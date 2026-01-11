@@ -1,0 +1,4 @@
+- ai: Mastra workflows and agents
+- calendar: Google Calendar integration
+- db: data access
+- auth: authentication helpers
