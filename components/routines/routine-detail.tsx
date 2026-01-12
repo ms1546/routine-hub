@@ -118,6 +118,7 @@ export const RoutineDetail = ({
         routineId={routine.id}
         proposedEvents={calendarPlan.proposedEvents}
         existingEvents={calendarPlan.existingEvents}
+        isCalendarConnected
       />
     </div>
   );

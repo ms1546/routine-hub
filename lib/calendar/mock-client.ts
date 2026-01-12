@@ -1,6 +1,15 @@
 import { randomUUID } from 'node:crypto';
 import type { CalendarClient } from './client';
-import type { CalendarEvent, CalendarTimeRange, ProposedCalendarEvent } from './types';
+import type {
+  CalendarEvent,
+  CalendarTimeRange,
+  ProposedCalendarEvent,
+  CalendarInsertResult
+} from './types';
+
+type MockCalendarOptions = {
+  failingProposals?: string[];
+};
 
 const seedEvents: CalendarEvent[] = [
   {
@@ -21,19 +30,30 @@ const seedEvents: CalendarEvent[] = [
 
 export class MockCalendarClient implements CalendarClient {
   private events: CalendarEvent[] = [...seedEvents];
+  private failingProposals: Set<string>;
+
+  constructor(options: MockCalendarOptions = {}) {
+    this.failingProposals = new Set(options.failingProposals);
+  }
 
   async listEvents(range: CalendarTimeRange): Promise<CalendarEvent[]> {
     return this.events.filter((event) => event.start >= range.start && event.end <= range.end);
   }
 
-  async insertEvents(events: ProposedCalendarEvent[]): Promise<CalendarEvent[]> {
+  async insertEvents(events: ProposedCalendarEvent[]): Promise<CalendarInsertResult> {
     const inserted: CalendarEvent[] = [];
+    const failures: { proposalId: string; reason: string }[] = [];
 
     for (const proposal of events) {
       const alreadyExists = this.events.some(
         (existing) => existing.source?.proposalId === proposal.proposalId
       );
       if (alreadyExists) {
+        continue;
+      }
+
+      if (this.failingProposals.has(proposal.proposalId)) {
+        failures.push({ proposalId: proposal.proposalId, reason: 'Mock failure' });
         continue;
       }
 
@@ -54,10 +74,14 @@ export class MockCalendarClient implements CalendarClient {
       inserted.push(event);
     }
 
-    return inserted;
+    return { success: inserted, failures };
   }
 
   reset(events: CalendarEvent[] = seedEvents) {
     this.events = [...events];
+  }
+
+  setFailingProposals(proposalIds: string[]) {
+    this.failingProposals = new Set(proposalIds);
   }
 }

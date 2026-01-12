@@ -27,3 +27,13 @@ export type CalendarTimeRange = {
   end: string;
   timezone: string;
 };
+
+export type CalendarInsertFailure = {
+  proposalId: string;
+  reason: string;
+};
+
+export type CalendarInsertResult = {
+  success: CalendarEvent[];
+  failures: CalendarInsertFailure[];
+};

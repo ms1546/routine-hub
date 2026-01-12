@@ -21,8 +21,10 @@ describe('MockCalendarClient', () => {
     const first = await client.insertEvents([proposal]);
     const second = await client.insertEvents([proposal]);
 
-    expect(first).toHaveLength(1);
-    expect(second).toHaveLength(0);
+    expect(first.success).toHaveLength(1);
+    expect(first.failures).toHaveLength(0);
+    expect(second.success).toHaveLength(0);
+    expect(second.failures).toHaveLength(0);
 
     const events = await client.listEvents({
       start: '2025-02-01T00:00:00.000Z',
@@ -32,5 +34,22 @@ describe('MockCalendarClient', () => {
     expect(events).toHaveLength(1);
     expect(events[0]).toBeDefined();
     expect(events[0]?.source?.proposalId).toBe('proposal-1');
+  });
+
+  it('records partial failures without duplicating events', async () => {
+    const client = new MockCalendarClient({ failingProposals: ['proposal-2'] });
+    client.reset([]);
+
+    const result = await client.insertEvents([
+      proposal,
+      { ...proposal, proposalId: 'proposal-2' }
+    ]);
+
+    expect(result.success).toHaveLength(1);
+    expect(result.failures).toEqual([{ proposalId: 'proposal-2', reason: 'Mock failure' }]);
+
+    const retry = await client.insertEvents([{ ...proposal, proposalId: 'proposal-2' }]);
+    expect(retry.success).toHaveLength(0);
+    expect(retry.failures).toEqual([{ proposalId: 'proposal-2', reason: 'Mock failure' }]);
   });
 });

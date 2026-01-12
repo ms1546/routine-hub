@@ -3,7 +3,14 @@ import { render, screen, fireEvent, act } from '@testing-library/react';
 import { CalendarProposalPanel } from '@/components/routines/calendar-proposal-panel';
 
 vi.mock('@/app/actions/calendar', () => ({
-  confirmProposedEventsAction: vi.fn(() => Promise.resolve([]))
+  confirmProposedEventsAction: vi.fn(() =>
+    Promise.resolve({
+      successCount: 1,
+      failureCount: 0,
+      insertedEvents: [],
+      failedEvents: []
+    })
+  )
 }));
 
 describe('CalendarProposalPanel', () => {
@@ -25,6 +32,7 @@ describe('CalendarProposalPanel', () => {
           }
         ]}
         existingEvents={[]}
+        isCalendarConnected
       />
     );
 

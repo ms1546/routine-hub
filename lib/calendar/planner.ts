@@ -5,12 +5,14 @@ import type { CalendarEvent, ProposedCalendarEvent, CalendarTimeRange } from './
 import { buildProposedEvents } from './proposals';
 import { getCalendarClient } from './client';
 import { createDefaultCalendarWindow } from './window';
+import { hasStoredRefreshToken } from '@/lib/auth/oauth-boundary';
 
 export type RoutinePlan = {
   workflow: RoutineAiWorkflowResult;
   proposedEvents: ProposedCalendarEvent[];
   existingEvents: CalendarEvent[];
   calendarWindow: CalendarTimeRange;
+  isCalendarConnected: boolean;
 };
 
 export async function planRoutineWithCalendar(routine: Routine): Promise<RoutinePlan> {
@@ -30,13 +32,15 @@ export async function planRoutineWithCalendar(routine: Routine): Promise<Routine
   });
 
   const proposedEvents = buildProposedEvents(routine, calendarWindow);
-  const client = getCalendarClient();
+  const isCalendarConnected = await hasStoredRefreshToken(routine.owner);
+  const client = getCalendarClient(routine.owner);
   const existingEvents = await client.listEvents(calendarWindow);
 
   return {
     workflow,
     proposedEvents,
     existingEvents,
-    calendarWindow
+    calendarWindow,
+    isCalendarConnected
   };
 }

@@ -1,0 +1,14 @@
+{
+  "id": "event-123",
+  "summary": "集中ブロック",
+  "description": "資料作成",
+  "start": { "dateTime": "2025-02-01T09:00:00.000Z" },
+  "end": { "dateTime": "2025-02-01T12:00:00.000Z" },
+  "extendedProperties": {
+    "private": {
+      "routinehubProposalId": "proposal-1",
+      "routineId": "routine-1",
+      "blockId": "block-1"
+    }
+  }
+}

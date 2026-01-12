@@ -27,13 +27,31 @@ describe('confirmProposedEventsAction', () => {
       proposalIds: [proposalId]
     });
 
-    expect(firstInsert).toHaveLength(1);
+    expect(firstInsert.successCount).toBe(1);
+    expect(firstInsert.failureCount).toBe(0);
 
     const secondInsert = await confirmProposedEventsAction({
       routineId: '11111111-1111-4111-8111-111111111111',
       proposalIds: [proposalId]
     });
 
-    expect(secondInsert).toHaveLength(0);
+    expect(secondInsert.successCount).toBe(0);
+    expect(secondInsert.failureCount).toBe(0);
+  });
+
+  it('returns failure details when calendar client rejects events', async () => {
+    const client = new MockCalendarClient();
+    client.reset([]);
+    client.setFailingProposals([proposalId]);
+    setCalendarClient(client);
+
+    const result = await confirmProposedEventsAction({
+      routineId: '11111111-1111-4111-8111-111111111111',
+      proposalIds: [proposalId]
+    });
+
+    expect(result.successCount).toBe(0);
+    expect(result.failureCount).toBe(1);
+    expect(result.failedEvents[0]?.proposalId).toBe(proposalId);
   });
 });
