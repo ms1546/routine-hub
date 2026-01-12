@@ -1,0 +1,12 @@
+node_modules
+.next
+out
+storybook-static
+coverage
+.env.local
+.env.development
+.env.test
+.env.production
+.DS_Store
+npm-debug.log*
+tsconfig.tsbuildinfo

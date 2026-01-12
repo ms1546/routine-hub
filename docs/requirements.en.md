@@ -16,6 +16,67 @@ The application integrates with Google Calendar and treats it as the single sour
 
 This product is designed as an **AI-operated system**, not merely an AI-powered application.
 
+## 1.2 背景・課題
+
+- 習慣化・学習・健康改善のノウハウは多いが、実行に落とし込むコストが高い
+- Notion 等のテンプレートはカレンダーと分断されている
+- AI による自動最適化は便利だが、ブラックボックス化や予定破壊の懸念がある
+- AI の判断や改善理由を説明できないアプリが多い
+
+---
+
+## 1.3 解決方針（プロダクト思想）
+
+### AI に関する基本方針（重要）
+- AI は **提案と評価のみ**を行う
+- AI は予定を自動で確定しない
+- 衝突は必ずユーザー確認を挟む
+- 将来予測は保証しない
+- AI 実行回数は制限する（admin 除外）
+
+### 習慣（Routine）の定義
+- Routine は「繰り返し前提のまとまった行動」
+- 最小単位は **3時間**
+- 細かいタスク管理は対象外
+
+---
+
+## 1.4 想定ユーザー
+
+- Google カレンダーを日常利用している知的労働者
+- 習慣化・学習・健康改善に関心がある
+- AI を補助として受け入れられるユーザー
+
+---
+
+## 1.5 技術スタック（前提）
+
+### フロントエンド / バックエンド
+- Next.js（App Router）
+- TypeScript
+- Server Actions 中心
+- shadcn/ui
+
+### AI / LLM
+- AWS Bedrock
+- Mastra（AI Agent / Workflow / 評価）
+- Langfuse（LLMOps / 可視化 / 判断支援）
+
+### インフラ
+- AWS ECS on Fargate Spot
+- EventBridge（夜間停止・起動）
+- DynamoDB
+- CloudWatch
+
+### 認証
+- Google OAuth（Cognito 経由）
+
+### CI/CD・テスト
+- GitHub Actions
+- Unit Test / Integration Test
+- Storybook
+- Chromatic（Visual Review 必須）
+
 ---
 
 ## 2. Product Principles

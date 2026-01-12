@@ -1,0 +1,20 @@
+.badge {
+  border-radius: 999px;
+  padding: 0.15rem 0.75rem;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.highlight {
+  background: rgba(124, 99, 255, 0.2);
+  border-color: rgba(168, 123, 255, 0.6);
+  color: var(--text);
+}
+
+.muted {
+  opacity: 0.7;
+}

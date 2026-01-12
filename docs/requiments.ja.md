@@ -59,6 +59,7 @@ AI の補助を受けながら **自分の生活制約に合わせて Google カ
 - Next.js（App Router）
 - TypeScript
 - Server Actions 中心
+- shadcn/ui
 
 ### AI / LLM
 - AWS Bedrock

@@ -70,6 +70,7 @@ The following MCP tools are also used to support development:
 * **mastra-docs MCP**: AI agent, workflow, and evaluation design
 * **chrome-devtools MCP**: UI inspection and debugging
 * **context7 / serena / ultracite MCP**: long-context reasoning and document organization
+* **shadcn**
 
 ---
 
