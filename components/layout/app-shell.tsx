@@ -4,7 +4,7 @@ import { cn } from '@/lib/utils';
 
 type AppShellProps = {
   title: string;
-  description: string;
+  description?: string;
   children: ReactNode;
   actions?: ReactNode;
   breadcrumb?: {
@@ -27,7 +27,7 @@ export function AppShell({ title, description, children, actions, breadcrumb }: 
             </Link>
           )}
           <h1 className="text-3xl font-semibold tracking-tight text-foreground md:text-4xl">{title}</h1>
-          <p className="max-w-2xl text-base text-muted-foreground">{description}</p>
+          {description ? <p className="max-w-2xl text-sm text-muted-foreground">{description}</p> : null}
         </div>
         {actions ? <div className={cn('flex flex-wrap gap-3')}>{actions}</div> : null}
       </header>

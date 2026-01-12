@@ -11,6 +11,7 @@ Routine Hub
 ### Description
 
 Routine Hub is a web application that allows users to reuse, customize, and apply recurring routines (habits) to their personal schedules with AI assistance.
+While the interface copy stays in English for Phase 2, mock data and workflow examples should reflect Japanese working styles so that local reviewers can relate to the scenarios.
 
 The application integrates with Google Calendar and treats it as the single source of truth. AI is used strictly as a proposal and evaluation mechanism, never as an autonomous decision-maker.
 

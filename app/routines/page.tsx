@@ -32,11 +32,12 @@ const parseFilters = (searchParams?: Record<string, string | string[] | undefine
 export default async function RoutinesPage({
   searchParams
 }: {
-  searchParams?: Record<string, string | string[] | undefined>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
+  const resolvedSearchParams = await searchParams;
   const [allRoutines, filteredRoutines] = await Promise.all([
     routinesRepository.list(),
-    routinesRepository.list(parseFilters(searchParams))
+    routinesRepository.list(parseFilters(resolvedSearchParams))
   ]);
   const uniqueTags = Array.from(new Set(allRoutines.flatMap((routine) => routine.tags))).sort();
   const listItems = filteredRoutines.map(toRoutineListItem);

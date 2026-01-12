@@ -28,12 +28,12 @@ const seedRoutines: SeedRoutine[] = [
     id: '11111111-1111-4111-8111-111111111111',
     name: 'Deep Focus Reset',
     description:
-      'A four-day cadence that alternates deep focus blocks with deliberate shutdowns so knowledge workers can reset without burning out.',
+      '月曜午前に深い集中ブロック、午後に振り返りを置き、火曜は低刺激タスクで体力を戻す 4 ブロック構成。',
     purpose:
-      'Protect focus work while giving the nervous system predictable rest. Designed for ICs shipping complex work under pressure.',
+      'ハードな開発サイクルで疲弊する個人開発者が、ペースを崩さず成果物を届けられるよう支援する。',
     durationType: 'weekly',
     visibility: 'public',
-    tags: ['focus', 'reset', 'wellbeing'],
+    tags: ['集中', '休息', 'リズム'],
     owner: 'ops@routinehub.dev',
     stats: { forks: 32, applications: 141 },
     timeBlocks: [
@@ -41,24 +41,24 @@ const seedRoutines: SeedRoutine[] = [
         day: 'monday',
         startHour: 8,
         endHour: 12,
-        label: 'High-Fidelity Build',
-        objective: 'Ship one critical artifact before noon stand-up.',
+        label: '高精度ビルド',
+        objective: '午前中のスタンドアップ前に主要成果物を仕上げる。',
         energyLevel: 'high'
       },
       {
         day: 'monday',
         startHour: 14,
         endHour: 18,
-        label: 'Constraint Debrief',
-        objective: 'Document blockers, handoff async updates, and prepare Tuesday focus stack.',
+        label: '制約ふりかえり',
+        objective: '阻害要因を洗い出して非同期で共有し、翌日の準備を整える。',
         energyLevel: 'medium'
       },
       {
         day: 'tuesday',
         startHour: 9,
         endHour: 12,
-        label: 'Slow Ramp Recovery',
-        objective: 'Low-stimulus admin and backlog review to recharge context.',
+        label: 'スロースタート回復',
+        objective: '低刺激の事務処理とバックログ整理で脳の緊張をほどく。',
         energyLevel: 'low'
       }
     ]
@@ -67,12 +67,12 @@ const seedRoutines: SeedRoutine[] = [
     id: '22222222-2222-4222-8222-222222222222',
     name: 'Product Lead Syncopation',
     description:
-      'Anchor decision-making windows for product leads who juggle roadmap, hiring, and coaching while leaving room for strategic drift.',
+      '意思決定とコーチングを週内で揺らぎなく配置し、突発案件のための遊びも残すリズム。',
     purpose:
-      'Reduce thrash by carving immovable collaboration windows and async focus pillars.',
+      'ロードマップ・採用・育成を同時進行するリードが、齟齬なく意思決定できる状態を守る。',
     durationType: 'weekly',
     visibility: 'public',
-    tags: ['product', 'leadership'],
+    tags: ['プロダクト', 'リーダーシップ'],
     owner: 'ops@routinehub.dev',
     stats: { forks: 54, applications: 212 },
     timeBlocks: [
@@ -80,16 +80,16 @@ const seedRoutines: SeedRoutine[] = [
         day: 'wednesday',
         startHour: 9,
         endHour: 12,
-        label: 'Roadmap Calibration',
-        objective: 'Commit to 3 priority calls with PM + Eng leads.',
+        label: 'ロードマップ調律',
+        objective: 'PM/Eng との優先順位すり合わせをまとめて実施。',
         energyLevel: 'high'
       },
       {
         day: 'thursday',
         startHour: 13,
         endHour: 17,
-        label: 'Talent Coaching Block',
-        objective: 'Batch 1:1s and growth reviews.',
+        label: 'メンバーコーチング',
+        objective: '1on1 と成長レビューを塊で行い、文脈切替を減らす。',
         energyLevel: 'medium'
       }
     ]
@@ -98,12 +98,12 @@ const seedRoutines: SeedRoutine[] = [
     id: '33333333-3333-4333-8333-333333333333',
     name: 'Sabbatical Landing Gear',
     description:
-      'Guide knowledge workers into sabbatical mode with deliberate decompression and communication rituals.',
+      '長期休暇前の引き継ぎと心身の減速を 1 日でやり切るための 2 ブロック構成。',
     purpose:
-      'Prevent post-leave whiplash by handling handoffs, expectation setting, and health habits before departure.',
+      '休暇前後のギャップを軽減し、関係者の権限や期待を明文化しておく。',
     durationType: 'half-day',
     visibility: 'private',
-    tags: ['recovery', 'handoff'],
+    tags: ['休暇準備', '引き継ぎ'],
     owner: 'ops@routinehub.dev',
     stats: { forks: 5, applications: 18 },
     timeBlocks: [
@@ -111,16 +111,16 @@ const seedRoutines: SeedRoutine[] = [
         day: 'friday',
         startHour: 9,
         endHour: 12,
-        label: 'Expectation Summit',
-        objective: 'Outline coverage map and align stakeholders on decision authority.',
+        label: '期待値すり合わせ',
+        objective: '担当範囲と意思決定の委譲ラインを明確にする。',
         energyLevel: 'medium'
       },
       {
         day: 'friday',
         startHour: 13,
         endHour: 17,
-        label: 'Brain Dump Workshop',
-        objective: 'Capture domain rituals, metrics, and dependencies before departure.',
+        label: '知識ダンプ',
+        objective: '業務ノウハウ・定例・依存関係をまとめて書き出す。',
         energyLevel: 'low'
       }
     ]
