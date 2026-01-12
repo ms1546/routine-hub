@@ -27,7 +27,10 @@ export const mockRoutineDetail: RoutineDetailView = {
       objective: '午前のスタンドアップ前に主要成果物をまとめる。',
       hours: 4,
       schedule: 'Monday · 8:00 – 12:00',
-      energyLevel: 'high'
+      energyLevel: 'high',
+      startHour: 8,
+      endHour: 12,
+      day: 'monday'
     },
     {
       id: 'block-2',
@@ -35,7 +38,32 @@ export const mockRoutineDetail: RoutineDetailView = {
       objective: 'ボトルネックを可視化し翌日の準備を進める。',
       hours: 4,
       schedule: 'Tuesday · 14:00 – 18:00',
-      energyLevel: 'medium'
+      energyLevel: 'medium',
+      startHour: 14,
+      endHour: 18,
+      day: 'tuesday'
     }
   ]
 };
+
+export const mockProposedEvents = [
+  {
+    proposalId: 'mock-1',
+    routineId: 'story-routine',
+    blockId: 'block-1',
+    title: 'Deep Focus Reset · 集中ビルド',
+    description: '主要成果物をまとめる',
+    start: '2025-02-01T00:00:00.000Z',
+    end: '2025-02-01T03:00:00.000Z',
+    status: 'pending' as const
+  }
+];
+
+export const mockExistingEvents = [
+  {
+    id: 'existing-1',
+    title: '朝ラン',
+    start: '2025-02-01T06:00:00.000Z',
+    end: '2025-02-01T07:00:00.000Z'
+  }
+];

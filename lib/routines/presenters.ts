@@ -22,6 +22,9 @@ export type RoutineBlockView = {
   hours: number;
   schedule: string;
   energyLevel: string;
+  startHour: number;
+  endHour: number;
+  day: Weekday;
 };
 
 export type RoutineDetailView = RoutineListItem & {
@@ -88,7 +91,10 @@ export const toRoutineDetail = (routine: Routine): RoutineDetailView => {
       objective: block.objective,
       hours: block.endHour - block.startHour,
       schedule: formatSchedule(block.day as Weekday, block.startHour, block.endHour),
-      energyLevel: block.energyLevel
+      energyLevel: block.energyLevel,
+      startHour: block.startHour,
+      endHour: block.endHour,
+      day: block.day as Weekday
     }))
   };
 };

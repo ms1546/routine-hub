@@ -62,14 +62,39 @@ User Browser
 → lib/
 
 * ai (Mastra workflows, agents, evaluation)
-* calendar (Google Calendar integration)
+* calendar (calendar integration abstraction)
 * db (DynamoDB access)
 * auth (OAuth helpers)
-  → AWS Services
+
+→ AWS Services
+
 * ECS Fargate
 * DynamoDB
 * Bedrock
 * Langfuse
+* Secrets Manager
+
+→ External Services
+
+* Google OAuth 2.0
+* Google Calendar API
+
+---
+
+### Note on Google Cloud Platform Usage
+
+Google Cloud Platform is **not used as an application runtime** in this architecture.
+
+GCP is required **only** for the following purposes:
+
+* Registration and management of Google OAuth 2.0 clients
+* Configuration of the OAuth consent screen
+* Enabling access to Google Calendar API
+
+All application logic, data processing, AI workflows, token storage,
+and operational control are executed entirely within AWS.
+
+GCP functions strictly as an external identity and calendar API provider.
 
 ---
 
@@ -132,4 +157,6 @@ User Browser
 
 ## Summary
 
-Routine Hub prioritizes trust, explainability, and operational realism. It is designed not merely as an AI-powered app, but as an AI-operated system that can be evaluated, improved, and explained.
+Routine Hub prioritizes trust, explainability, and operational realism.
+It is designed not merely as an AI-powered app, but as an AI-operated system
+that can be evaluated, improved, and explained.

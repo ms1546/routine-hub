@@ -8,6 +8,7 @@ import {
   forkRoutineAction,
   updateRoutineVisibilityAction
 } from '@/app/actions/routines';
+import { planRoutineWithCalendar } from '@/lib/calendar/planner';
 
 export default async function RoutineDetailPage({
   params
@@ -22,6 +23,7 @@ export default async function RoutineDetailPage({
 
   const detail = toRoutineDetail(routine);
   const insights = await generateRoutineInsights(routine);
+  const calendarPlan = await planRoutineWithCalendar(routine);
 
   return (
     <AppShell
@@ -35,6 +37,10 @@ export default async function RoutineDetailPage({
         onToggleVisibility={updateRoutineVisibilityAction}
         onApplyRoutine={applyRoutineAction}
         onForkRoutine={forkRoutineAction}
+        calendarPlan={{
+          proposedEvents: calendarPlan.proposedEvents,
+          existingEvents: calendarPlan.existingEvents
+        }}
       />
     </AppShell>
   );

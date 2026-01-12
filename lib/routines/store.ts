@@ -38,6 +38,7 @@ const seedRoutines: SeedRoutine[] = [
     stats: { forks: 32, applications: 141 },
     timeBlocks: [
       {
+        id: '11111111-aaaa-4111-8111-aaaaaaaaaaaa',
         day: 'monday',
         startHour: 8,
         endHour: 12,
@@ -46,6 +47,7 @@ const seedRoutines: SeedRoutine[] = [
         energyLevel: 'high'
       },
       {
+        id: '11111111-bbbb-4111-8111-aaaaaaaaaaaa',
         day: 'monday',
         startHour: 14,
         endHour: 18,
@@ -54,6 +56,7 @@ const seedRoutines: SeedRoutine[] = [
         energyLevel: 'medium'
       },
       {
+        id: '11111111-cccc-4111-8111-aaaaaaaaaaaa',
         day: 'tuesday',
         startHour: 9,
         endHour: 12,
@@ -77,6 +80,7 @@ const seedRoutines: SeedRoutine[] = [
     stats: { forks: 54, applications: 212 },
     timeBlocks: [
       {
+        id: '22222222-aaaa-4222-8222-bbbbbbbbbbbb',
         day: 'wednesday',
         startHour: 9,
         endHour: 12,
@@ -85,6 +89,7 @@ const seedRoutines: SeedRoutine[] = [
         energyLevel: 'high'
       },
       {
+        id: '22222222-bbbb-4222-8222-bbbbbbbbbbbb',
         day: 'thursday',
         startHour: 13,
         endHour: 17,
@@ -108,6 +113,7 @@ const seedRoutines: SeedRoutine[] = [
     stats: { forks: 5, applications: 18 },
     timeBlocks: [
       {
+        id: '33333333-aaaa-4333-8333-cccccccccccc',
         day: 'friday',
         startHour: 9,
         endHour: 12,
@@ -116,6 +122,7 @@ const seedRoutines: SeedRoutine[] = [
         energyLevel: 'medium'
       },
       {
+        id: '33333333-bbbb-4333-8333-cccccccccccc',
         day: 'friday',
         startHour: 13,
         endHour: 17,

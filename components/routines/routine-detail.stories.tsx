@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react';
 import { RoutineDetail } from './routine-detail';
-import { mockRoutineDetail } from '@/stories/routine-fixtures';
+import { mockRoutineDetail, mockProposedEvents, mockExistingEvents } from '@/stories/routine-fixtures';
 import { stubApplyRoutine, stubForkRoutine, stubToggleVisibility } from '@/stories/routine-action-stubs';
 
 const insights = [
@@ -16,7 +16,11 @@ const meta: Meta<typeof RoutineDetail> = {
     insights,
     onToggleVisibility: stubToggleVisibility,
     onApplyRoutine: stubApplyRoutine,
-    onForkRoutine: stubForkRoutine
+    onForkRoutine: stubForkRoutine,
+    calendarPlan: {
+      proposedEvents: mockProposedEvents,
+      existingEvents: mockExistingEvents
+    }
   }
 };
 
