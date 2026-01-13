@@ -34,7 +34,7 @@ const seedRoutines: SeedRoutine[] = [
     durationType: 'weekly',
     visibility: 'public',
     tags: ['集中', '休息', 'リズム'],
-    owner: 'ops@routinehub.dev',
+    owner: 'routinehub.dev@gmail.com',
     stats: { forks: 32, applications: 141 },
     timeBlocks: [
       {
@@ -76,7 +76,7 @@ const seedRoutines: SeedRoutine[] = [
     durationType: 'weekly',
     visibility: 'public',
     tags: ['プロダクト', 'リーダーシップ'],
-    owner: 'ops@routinehub.dev',
+    owner: 'routinehub.dev@gmail.com',
     stats: { forks: 54, applications: 212 },
     timeBlocks: [
       {
@@ -109,7 +109,7 @@ const seedRoutines: SeedRoutine[] = [
     durationType: 'half-day',
     visibility: 'private',
     tags: ['休暇準備', '引き継ぎ'],
-    owner: 'ops@routinehub.dev',
+    owner: 'routinehub.dev@gmail.com',
     stats: { forks: 5, applications: 18 },
     timeBlocks: [
       {

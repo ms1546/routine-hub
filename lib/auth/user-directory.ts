@@ -1,8 +1,8 @@
 const mockDirectory = {
-  'ops@routinehub.dev': {
+  'routinehub.dev@gmail.com': {
     id: 'account-ops',
     displayName: 'Ops Team',
-    email: 'ops@routinehub.dev'
+    email: 'routinehub.dev@gmail.com'
   },
   'owner@example.com': {
     id: 'account-owner',

@@ -19,7 +19,7 @@ export const mockRoutineDetail: RoutineDetailView = {
   ...mockRoutineListItem,
   createdAt: new Date('2024-01-10').toISOString(),
   updatedAt: new Date('2024-03-18').toISOString(),
-  owner: 'ops@routinehub.dev',
+  owner: 'routinehub.dev@gmail.com',
   timeBlocks: [
     {
       id: 'block-1',
