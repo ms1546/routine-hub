@@ -74,6 +74,17 @@ UI品質を自動化だけに委ねない方針です。
 * Storybook / Chromatic
 * GitHub Actions
 
+### 主要な環境変数
+
+| キー | 用途 | 備考 |
+| --- | --- | --- |
+| `AWS_REGION` | Bedrock のリージョン | 例: `ap-northeast-1` |
+| `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY` | Bedrock 呼び出し資格情報 | IAM ロール運用なら不要 |
+| `AWS_BEDROCK_MODEL` | （任意）利用するモデル ID | 省略時は `anthropic.claude-3-5-sonnet-20241022-v2:0` |
+| `AWS_BEDROCK_INFERENCE_PROFILE_ARN` | 推論プロファイル ARN | Bedrock のプロファイルを使う場合は必須 |
+| `LANGFUSE_PUBLIC_KEY` / `LANGFUSE_SECRET_KEY` | Langfuse 追跡 | `LANGFUSE_BASE_URL` でホスト変更可 |
+| `MASTRA_USE_MOCK` | `true` で常にモック実行 | Bedrock 確認前の安全弁 |
+
 ---
 
 ## このリポジトリの見どころ

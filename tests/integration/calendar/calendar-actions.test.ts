@@ -1,10 +1,10 @@
 import { describe, expect, it, beforeEach } from 'vitest';
 import { confirmProposedEventsAction } from '@/app/actions/calendar';
-import { setCalendarClient } from '@/lib/calendar/client';
-import { MockCalendarClient } from '@/lib/calendar/mock-client';
-import { routinesRepository } from '@/lib/routines';
-import { buildProposedEvents } from '@/lib/calendar/proposals';
-import { createDefaultCalendarWindow } from '@/lib/calendar/window';
+import { setCalendarClient } from '@/features/calendar/domain/client';
+import { MockCalendarClient } from '@/features/calendar/domain/mock-client';
+import { routinesRepository } from '@/features/routines';
+import { buildProposedEvents } from '@/features/calendar/domain/proposals';
+import { createDefaultCalendarWindow } from '@/features/calendar/domain/window';
 
 let proposalId: string;
 

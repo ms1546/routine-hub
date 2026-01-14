@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { MockCalendarClient } from '@/lib/calendar/mock-client';
-import type { ProposedCalendarEvent } from '@/lib/calendar/types';
+import { MockCalendarClient } from '@/features/calendar/domain/mock-client';
+import type { ProposedCalendarEvent } from '@/features/calendar/domain/types';
 
 const proposal: ProposedCalendarEvent = {
   proposalId: 'proposal-1',

@@ -1,7 +1,7 @@
 const path = require('node:path');
 
 module.exports = {
-  stories: ['../components/**/*.stories.@(ts|tsx)'],
+  stories: ['../src/components/**/*.stories.@(ts|tsx)', '../stories/**/*.stories.@(ts|tsx)'],
   addons: ['@storybook/addon-essentials', '@storybook/addon-interactions'],
   framework: {
     name: '@storybook/nextjs',

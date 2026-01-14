@@ -1,7 +1,7 @@
 {
   "extends": "../tsconfig.json",
   "include": [
-    "../components",
+    "../src/components",
     "../stories",
     "./preview.ts",
     "./main.ts"

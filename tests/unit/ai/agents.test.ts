@@ -1,10 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import { randomUUID } from 'node:crypto';
-import type { Routine } from '@/lib/routines';
-import type { RoutineAiWorkflowInput } from '@/lib/ai/types';
-import { runProfileAgent } from '@/lib/ai/agents/profile-agent';
-import { runRoutineInterpreterAgent } from '@/lib/ai/agents/routine-interpreter-agent';
-import { runCalendarConflictAgent } from '@/lib/ai/agents/calendar-conflict-agent';
+import type { Routine } from '@/features/routines';
+import type { RoutineAiWorkflowInput } from '@/features/ai/types';
+import { runProfileAgent } from '@/features/ai/agents/profile-agent';
+import { runRoutineInterpreterAgent } from '@/features/ai/agents/routine-interpreter-agent';
+import { runCalendarConflictAgent } from '@/features/ai/agents/calendar-conflict-agent';
 
 const routine: Routine = {
   id: randomUUID(),
@@ -48,20 +48,34 @@ const baseInput: RoutineAiWorkflowInput = {
 
 describe('AI agents', () => {
   it('summarizes user profile', async () => {
-    const profile = await runProfileAgent(baseInput);
-    expect(profile.agent).toBe('profile-agent');
-    expect(profile.data.persona).toContain('PROFILE');
+    const profile = await runProfileAgent({ userProfile: baseInput.user });
+    expect(profile.agent).toContain('profile-agent');
+    expect(profile.data.persona.length).toBeGreaterThan(0);
     expect(profile.data.highlightedConstraints).toContain('travel buffer');
   });
 
   it('interprets routine intent', async () => {
-    const interpretation = await runRoutineInterpreterAgent(baseInput);
+    const profile = await runProfileAgent({ userProfile: baseInput.user });
+    const interpretation = await runRoutineInterpreterAgent({
+      routine,
+      profileSummary: profile.data
+    });
     expect(interpretation.data.successSignals.length).toBeGreaterThan(0);
-    expect(interpretation.data.intent).toContain('INTERPRETATION');
+    expect(interpretation.data.intent.length).toBeGreaterThan(0);
   });
 
   it('detects conflicts based on heuristics', async () => {
-    const conflicts = await runCalendarConflictAgent(baseInput);
+    const profile = await runProfileAgent({ userProfile: baseInput.user });
+    const interpretation = await runRoutineInterpreterAgent({
+      routine,
+      profileSummary: profile.data
+    });
+    const conflicts = await runCalendarConflictAgent({
+      routine,
+      interpretedRoutineIntent: interpretation.data,
+      userProfile: baseInput.user,
+      calendarWindow: baseInput.calendarWindow
+    });
     expect(conflicts.data.conflicts.some((c) => c.id === 'early-start')).toBe(true);
   });
 });

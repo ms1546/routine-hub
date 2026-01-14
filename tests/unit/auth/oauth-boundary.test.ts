@@ -48,14 +48,14 @@ describe('oauth boundary', () => {
   });
 
   it('generates authorization URL with encoded state', async () => {
-    const { buildGoogleOAuthUrl } = await import('@/lib/auth/oauth-boundary');
+    const { buildGoogleOAuthUrl } = await import('@/infrastructure/auth/oauth-boundary');
     const url = buildGoogleOAuthUrl('state-123');
     expect(url).toContain('state=');
     expect(generateAuthUrl).toHaveBeenCalled();
   });
 
   it('exchanges code for tokens via OAuth client', async () => {
-    const { exchangeCodeForTokens } = await import('@/lib/auth/oauth-boundary');
+    const { exchangeCodeForTokens } = await import('@/infrastructure/auth/oauth-boundary');
     const tokens = await exchangeCodeForTokens('code-123');
     expect(getToken).toHaveBeenCalledWith('code-123');
     expect(tokens.accessToken).toBe('access');

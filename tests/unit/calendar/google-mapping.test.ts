@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { mapGoogleEvent } from '@/lib/calendar/google-client';
-import fixture from '@/tests/fixtures/google-event.json';
+import { mapGoogleEvent } from '@/features/calendar/domain/google-client';
+import fixture from '../../fixtures/google-event.json';
 import type { calendar_v3 } from 'googleapis';
 
 describe('mapGoogleEvent', () => {

@@ -3,7 +3,7 @@ import {
   applyRoutineAction,
   createRoutineAction
 } from '@/app/actions/routines';
-import { routinesRepository } from '@/lib/routines';
+import { routinesRepository } from '@/features/routines';
 
 const buildFormData = () => {
   const formData = new FormData();

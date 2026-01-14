@@ -1,11 +1,11 @@
-import type { ActionResult } from '@/lib/actions/types';
-import type { Routine } from '@/lib/routines';
-import type { RoutineApplicationPreview } from '@/lib/calendar/mock';
+import type { ActionResult } from '@/shared/types/actionResult';
+import type { Routine } from '@/features/routines';
+import type { RoutineApplicationPreview } from '@/features/calendar/domain/mock';
 import type {
   ApplyRoutinePayload,
   ForkRoutinePayload,
   VisibilityTogglePayload
-} from '@/app/actions/routines';
+} from '@/features/routines/actions/routines';
 
 const ok = async <T>(data?: T): Promise<ActionResult<T>> => ({ ok: true, data });
 

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { createRoutineSchema, normalizeTags } from '@/lib/routines';
+import { createRoutineSchema, normalizeTags } from '@/features/routines';
 
 const baseInput = {
   name: 'Test Routine',
