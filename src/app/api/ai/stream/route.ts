@@ -21,8 +21,34 @@ export const dynamic = 'force-dynamic';
 type StreamChunk =
   | { type: 'step'; step: string; data: any }
   | { type: 'progress'; step: string; message: string }
+  | { type: 'text'; text: string }
   | { type: 'complete'; data: any }
   | { type: 'error'; error: string };
+
+// 各ステップの結果をテキスト形式に変換
+function formatStepAsText(step: string, data: any): string {
+  switch (step) {
+    case 'profile':
+      return `## プロフィール分析\n\nペルソナ: ${data.data.persona}\n\n重要な制約:\n${data.data.highlightedConstraints.map((c: string) => `- ${c}`).join('\n')}\n\n推奨トーン: ${data.data.toneGuidance}\n\n`;
+    case 'interpretation':
+      return `## ルーチン解釈\n\n意図: ${data.data.intent}\n\n成功要因:\n${data.data.successSignals.map((s: string) => `- ${s}`).join('\n')}\n\n${data.data.riskSignals.length > 0 ? `リスク要因:\n${data.data.riskSignals.map((r: string) => `- ${r}`).join('\n')}\n\n` : ''}`;
+    case 'conflicts':
+      return `## 衝突確認\n\n${data.data.conflicts.length > 0 ? `検出された衝突:\n${data.data.conflicts.map((c: any) => `- **${c.label}** (${c.severity}): ${c.rationale}`).join('\n')}\n\n` : '衝突は検出されませんでした。\n\n'}前提条件:\n${data.data.assumptions.map((a: string) => `- ${a}`).join('\n')}\n\n`;
+    case 'optimizations':
+      return `## 最適化提案\n\n${data.data.proposals.map((p: any) => `### ${p.title}\n${p.description}\n\nトレードオフ: ${p.tradeOffs.join(', ')}\n${p.aiOnly ? '(AIのみで実行可能)' : '(人間の確認が必要)'}\n`).join('\n')}`;
+    case 'futureSimulation':
+      return `## 将来シミュレーション\n\n見通し: ${data.data.outlook}\n\nガードレール:\n${data.data.guardrails.map((g: string) => `- ${g}`).join('\n')}\n\nフォローアップ質問:\n${data.data.followUpQuestions.map((q: string) => `- ${q}`).join('\n')}\n\n`;
+    case 'evaluation':
+      return `## 評価結果\n\n判定: ${data.data.verdict === 'approve' ? '承認' : '要修正'}\n\nスコア:\n- 明確性: ${data.data.clarity.score}/10 (${data.data.clarity.rationale})\n- 一貫性: ${data.data.consistency.score}/10 (${data.data.consistency.rationale})\n- 説明品質: ${data.data.explanationQuality.score}/10 (${data.data.explanationQuality.rationale})\n\n`;
+    default:
+      return '';
+  }
+}
+
+// テキストを文字列として送信（クライアント側で順番に表示）
+function* streamText(text: string): Generator<StreamChunk> {
+  yield { type: 'text', text };
+}
 
 function createStreamResponse(stream: ReadableStream<StreamChunk>) {
   return new Response(stream, {
@@ -44,6 +70,10 @@ async function* streamWorkflow(
     // Step 1: Profile
     yield { type: 'progress', step: 'profile', message: 'プロフィールを分析しています...' };
     const profile = await runProfileAgent({ userProfile: input.user });
+    const profileText = formatStepAsText('profile', profile);
+    for await (const chunk of streamText(profileText)) {
+      yield chunk;
+    }
     yield { type: 'step', step: 'profile', data: profile };
 
     // Step 2: Interpretation
@@ -52,6 +82,10 @@ async function* streamWorkflow(
       routine: input.routine,
       profileSummary: profile.data
     });
+    const interpretationText = formatStepAsText('interpretation', interpretation);
+    for await (const chunk of streamText(interpretationText)) {
+      yield chunk;
+    }
     yield { type: 'step', step: 'interpretation', data: interpretation };
 
     // Step 3: Conflicts
@@ -62,6 +96,10 @@ async function* streamWorkflow(
       userProfile: input.user,
       calendarWindow: input.calendarWindow
     });
+    const conflictsText = formatStepAsText('conflicts', conflicts);
+    for await (const chunk of streamText(conflictsText)) {
+      yield chunk;
+    }
     yield { type: 'step', step: 'conflicts', data: conflicts };
 
     // Step 4: Optimizations
@@ -72,6 +110,10 @@ async function* streamWorkflow(
       interpretation,
       conflicts
     });
+    const optimizationsText = formatStepAsText('optimizations', optimizations);
+    for await (const chunk of streamText(optimizationsText)) {
+      yield chunk;
+    }
     yield { type: 'step', step: 'optimizations', data: optimizations };
 
     // Step 5: Future Simulation
@@ -81,6 +123,10 @@ async function* streamWorkflow(
       optimizations,
       profile
     });
+    const futureSimulationText = formatStepAsText('futureSimulation', futureSimulation);
+    for await (const chunk of streamText(futureSimulationText)) {
+      yield chunk;
+    }
     yield { type: 'step', step: 'futureSimulation', data: futureSimulation };
 
     // Step 6: Evaluation
@@ -90,6 +136,10 @@ async function* streamWorkflow(
       conflicts,
       futureSimulation
     });
+    const evaluationText = formatStepAsText('evaluation', evaluation);
+    for await (const chunk of streamText(evaluationText)) {
+      yield chunk;
+    }
     yield { type: 'step', step: 'evaluation', data: evaluation };
 
     // Complete

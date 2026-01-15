@@ -18,7 +18,7 @@ type StreamingWorkflowPanelsProps = {
 };
 
 export function StreamingWorkflowPanels({ routineId, initialWorkflow }: StreamingWorkflowPanelsProps) {
-  const { workflow, partialWorkflow, currentStep, progressMessage, isLoading, error, startStream } = useStreamWorkflow(routineId);
+  const { workflow, partialWorkflow, currentStep, progressMessage, streamingText, isLoading, error, startStream } = useStreamWorkflow(routineId);
   const [displayWorkflow, setDisplayWorkflow] = useState<RoutineAiWorkflowResult | null>(initialWorkflow);
 
   useEffect(() => {
@@ -51,21 +51,34 @@ export function StreamingWorkflowPanels({ routineId, initialWorkflow }: Streamin
 
   return (
     <section className="space-y-4" id="ai-workflow">
-      <h3 className="text-xl font-semibold">AI Workflow Output</h3>
-      <div className="space-y-2 rounded-2xl border border-dashed border-border/60 bg-card/10 p-4 text-sm text-muted-foreground">
-        <p className="text-xs uppercase tracking-[0.3em] text-muted-foreground">AI commentary</p>
-        {progressMessage ? (
-          <p>{progressMessage}</p>
-        ) : (
-          <p>AI コメントを生成しています。出力が確定するまで人が差分を確認してください。</p>
-        )}
-        {currentStep && (
-          <div className="mt-2 text-xs">
-            <p className="text-muted-foreground">現在のステップ: {getStepLabel(currentStep)}</p>
-          </div>
-        )}
-      </div>
-      {partialWorkflow && <PartialWorkflowPanels workflow={partialWorkflow} currentStep={currentStep} />}
+      <h3 className="text-xl font-semibold">AI Workflow Analysis</h3>
+      {streamingText ? (
+        <Card className="border border-border/60 bg-card/30">
+          <CardContent className="p-6">
+            <div className="prose prose-invert max-w-none">
+              <pre className="whitespace-pre-wrap font-sans text-sm text-foreground leading-relaxed">
+                {streamingText}
+                {isLoading && <span className="animate-pulse">▊</span>}
+              </pre>
+            </div>
+          </CardContent>
+        </Card>
+      ) : (
+        <div className="space-y-2 rounded-2xl border border-dashed border-border/60 bg-card/10 p-4 text-sm text-muted-foreground">
+          <p className="text-xs uppercase tracking-[0.3em] text-muted-foreground">AI commentary</p>
+          {progressMessage ? (
+            <p>{progressMessage}</p>
+          ) : (
+            <p>AI コメントを生成しています。出力が確定するまで人が差分を確認してください。</p>
+          )}
+          {currentStep && (
+            <div className="mt-2 text-xs">
+              <p className="text-muted-foreground">現在のステップ: {getStepLabel(currentStep)}</p>
+            </div>
+          )}
+        </div>
+      )}
+      {partialWorkflow && !streamingText && <PartialWorkflowPanels workflow={partialWorkflow} currentStep={currentStep} />}
     </section>
   );
 }

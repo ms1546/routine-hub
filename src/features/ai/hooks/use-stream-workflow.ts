@@ -1,11 +1,12 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import type { RoutineAiWorkflowResult } from '../types';
 
 type StreamChunk =
   | { type: 'step'; step: string; data: any }
   | { type: 'progress'; step: string; message: string }
+  | { type: 'text'; text: string }
   | { type: 'complete'; data: RoutineAiWorkflowResult }
   | { type: 'error'; error: string };
 
@@ -14,6 +15,7 @@ type StreamState = {
   partialWorkflow: Partial<RoutineAiWorkflowResult> | null;
   currentStep: string | null;
   progressMessage: string | null;
+  streamingText: string;
   isLoading: boolean;
   error: string | null;
 };
@@ -24,18 +26,33 @@ export function useStreamWorkflow(routineId: string | null) {
     partialWorkflow: null,
     currentStep: null,
     progressMessage: null,
+    streamingText: '',
     isLoading: false,
     error: null
   });
 
+  // 文字を順番に表示するためのキューとタイマー
+  const textQueueRef = useRef<string[]>([]);
+  const displayTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const isProcessingRef = useRef(false);
+
   const startStream = useCallback(async () => {
     if (!routineId) return;
+
+    // 既存のタイマーをクリア
+    if (displayTimerRef.current) {
+      clearTimeout(displayTimerRef.current);
+      displayTimerRef.current = null;
+    }
+    textQueueRef.current = [];
+    isProcessingRef.current = false;
 
     setState({
       workflow: null,
       partialWorkflow: null,
       currentStep: null,
       progressMessage: null,
+      streamingText: '',
       isLoading: true,
       error: null
     });
@@ -82,6 +99,35 @@ export function useStreamWorkflow(routineId: string | null) {
                   currentStep: chunk.step,
                   progressMessage: chunk.message
                 }));
+              } else if (chunk.type === 'text') {
+                // 文字列全体をキューに追加（順番を保証するため）
+                const textToAdd = chunk.text;
+                if (textToAdd) {
+                  // 文字列を1文字ずつキューに追加
+                  for (let i = 0; i < textToAdd.length; i++) {
+                    textQueueRef.current.push(textToAdd[i]);
+                  }
+
+                  // 既に処理中でない場合、処理を開始
+                  if (!isProcessingRef.current) {
+                    isProcessingRef.current = true;
+                    const processQueue = () => {
+                      if (textQueueRef.current.length > 0) {
+                        const char = textQueueRef.current.shift();
+                        if (char) {
+                          setState((prev) => ({
+                            ...prev,
+                            streamingText: prev.streamingText + char
+                          }));
+                        }
+                        displayTimerRef.current = setTimeout(processQueue, 20); // 約50文字/秒
+                      } else {
+                        isProcessingRef.current = false;
+                      }
+                    };
+                    processQueue();
+                  }
+                }
               } else if (chunk.type === 'step') {
                 setState((prev) => {
                   const current = prev.partialWorkflow || {
@@ -125,6 +171,7 @@ export function useStreamWorkflow(routineId: string | null) {
                   partialWorkflow: null,
                   currentStep: null,
                   progressMessage: null,
+                  streamingText: '',
                   isLoading: false,
                   error: null
                 });
@@ -135,6 +182,7 @@ export function useStreamWorkflow(routineId: string | null) {
                   partialWorkflow: null,
                   currentStep: null,
                   progressMessage: null,
+                  streamingText: '',
                   isLoading: false,
                   error: chunk.error
                 });
@@ -147,19 +195,38 @@ export function useStreamWorkflow(routineId: string | null) {
         }
       }
     } catch (error) {
+      // タイマーをクリア
+      if (displayTimerRef.current) {
+        clearTimeout(displayTimerRef.current);
+        displayTimerRef.current = null;
+      }
+      textQueueRef.current = [];
+      isProcessingRef.current = false;
+
       setState({
         workflow: null,
         partialWorkflow: null,
         currentStep: null,
         progressMessage: null,
+        streamingText: '',
         isLoading: false,
         error: error instanceof Error ? error.message : 'Unknown error'
       });
     }
   }, [routineId]);
 
+  // クリーンアップ
+  useEffect(() => {
+    return () => {
+      if (displayTimerRef.current) {
+        clearTimeout(displayTimerRef.current);
+      }
+    };
+  }, []);
+
   return {
     ...state,
+    streamingText: state.streamingText,
     startStream
   };
 }
