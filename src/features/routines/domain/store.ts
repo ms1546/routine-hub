@@ -131,6 +131,77 @@ const seedRoutines: SeedRoutine[] = [
         energyLevel: 'low'
       }
     ]
+  },
+  {
+    id: '44444444-4444-4444-8444-444444444444',
+    name: '週末リセット',
+    description: '週末に心身をリセットし、翌週に向けた準備を行う2ブロック構成。',
+    purpose: '週末を有効活用し、月曜からのスタートをスムーズにする。',
+    durationType: 'half-day',
+    visibility: 'public',
+    tags: ['週末', 'リセット', '準備'],
+    owner: 'routinehub.dev@gmail.com',
+    stats: { forks: 12, applications: 45 },
+    timeBlocks: [
+      {
+        id: '44444444-aaaa-4444-8444-dddddddddddd',
+        day: 'saturday',
+        startHour: 9,
+        endHour: 12,
+        label: '週次レビュー',
+        objective: '今週の成果と課題を振り返り、来週の優先順位を整理する。',
+        energyLevel: 'medium'
+      },
+      {
+        id: '44444444-bbbb-4444-8444-dddddddddddd',
+        day: 'sunday',
+        startHour: 14,
+        endHour: 17,
+        label: '翌週準備',
+        objective: '来週のスケジュールを確認し、必要な準備を整える。',
+        energyLevel: 'low'
+      }
+    ]
+  },
+  {
+    id: '55555555-5555-5555-8555-555555555555',
+    name: 'リモートワーク集中',
+    description: 'リモートワーク環境で集中力を最大化するための1日構成。',
+    purpose: '在宅勤務でも高い生産性を維持し、ワークライフバランスを保つ。',
+    durationType: 'full-day',
+    visibility: 'public',
+    tags: ['リモートワーク', '集中', '生産性'],
+    owner: 'routinehub.dev@gmail.com',
+    stats: { forks: 28, applications: 98 },
+    timeBlocks: [
+      {
+        id: '55555555-aaaa-5555-8555-eeeeeeeeeeee',
+        day: 'monday',
+        startHour: 8,
+        endHour: 12,
+        label: '朝の集中セッション',
+        objective: '最も重要なタスクを午前中に完了させる。',
+        energyLevel: 'high'
+      },
+      {
+        id: '55555555-bbbb-5555-8555-eeeeeeeeeeee',
+        day: 'monday',
+        startHour: 13,
+        endHour: 16,
+        label: '午後の協働時間',
+        objective: 'チームとの連携やミーティングに充てる。',
+        energyLevel: 'medium'
+      },
+      {
+        id: '55555555-cccc-5555-8555-eeeeeeeeeeee',
+        day: 'monday',
+        startHour: 16,
+        endHour: 19,
+        label: '振り返りと整理',
+        objective: '1日の成果を整理し、翌日の準備を行う。',
+        energyLevel: 'low'
+      }
+    ]
   }
 ];
 

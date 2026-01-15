@@ -8,7 +8,10 @@ import { generateRoutineInsights, type RoutineInsight } from '@/features/ai/insi
 import {
   applyRoutineAction,
   forkRoutineAction,
-  updateRoutineVisibilityAction
+  updateRoutineVisibilityAction,
+  updateRoutineBlockAction,
+  deleteRoutineBlockAction,
+  reorderRoutineBlocksAction
 } from '@/features/routines/actions/routines';
 import { planRoutineWithCalendar } from '@/features/calendar/domain/planner';
 import { getCurrentUser, type AuthenticatedUser } from '@/infrastructure/auth/session';
@@ -55,6 +58,7 @@ type RoutineDetailContentProps = {
 
 async function RoutineDetailContent({ routine, detail, insights, currentUser }: RoutineDetailContentProps) {
   const calendarPlan = await planRoutineWithCalendar(routine, currentUser);
+  const canEdit = currentUser.email === routine.owner || currentUser.role === 'admin';
 
   return (
     <RoutineDetail
@@ -63,6 +67,10 @@ async function RoutineDetailContent({ routine, detail, insights, currentUser }: 
       onToggleVisibility={updateRoutineVisibilityAction}
       onApplyRoutine={applyRoutineAction}
       onForkRoutine={forkRoutineAction}
+      onUpdateBlock={canEdit ? updateRoutineBlockAction : undefined}
+      onDeleteBlock={canEdit ? deleteRoutineBlockAction : undefined}
+      onReorderBlocks={canEdit ? reorderRoutineBlocksAction : undefined}
+      canEdit={canEdit}
       calendarPlan={{
         proposedEvents: calendarPlan.proposedEvents,
         existingEvents: calendarPlan.existingEvents,

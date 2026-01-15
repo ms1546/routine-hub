@@ -1,6 +1,6 @@
 # Codex Implementation Instructions
 
-You must follow the requirements defined in `docs/requirements.md`.
+You must follow the requirements defined in `docs/requirements.en.md`.
 
 ## General Rules
 - Do NOT change the requirements or assumptions.

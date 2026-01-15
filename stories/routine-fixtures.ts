@@ -8,6 +8,7 @@ export const mockRoutineListItem: RoutineListItem = {
   durationType: 'weekly',
   tags: ['集中', '休息'],
   visibility: 'public',
+  owner: 'routinehub.dev@gmail.com',
   totalHours: 12,
   blockCount: 3,
   highlightDay: 'Monday',

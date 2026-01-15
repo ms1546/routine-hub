@@ -23,10 +23,13 @@ const routineBlockCoreSchema = z
     energyLevel: z.enum(['low', 'medium', 'high'])
   })
   .superRefine((block, ctx) => {
-    if (block.endHour - block.startHour < 3) {
+    // 各ブロックは最低156分（2.6時間）必要
+    // 整数時間単位なので、実質的には3時間以上（endHour - startHour >= 3）
+    const durationHours = block.endHour - block.startHour;
+    if (durationHours < 3) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
-        message: 'Routine blocks must be at least 3 hours long.'
+        message: '各時間ブロックは最低3時間（156分）必要です。'
       });
     }
   });
@@ -39,8 +42,40 @@ export const routineBlockInputSchema = routineBlockCoreSchema.extend({
   id: z.string().uuid().optional()
 });
 
-export const routineSchema = z.object({
-  id: z.string().uuid(),
+export const routineSchema = z
+  .object({
+    id: z.string().uuid(),
+    name: z.string().min(3).max(80),
+    description: z.string().min(12).max(600),
+    purpose: z.string().min(8).max(500),
+    durationType: routineDurationSchema,
+    visibility: routineVisibilitySchema,
+    tags: z.array(z.string().min(2).max(30)).min(1).max(8),
+    owner: z.string().min(1),
+    createdAt: z.date(),
+    updatedAt: z.date(),
+    version: z.number().int().min(1),
+    timeBlocks: z.array(routineBlockSchema).min(1),
+    stats: z.object({
+      forks: z.number().int().min(0),
+      applications: z.number().int().min(0)
+    })
+  })
+  .superRefine((routine, ctx) => {
+    // Routine全体の合計時間は最低3時間（180分）必要
+    const totalHours = routine.timeBlocks.reduce((acc, block) => acc + (block.endHour - block.startHour), 0);
+    if (totalHours < 3) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'Routine全体の合計時間は最低3時間必要です。',
+        path: ['timeBlocks']
+      });
+    }
+  });
+
+// routineSchemaにsuperRefineがあるため、.omit()が使えない
+// そのため、createRoutineSchemaを直接定義する
+const routineBaseSchema = z.object({
   name: z.string().min(3).max(80),
   description: z.string().min(12).max(600),
   purpose: z.string().min(8).max(500),
@@ -48,30 +83,31 @@ export const routineSchema = z.object({
   visibility: routineVisibilitySchema,
   tags: z.array(z.string().min(2).max(30)).min(1).max(8),
   owner: z.string().min(1),
-  createdAt: z.date(),
-  updatedAt: z.date(),
-  version: z.number().int().min(1),
-  timeBlocks: z.array(routineBlockSchema).min(1),
-  stats: z.object({
-    forks: z.number().int().min(0),
-    applications: z.number().int().min(0)
-  })
+  timeBlocks: z.array(routineBlockInputSchema).min(1)
 });
 
-export const createRoutineSchema = routineSchema
-  .omit({ id: true, createdAt: true, updatedAt: true, stats: true, version: true })
+export const createRoutineSchema = routineBaseSchema
   .extend({
-    visibility: routineVisibilitySchema.default('private'),
-    timeBlocks: z.array(routineBlockInputSchema).min(1)
+    visibility: routineVisibilitySchema.default('private')
+  })
+  .superRefine((routine, ctx) => {
+    // Routine全体の合計時間は最低3時間（180分）必要
+    const totalHours = routine.timeBlocks.reduce((acc, block) => acc + (block.endHour - block.startHour), 0);
+    if (totalHours < 3) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'Routine全体の合計時間は最低3時間必要です。',
+        path: ['timeBlocks']
+      });
+    }
   });
 
-export const updateRoutineSchema = routineSchema
-  .pick({ id: true })
-  .extend({
-    patch: routineSchema
-      .omit({ id: true, createdAt: true, updatedAt: true, version: true, stats: true })
-      .partial()
-  });
+// routineSchemaにsuperRefineがあるため、.omit()が使えない
+// そのため、updateRoutineSchemaを直接定義する
+export const updateRoutineSchema = z.object({
+  id: z.string().uuid(),
+  patch: routineBaseSchema.partial()
+});
 
 export type Weekday = z.infer<typeof weekdaySchema>;
 export type RoutineDuration = z.infer<typeof routineDurationSchema>;

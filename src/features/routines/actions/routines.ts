@@ -11,6 +11,7 @@ import {
   RoutineVisibility,
   createRoutineSchema,
   routineBlockInputSchema,
+  routineDurationSchema,
   routineVisibilitySchema,
   routinesRepository
 } from '@/features/routines';
@@ -89,7 +90,7 @@ const handleActionError = <T>(error: unknown): ActionResult<T> => {
   console.error(error);
   return {
     ok: false,
-    error: error instanceof Error ? error.message : 'Unexpected error'
+    error: error instanceof Error ? error.message : '予期しないエラーが発生しました'
   };
 };
 
@@ -128,7 +129,7 @@ export async function updateRoutineVisibilityAction(
     const parsed = visibilityToggleSchema.parse(payload);
     const routine = await routinesRepository.get(parsed.routineId);
     if (!routine) {
-      throw new Error('Routine not found');
+      throw new Error('Routineが見つかりません');
     }
 
     const nextVisibility: RoutineVisibility =
@@ -166,10 +167,144 @@ export async function addRoutineBlockAction(
   }
 }
 
+const updateBlockSchema = z.object({
+  routineId: z.string().uuid(),
+  blockId: z.string().uuid(),
+  block: routineBlockInputSchema
+});
+
+export type UpdateBlockPayload = z.infer<typeof updateBlockSchema>;
+
+export async function updateRoutineBlockAction(
+  payload: UpdateBlockPayload
+): Promise<ActionResult<Routine>> {
+  try {
+    const parsed = updateBlockSchema.parse(payload);
+    const routine = await routinesRepository.get(parsed.routineId);
+    if (!routine) {
+      throw new Error('Routineが見つかりません');
+    }
+
+    const updatedBlocks = routine.timeBlocks.map((block) =>
+      block.id === parsed.blockId
+        ? {
+            ...parsed.block,
+            id: parsed.blockId
+          }
+        : block
+    );
+
+    const updated = await routinesRepository.update({
+      id: routine.id,
+      patch: {
+        timeBlocks: updatedBlocks
+      }
+    });
+
+    revalidateRoutinePaths(routine.id);
+    return { ok: true, data: updated };
+  } catch (error) {
+    return handleActionError<Routine>(error);
+  }
+}
+
+const deleteBlockSchema = z.object({
+  routineId: z.string().uuid(),
+  blockId: z.string().uuid()
+});
+
+export type DeleteBlockPayload = z.infer<typeof deleteBlockSchema>;
+
+export async function deleteRoutineBlockAction(
+  payload: DeleteBlockPayload
+): Promise<ActionResult<Routine>> {
+  try {
+    const parsed = deleteBlockSchema.parse(payload);
+    const routine = await routinesRepository.get(parsed.routineId);
+    if (!routine) {
+      throw new Error('Routine not found');
+    }
+
+    if (routine.timeBlocks.length <= 1) {
+      throw new Error('最後の時間ブロックは削除できません');
+    }
+
+    const updatedBlocks = routine.timeBlocks.filter((block) => block.id !== parsed.blockId);
+
+    const updated = await routinesRepository.update({
+      id: routine.id,
+      patch: {
+        timeBlocks: updatedBlocks
+      }
+    });
+
+    revalidateRoutinePaths(routine.id);
+    return { ok: true, data: updated };
+  } catch (error) {
+    return handleActionError<Routine>(error);
+  }
+}
+
+const reorderBlocksSchema = z.object({
+  routineId: z.string().uuid(),
+  blockIds: z.array(z.string().uuid()).min(1)
+});
+
+export type ReorderBlocksPayload = z.infer<typeof reorderBlocksSchema>;
+
+export async function reorderRoutineBlocksAction(
+  payload: ReorderBlocksPayload
+): Promise<ActionResult<Routine>> {
+  try {
+    const parsed = reorderBlocksSchema.parse(payload);
+    const routine = await routinesRepository.get(parsed.routineId);
+    if (!routine) {
+      throw new Error('Routineが見つかりません');
+    }
+
+    if (parsed.blockIds.length !== routine.timeBlocks.length) {
+      throw new Error('ブロックIDの数が一致しません');
+    }
+
+    const blockMap = new Map(routine.timeBlocks.map((block) => [block.id, block]));
+    const reorderedBlocks = parsed.blockIds
+      .map((id) => blockMap.get(id))
+      .filter((block): block is RoutineBlock => block !== undefined);
+
+    if (reorderedBlocks.length !== routine.timeBlocks.length) {
+      throw new Error('一部のブロックIDが見つかりません');
+    }
+
+    const updated = await routinesRepository.update({
+      id: routine.id,
+      patch: {
+        timeBlocks: reorderedBlocks
+      }
+    });
+
+    revalidateRoutinePaths(routine.id);
+    return { ok: true, data: updated };
+  } catch (error) {
+    return handleActionError<Routine>(error);
+  }
+}
+
+// createRoutineSchemaにsuperRefineがあるため、.partial()が使えない
+// そのため、overridesを直接定義する
 const forkRoutineSchema = z.object({
   routineId: z.string().uuid(),
   owner: z.string().min(3),
-  overrides: createRoutineSchema.partial().optional()
+  overrides: z
+    .object({
+      name: z.string().min(3).max(80).optional(),
+      description: z.string().min(12).max(600).optional(),
+      purpose: z.string().min(8).max(500).optional(),
+      durationType: routineDurationSchema.optional(),
+      visibility: routineVisibilitySchema.optional(),
+      tags: z.array(z.string().min(2).max(30)).min(1).max(8).optional(),
+      timeBlocks: z.array(routineBlockInputSchema).min(1).optional()
+    })
+    .optional()
 });
 
 export type ForkRoutinePayload = z.infer<typeof forkRoutineSchema>;
@@ -199,7 +334,7 @@ export async function applyRoutineAction(
     const parsed = routineApplicationSchema.parse(payload);
     const routine = await routinesRepository.get(parsed.routineId);
     if (!routine) {
-      throw new Error('Routine not found');
+      throw new Error('Routineが見つかりません');
     }
 
     const preview = buildRoutinePreview(routine, parsed);

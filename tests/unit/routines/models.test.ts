@@ -34,7 +34,52 @@ describe('createRoutineSchema', () => {
       ]
     };
 
-    expect(() => createRoutineSchema.parse(invalid)).toThrow(/3 hours/);
+    expect(() => createRoutineSchema.parse(invalid)).toThrow(/各時間ブロックは最低3時間/);
+  });
+
+  it('rejects routines with total hours less than 3', () => {
+    const invalid = {
+      ...baseInput,
+      timeBlocks: [
+        {
+          day: 'monday' as const,
+          startHour: 9,
+          endHour: 11, // 2 hours
+          label: 'Short',
+          objective: 'Too short block',
+          energyLevel: 'medium' as const
+        }
+      ]
+    };
+
+    expect(() => createRoutineSchema.parse(invalid)).toThrow(/Routine全体の合計時間は最低3時間必要です/);
+  });
+
+  it('accepts routines with multiple blocks totaling 3+ hours', () => {
+    const valid = {
+      ...baseInput,
+      timeBlocks: [
+        {
+          day: 'monday' as const,
+          startHour: 9,
+          endHour: 11, // 2 hours
+          label: 'Morning',
+          objective: 'Morning work',
+          energyLevel: 'high' as const
+        },
+        {
+          day: 'monday' as const,
+          startHour: 14,
+          endHour: 15, // 1 hour
+          label: 'Afternoon',
+          objective: 'Afternoon work',
+          energyLevel: 'medium' as const
+        }
+      ]
+    };
+
+    // Should fail because individual blocks must be 3+ hours
+    expect(() => createRoutineSchema.parse(valid)).toThrow();
   });
 
   it('accepts a well formed routine', () => {

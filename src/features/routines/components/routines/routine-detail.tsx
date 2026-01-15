@@ -7,6 +7,7 @@ import {
   CardTitle
 } from '@/shared/ui/card';
 import { CalendarProposalPanel } from './calendar-proposal-panel';
+import { RoutineBlockEditor } from './routine-block-editor';
 import type { ProposedCalendarEvent, CalendarEvent } from '@/features/calendar/domain/types';
 import type { RoutineAiWorkflowResult } from '@/features/ai/types';
 import type { RoutineDetailView, Routine } from '@/features/routines';
@@ -14,7 +15,10 @@ import type { RoutineInsight } from '@/features/ai/insights';
 import type {
   ApplyRoutinePayload,
   ForkRoutinePayload,
-  VisibilityTogglePayload
+  VisibilityTogglePayload,
+  UpdateBlockPayload,
+  DeleteBlockPayload,
+  ReorderBlocksPayload
 } from '@/features/routines/actions/routines';
 import type { ActionResult } from '@/shared/types/actionResult';
 import type { RoutineApplicationPreview } from '@/features/calendar/domain/mock';
@@ -43,6 +47,10 @@ type RoutineDetailProps = {
   onToggleVisibility: (payload: VisibilityTogglePayload) => Promise<ActionResult<Routine>>;
   onApplyRoutine: (payload: ApplyRoutinePayload) => Promise<ActionResult<RoutineApplicationPreview>>;
   onForkRoutine: (payload: ForkRoutinePayload) => Promise<ActionResult<Routine>>;
+  onUpdateBlock?: (payload: UpdateBlockPayload) => Promise<ActionResult<Routine>>;
+  onDeleteBlock?: (payload: DeleteBlockPayload) => Promise<ActionResult<Routine>>;
+  onReorderBlocks?: (payload: ReorderBlocksPayload) => Promise<ActionResult<Routine>>;
+  canEdit?: boolean;
   calendarPlan?: CalendarPlanView;
   workflow?: RoutineAiWorkflowResult | null;
 };
@@ -53,6 +61,10 @@ export const RoutineDetail = ({
   onToggleVisibility,
   onApplyRoutine,
   onForkRoutine,
+  onUpdateBlock,
+  onDeleteBlock,
+  onReorderBlocks,
+  canEdit = false,
   calendarPlan,
   workflow
 }: RoutineDetailProps) => {
@@ -108,24 +120,36 @@ export const RoutineDetail = ({
           </div>
           <Badge variant="secondary">{routine.timeBlocks.length} blocks</Badge>
         </div>
-        <div className="grid gap-3 sm:grid-cols-2">
-          {routine.timeBlocks.map((block) => (
-            <Card key={block.id} className="hover-lift">
-              <CardContent className="p-4">
-                <div className="flex flex-col gap-2">
-                  <div>
-                    <p className="font-medium">{block.label}</p>
-                    <p className="text-sm text-muted-foreground line-clamp-2">{block.objective}</p>
+        {onUpdateBlock && onDeleteBlock && onReorderBlocks ? (
+          <RoutineBlockEditor
+            routine={routine}
+            onUpdateBlock={onUpdateBlock}
+            onDeleteBlock={onDeleteBlock}
+            onReorderBlocks={onReorderBlocks}
+            canEdit={canEdit}
+          />
+        ) : (
+          <div className="grid gap-3 sm:grid-cols-2">
+            {routine.timeBlocks.map((block) => (
+              <Card key={block.id} className="hover-lift">
+                <CardContent className="p-4">
+                  <div className="flex flex-col gap-2">
+                    <div>
+                      <p className="font-medium">{block.label}</p>
+                      <p className="text-sm text-muted-foreground line-clamp-2">{block.objective}</p>
+                    </div>
+                    <div className="flex gap-1.5 pt-1">
+                      <Badge variant="outline" className="text-xs">{block.schedule}</Badge>
+                      <Badge variant={block.energyLevel === 'high' ? 'warning' : 'secondary'} className="text-xs">
+                        {block.energyLevel}
+                      </Badge>
+                    </div>
                   </div>
-                  <div className="flex gap-1.5 pt-1">
-                    <Badge variant="outline" className="text-xs">{block.schedule}</Badge>
-                    <Badge variant={block.energyLevel === 'high' ? 'warning' : 'secondary'} className="text-xs">{block.energyLevel}</Badge>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        )}
       </section>
 
       {workflow === undefined ? null : workflow ? (
