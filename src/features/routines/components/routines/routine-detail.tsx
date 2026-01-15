@@ -8,9 +8,9 @@ import {
 } from '@/shared/ui/card';
 import { CalendarProposalPanel } from './calendar-proposal-panel';
 import type { ProposedCalendarEvent, CalendarEvent } from '@/features/calendar/domain/types';
-import type { RoutineAiWorkflowResult } from '@/lib/ai/types';
+import type { RoutineAiWorkflowResult } from '@/features/ai/types';
 import type { RoutineDetailView, Routine } from '@/features/routines';
-import type { RoutineInsight } from '@/lib/ai/insights';
+import type { RoutineInsight } from '@/features/ai/insights';
 import type {
   ApplyRoutinePayload,
   ForkRoutinePayload,
@@ -21,6 +21,7 @@ import type { RoutineApplicationPreview } from '@/features/calendar/domain/mock'
 import { VisibilityToggleButton } from './visibility-toggle-button';
 import { ApplyRoutineForm } from './apply-routine-form';
 import { ForkRoutineForm } from './fork-routine-form';
+import { StreamingWorkflowPanels } from './streaming-workflow-panels';
 
 type AiAccessStatus = {
   allowed: boolean;
@@ -124,7 +125,7 @@ export const RoutineDetail = ({
       {workflow === undefined ? null : workflow ? (
         <WorkflowPanels workflow={workflow} />
       ) : (
-        <PendingWorkflowPanel />
+        <StreamingWorkflowPanels routineId={routine.id} initialWorkflow={null} />
       )}
 
       {workflow ? null : <InsightsPanel insights={insights} />}
@@ -160,8 +161,8 @@ const WorkflowPanels = ({ workflow }: { workflow: RoutineAiWorkflowResult }) => 
             <div>
               <p className="text-xs uppercase tracking-wide">Constraints</p>
               <ul className="list-disc pl-5">
-                {workflow.profile.data.highlightedConstraints.map((constraint) => (
-                  <li key={constraint}>{constraint}</li>
+                {workflow.profile.data.highlightedConstraints.map((constraint, i) => (
+                  <li key={i}>{constraint}</li>
                 ))}
               </ul>
             </div>
@@ -178,21 +179,21 @@ const WorkflowPanels = ({ workflow }: { workflow: RoutineAiWorkflowResult }) => 
             <div>
               <p className="text-xs uppercase tracking-wide">Success signals</p>
               <ul className="list-disc pl-5">
-                {workflow.interpretation.data.successSignals.map((signal) => (
-                  <li key={signal}>{signal}</li>
+                {workflow.interpretation.data.successSignals.map((signal, i) => (
+                  <li key={i}>{signal}</li>
                 ))}
               </ul>
             </div>
-            {workflow.interpretation.data.riskSignals.length ? (
+            {workflow.interpretation.data.riskSignals.length > 0 && (
               <div>
                 <p className="text-xs uppercase tracking-wide">Risk signals</p>
                 <ul className="list-disc pl-5">
-                  {workflow.interpretation.data.riskSignals.map((signal) => (
-                    <li key={signal}>{signal}</li>
+                  {workflow.interpretation.data.riskSignals.map((signal, i) => (
+                    <li key={i}>{signal}</li>
                   ))}
                 </ul>
               </div>
-            ) : null}
+            )}
           </CardContent>
         </Card>
       </div>
@@ -214,8 +215,8 @@ const WorkflowPanels = ({ workflow }: { workflow: RoutineAiWorkflowResult }) => 
             <div>
               <p className="text-xs uppercase tracking-wide">Assumptions</p>
               <ul className="list-disc pl-5">
-                {workflow.conflicts.data.assumptions.map((assumption) => (
-                  <li key={assumption}>{assumption}</li>
+                {workflow.conflicts.data.assumptions.map((assumption, i) => (
+                  <li key={i}>{assumption}</li>
                 ))}
               </ul>
             </div>
@@ -252,16 +253,16 @@ const WorkflowPanels = ({ workflow }: { workflow: RoutineAiWorkflowResult }) => 
             <div>
               <p className="text-xs uppercase tracking-wide">Guardrails</p>
               <ul className="list-disc pl-5">
-                {workflow.futureSimulation.data.guardrails.map((guardrail) => (
-                  <li key={guardrail}>{guardrail}</li>
+                {workflow.futureSimulation.data.guardrails.map((guardrail, i) => (
+                  <li key={i}>{guardrail}</li>
                 ))}
               </ul>
             </div>
             <div>
               <p className="text-xs uppercase tracking-wide">Follow-up</p>
               <ul className="list-disc pl-5">
-                {workflow.futureSimulation.data.followUpQuestions.map((question) => (
-                  <li key={question}>{question}</li>
+                {workflow.futureSimulation.data.followUpQuestions.map((question, i) => (
+                  <li key={i}>{question}</li>
                 ))}
               </ul>
             </div>
@@ -307,10 +308,3 @@ const InsightsPanel = ({ insights }: { insights: RoutineInsight[] }) => {
     </section>
   );
 };
-
-const PendingWorkflowPanel = () => (
-  <section className="space-y-2 rounded-2xl border border-dashed border-border/60 bg-card/10 p-4 text-sm text-muted-foreground">
-    <p className="text-xs uppercase tracking-[0.3em] text-muted-foreground">AI commentary</p>
-    <p>AI コメントを生成しています。出力が確定するまで人が差分を確認してください。</p>
-  </section>
-);
