@@ -37,9 +37,9 @@ export function ForkRoutineForm({ routineId, defaultName, action }: ForkRoutineF
   };
 
   return (
-    <Card className="w-full p-5">
-      <form className="flex w-full flex-col gap-4 sm:flex-row sm:items-end sm:gap-3" onSubmit={handleSubmit}>
-        <div className="space-y-2.5 flex-1">
+    <Card className="w-full p-4">
+      <form className="flex w-full flex-col gap-3 sm:flex-row sm:items-end" onSubmit={handleSubmit}>
+        <div className="space-y-1.5 flex-1">
           <Label htmlFor="fork-name">Routine Name</Label>
           <Input
             type="text"
@@ -50,15 +50,15 @@ export function ForkRoutineForm({ routineId, defaultName, action }: ForkRoutineF
             required
           />
         </div>
-        <div className="space-y-2.5 flex-1">
+        <div className="space-y-1.5 flex-1">
           <Label htmlFor="fork-owner">Owner Email</Label>
           <Input type="email" name="owner" id="fork-owner" placeholder="you@example.com" required />
         </div>
         <Button type="submit" disabled={pending} className="w-full sm:w-auto">
-          {pending ? 'Forking…' : 'Fork Routine'}
+          {pending ? 'Forking…' : 'Fork'}
         </Button>
       </form>
-      {status && <p className="text-sm text-muted-foreground mt-3">{status}</p>}
+      {status && <p className="text-sm text-muted-foreground mt-2">{status}</p>}
     </Card>
   );
 }

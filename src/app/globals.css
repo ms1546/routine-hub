@@ -4,62 +4,61 @@
 
 @layer base {
   :root {
-    /* 白と黒のみのモノクロデザイン */
-    /* アクセシビリティを考慮したWCAG 2.1 AA基準準拠 */
-    /* グレーの濃淡で視覚的階層を構築 */
+    /* ===================================
+       Routine Hub Design System
+       "Intelligent Minimalism"
+       ===================================
 
-    /* 背景: 純白（基調色） */
-    --background: 0 0% 100%;
-    /* テキスト: 純黒（最高コントラスト比21:1） */
-    --foreground: 0 0% 0%;
+       白黒ベースにディープインディゴのアクセント
+       プロフェッショナルで信頼感のあるUI
+    */
 
-    /* ミュート背景: 薄いグレー（セクション区別用） */
-    --muted: 0 0% 96%;
-    /* ミュートテキスト: 中程度のグレー（コントラスト比7:1以上） */
-    --muted-foreground: 0 0% 45%;
+    /* === 基本色 === */
+    --background: 0 0% 99%;
+    --foreground: 222 47% 11%;
+
+    /* === ミュート（セクション・補足テキスト） === */
+    --muted: 220 14% 96%;
+    --muted-foreground: 220 9% 46%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 0 0% 0%;
+    --popover-foreground: 222 47% 11%;
 
-    /* カード: 白（背景と同じだが、シャドウで区別） */
+    /* === カード === */
     --card: 0 0% 100%;
-    --card-foreground: 0 0% 0%;
+    --card-foreground: 222 47% 11%;
 
-    /* ボーダー: 濃いグレー（コントラスト比4.5:1以上） */
-    --border: 0 0% 20%;
-    --input: 0 0% 20%;
+    /* === ボーダー・入力 === */
+    --border: 220 13% 91%;
+    --input: 220 13% 91%;
 
-    /* プライマリ: 黒（アクションボタン用） */
-    --primary: 0 0% 0%;
+    /* === プライマリ：ディープインディゴ（AI・信頼性） === */
+    --primary: 239 84% 67%;
     --primary-foreground: 0 0% 100%;
 
-    /* セカンダリ: 濃いグレー */
-    --secondary: 0 0% 15%;
+    /* === セカンダリ：ダークスレート === */
+    --secondary: 222 47% 11%;
     --secondary-foreground: 0 0% 100%;
 
-    /* アクセント: 中程度のグレー（ホバー用） */
-    --accent: 0 0% 90%;
-    --accent-foreground: 0 0% 0%;
+    /* === アクセント：ソフトインディゴ === */
+    --accent: 239 84% 97%;
+    --accent-foreground: 239 84% 40%;
 
-    /* AIセクション用: 薄いグレー背景 */
-    --ai-section: 0 0% 98%;
-    --ai-section-border: 0 0% 30%;
-
-    /* 破壊的アクション: 黒（重要度を強調） */
-    --destructive: 0 0% 0%;
+    /* === 破壊的アクション：レッド === */
+    --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
 
-    /* 警告/注意: 濃いグレー */
-    --warning: 0 0% 30%;
+    /* === 警告：アンバー === */
+    --warning: 38 92% 50%;
     --warning-foreground: 0 0% 100%;
 
-    /* 成功/承認: 中程度のグレー */
-    --success: 0 0% 40%;
+    /* === 成功：エメラルド === */
+    --success: 160 84% 39%;
     --success-foreground: 0 0% 100%;
 
-    /* フォーカスリング: 濃いグレー（アクセシビリティ） */
-    --ring: 0 0% 20%;
-    --radius: 0.75rem;
+    /* === フォーカス === */
+    --ring: 239 84% 67%;
+    --radius: 0.625rem;
   }
 
   * {
@@ -67,153 +66,145 @@
   }
 
   body {
-    @apply bg-background text-foreground;
-    /* スムーズなスクロール */
+    @apply bg-background text-foreground antialiased;
     scroll-behavior: smooth;
+    font-feature-settings: 'liga' 1, 'calt' 1, 'kern' 1;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
   }
 
-  /* アクセシビリティ: フォーカス表示の強化 */
+  /* フォーカス表示 */
   *:focus-visible {
-    @apply outline-none ring-2 ring-ring ring-offset-2 ring-offset-background;
+    @apply outline-none ring-2 ring-primary/50 ring-offset-2 ring-offset-background;
   }
 
-  /* リンクのアクセシビリティ */
   a:focus-visible {
     @apply underline underline-offset-4;
   }
-}
 
-@layer base {
-  body {
-    font-feature-settings: 'liga' 1, 'calt' 1;
-    /* より洗練されたタイポグラフィ */
-    letter-spacing: -0.01em;
+  /* 見出しの階層 */
+  h1 {
+    @apply text-4xl font-bold tracking-tight text-foreground;
   }
 
-  /* 見出しのタイポグラフィ改善 */
-  h1,
-  h2,
-  h3,
-  h4,
+  h2 {
+    @apply text-2xl font-semibold tracking-tight text-foreground;
+  }
+
+  h3 {
+    @apply text-xl font-semibold tracking-tight text-foreground;
+  }
+
+  h4 {
+    @apply text-lg font-medium text-foreground;
+  }
+
   h5,
   h6 {
-    @apply font-semibold tracking-tight;
+    @apply text-base font-medium text-foreground;
+  }
+
+  /* セレクション */
+  ::selection {
+    @apply bg-primary/20 text-primary;
   }
 }
 
 @layer components {
 
-  /* モダンなカードスタイル - 白黒デザイン */
-  .card-modern {
-    @apply relative overflow-hidden transition-all duration-300 ease-out;
-    @apply border-2 border-border bg-card;
-    @apply hover:border-foreground hover:shadow-xl hover:shadow-black/20;
-  }
-
-  /* グラデーション背景 - 白基調 */
-  .gradient-bg {
-    background: hsl(var(--background));
-  }
-
-  /* AIセクション用のスタイル - 薄いグレー背景で区別 */
-  .ai-section {
-    background: hsl(var(--ai-section));
-    border: 2px solid hsl(var(--ai-section-border));
-    border-left: 4px solid hsl(var(--foreground));
-  }
-
-  /* セクション区別用の背景 - 薄いグレー */
+  /* === セクション背景 === */
   .section-bg {
-    background: hsl(var(--muted));
-    border-radius: 0.75rem;
-    padding: 1.5rem;
-    border: 1px solid hsl(var(--border)/30);
+    @apply bg-muted/50 rounded-xl p-6;
+    border: 1px solid hsl(var(--border));
   }
 
-  /* 微細なグラスモーフィズム効果 */
-  .glass-effect {
-    @apply backdrop-blur-md bg-card/60 border-border/40;
-    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.1);
+  /* === グラデーション背景 === */
+  .gradient-bg {
+    background:
+      radial-gradient(ellipse at 0% 0%, hsl(var(--accent)) 0%, transparent 50%),
+      radial-gradient(ellipse at 100% 100%, hsl(var(--primary) / 0.05) 0%, transparent 50%),
+      hsl(var(--background));
   }
 
-  /* グロー効果 - 白黒デザインではシャドウで表現 */
-  .glow-effect {
-    position: relative;
-  }
-
-  .glow-effect:hover {
-    box-shadow: 0 0 20px rgba(0, 0, 0, 0.15);
-  }
-
-  /* シマー効果（ローディングアニメーション） - 白黒デザイン */
-  .shimmer {
-    background: linear-gradient(90deg,
-        hsl(var(--muted)) 0%,
-        hsl(var(--border)/30) 50%,
-        hsl(var(--muted)) 100%);
-    background-size: 200% 100%;
-    animation: shimmer 2s infinite;
-  }
-
-  /* パルス効果 - 白黒デザイン */
-  .pulse-glow {
-    animation: pulse-glow 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-  }
-
-  /* フローティングアニメーション */
-  .float {
-    animation: float 6s ease-in-out infinite;
-  }
-
-  /* フェードインアップ */
+  /* === アニメーション === */
   .fade-in-up {
-    animation: fade-in-up 0.6s ease-out;
+    animation: fade-in-up 0.5s cubic-bezier(0.16, 1, 0.3, 1);
   }
 
-  /* スケールイン */
   .scale-in {
     animation: scale-in 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+
+  .hover-lift {
+    @apply transition-all duration-300;
+  }
+
+  .hover-lift:hover {
+    transform: translateY(-2px);
+    box-shadow:
+      0 10px 40px -10px hsl(var(--primary) / 0.15),
+      0 4px 6px -4px hsl(var(--foreground) / 0.05);
+  }
+
+  /* === ステータスバッジ強調 === */
+  .status-dot {
+    @apply w-2 h-2 rounded-full;
+  }
+
+  .status-dot--success {
+    @apply bg-success;
+    box-shadow: 0 0 8px hsl(var(--success) / 0.4);
+  }
+
+  .status-dot--warning {
+    @apply bg-warning;
+    box-shadow: 0 0 8px hsl(var(--warning) / 0.4);
+  }
+
+  .status-dot--destructive {
+    @apply bg-destructive;
+    box-shadow: 0 0 8px hsl(var(--destructive) / 0.4);
+  }
+
+  /* === プライマリグロー === */
+  .glow-primary {
+    box-shadow:
+      0 0 20px hsl(var(--primary) / 0.2),
+      0 0 60px hsl(var(--primary) / 0.1);
   }
 }
 
 @layer utilities {
 
-  /* テキストグラデーション - 白黒デザインでは不要 */
-  .text-gradient {
-    color: hsl(var(--foreground));
-  }
-
-  /* ボーダーグラデーション - 白黒デザインでは単色ボーダー */
-  .border-gradient {
-    border-color: hsl(var(--border));
-  }
-
-  /* シャドウグラデーション - 白黒デザイン */
-  .shadow-glow {
-    box-shadow: 0 0 20px rgba(0, 0, 0, 0.1), 0 0 40px rgba(0, 0, 0, 0.05);
-  }
-
-  /* ホバー時のリフト効果 - 白黒デザイン */
-  .hover-lift {
-    transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.3s ease;
-  }
-
-  .hover-lift:hover {
-    transform: translateY(-4px) scale(1.02);
-    box-shadow: 0 12px 24px -8px rgba(0, 0, 0, 0.15);
+  /* テキストバランス */
+  .text-balance {
+    text-wrap: balance;
   }
 }
 
-/* カスタムキーフレームアニメーション */
-@keyframes gradient-shift {
-
-  0%,
-  100% {
-    background-position: 0% 50%;
+/* === キーフレーム === */
+@keyframes fade-in-up {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
   }
 
-  50% {
-    background-position: 100% 50%;
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes scale-in {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1);
   }
 }
 
@@ -227,73 +218,21 @@
   }
 }
 
-@keyframes pulse-glow {
-
-  0%,
-  100% {
-    opacity: 1;
-    box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
-  }
-
-  50% {
-    opacity: 0.8;
-    box-shadow: 0 0 30px rgba(0, 0, 0, 0.15);
-  }
-}
-
-@keyframes float {
-
-  0%,
-  100% {
-    transform: translateY(0px);
-  }
-
-  50% {
-    transform: translateY(-10px);
-  }
-}
-
-@keyframes fade-in-up {
-  from {
-    opacity: 0;
-    transform: translateY(20px);
-  }
-
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-@keyframes scale-in {
-  from {
-    opacity: 0;
-    transform: scale(0.9);
-  }
-
-  to {
-    opacity: 1;
-    transform: scale(1);
-  }
-}
-
-/* スクロールバーのスタイリング - 白黒デザイン */
+/* === スクロールバー === */
 ::-webkit-scrollbar {
-  width: 10px;
-  height: 10px;
+  width: 8px;
+  height: 8px;
 }
 
 ::-webkit-scrollbar-track {
-  background: hsl(var(--muted));
-  border-radius: 10px;
+  background: transparent;
 }
 
 ::-webkit-scrollbar-thumb {
   background: hsl(var(--border));
-  border-radius: 10px;
-  border: 2px solid hsl(var(--muted));
+  border-radius: 100px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: hsl(var(--foreground));
+  background: hsl(var(--muted-foreground));
 }

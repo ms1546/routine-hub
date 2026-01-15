@@ -44,21 +44,21 @@ export function ApplyRoutineForm({
   };
 
   return (
-    <Card className="w-full p-5">
-      <form className="flex flex-col gap-4 sm:flex-row sm:items-end sm:gap-3" onSubmit={handleSubmit}>
-        <div className="space-y-2.5 flex-1">
+    <Card className="w-full p-4">
+      <form className="flex flex-col gap-3 sm:flex-row sm:items-end" onSubmit={handleSubmit}>
+        <div className="space-y-1.5 flex-1">
           <Label htmlFor="startDate">Start Date</Label>
           <Input type="date" name="startDate" id="startDate" defaultValue={today()} required />
         </div>
-        <div className="space-y-2.5 flex-1">
+        <div className="space-y-1.5 flex-1">
           <Label htmlFor="endDate">End Date</Label>
           <Input type="date" name="endDate" id="endDate" defaultValue={plusDays(7)} required />
         </div>
         <Button type="submit" disabled={pending} className="w-full sm:w-auto">
-          {pending ? 'Simulating…' : 'Apply (Mock)'}
+          {pending ? 'Simulating…' : 'Apply'}
         </Button>
       </form>
-      {status && <p className="text-sm text-muted-foreground mt-3">{status}</p>}
+      {status && <p className="text-sm text-muted-foreground mt-2">{status}</p>}
     </Card>
   );
 }

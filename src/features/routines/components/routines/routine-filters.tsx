@@ -29,12 +29,12 @@ export function RoutineFilters({ availableTags }: RoutineFiltersProps) {
   };
 
   const selectClassName =
-    'relative h-11 w-full rounded-lg border border-input/60 bg-background px-4 py-2.5 text-sm text-foreground transition-all duration-300 hover:border-primary/40 hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:border-ring/50 focus-visible:shadow-lg focus-visible:shadow-ring/20 disabled:cursor-not-allowed disabled:opacity-50';
+    'h-10 w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground transition-colors hover:border-muted-foreground/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:border-primary disabled:cursor-not-allowed disabled:opacity-50';
 
   return (
-    <Card className="p-6 scale-in" aria-busy={pending}>
-      <div className="grid gap-6 md:grid-cols-3">
-        <div className="space-y-2.5">
+    <Card className="p-4" aria-busy={pending}>
+      <div className="grid gap-4 sm:grid-cols-3">
+        <div className="space-y-1.5">
           <Label htmlFor="tag-filter">Tag</Label>
           <select id="tag-filter" value={searchParams.get('tag') ?? ''} onChange={(event) => updateParam('tag', event.target.value)} className={selectClassName}>
             <option value="">All tags</option>
@@ -45,7 +45,7 @@ export function RoutineFilters({ availableTags }: RoutineFiltersProps) {
             ))}
           </select>
         </div>
-        <div className="space-y-2.5">
+        <div className="space-y-1.5">
           <Label htmlFor="duration-filter">Duration</Label>
           <select id="duration-filter" value={searchParams.get('duration') ?? ''} onChange={(event) => updateParam('duration', event.target.value)} className={selectClassName}>
             <option value="">Any duration</option>
@@ -54,7 +54,7 @@ export function RoutineFilters({ availableTags }: RoutineFiltersProps) {
             <option value="weekly">Weekly</option>
           </select>
         </div>
-        <div className="space-y-2.5">
+        <div className="space-y-1.5">
           <Label htmlFor="visibility-filter">Visibility</Label>
           <select id="visibility-filter" value={searchParams.get('visibility') ?? ''} onChange={(event) => updateParam('visibility', event.target.value)} className={selectClassName}>
             <option value="">All</option>
