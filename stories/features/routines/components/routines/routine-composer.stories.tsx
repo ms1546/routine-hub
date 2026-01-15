@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react';
-import { RoutineComposer } from './routine-composer';
-import { stubCreateRoutine } from '@/stories/routine-action-stubs';
+import { RoutineComposer } from '@/features/routines/components/routines/routine-composer';
+import { stubCreateRoutine } from '../../../../routine-action-stubs';
 
 const meta: Meta<typeof RoutineComposer> = {
   title: 'Routines/RoutineComposer',

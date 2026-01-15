@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react';
-import { RoutineDetail } from './routine-detail';
-import { mockRoutineDetail, mockProposedEvents, mockExistingEvents } from '@/features/routines/test-helpers/test-data';
-import { stubApplyRoutine, stubForkRoutine, stubToggleVisibility } from '@/features/routines/test-helpers/action-stubs';
+import { RoutineDetail } from '@/features/routines/components/routines/routine-detail';
+import { mockRoutineDetail, mockProposedEvents, mockExistingEvents } from '../../../../routine-fixtures';
+import { stubApplyRoutine, stubForkRoutine, stubToggleVisibility } from '../../../../routine-action-stubs';
 import type { RoutineAiWorkflowResult } from '@/features/ai/types';
 
 const insights = [

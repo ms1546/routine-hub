@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react';
-import { ExecutionHistoryCard } from './execution-history-card';
-import { HumanEvaluationForm } from './human-evaluation-form';
-import { MaintenanceCard } from './maintenance-card';
+import { ExecutionHistoryCard } from '@/features/admin/components/admin/execution-history-card';
+import { HumanEvaluationForm } from '@/features/admin/components/admin/human-evaluation-form';
+import { MaintenanceCard } from '@/features/admin/components/admin/maintenance-card';
 import type { ExecutionRecord } from '@/features/ai/execution-log';
 import type { MaintenanceState } from '@/infrastructure/system/maintenance';
 

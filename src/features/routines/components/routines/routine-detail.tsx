@@ -147,146 +147,207 @@ export const RoutineDetail = ({
 };
 
 const WorkflowPanels = ({ workflow }: { workflow: RoutineAiWorkflowResult }) => {
+  // Sort conflicts by severity (high -> medium -> low)
+  const sortedConflicts = [...workflow.conflicts.data.conflicts].sort((a, b) => {
+    const severityOrder = { high: 3, medium: 2, low: 1 };
+    return severityOrder[b.severity] - severityOrder[a.severity];
+  });
+
   return (
-    <section className="space-y-4" id="ai-workflow">
-      <h3 className="text-xl font-semibold">AI Workflow Output</h3>
-      <div className="grid gap-4 md:grid-cols-2">
-        <Card className="border border-border/60 bg-card/30">
-          <CardHeader>
-            <CardTitle>Profile summary</CardTitle>
-            <CardDescription>{workflow.profile.agent}</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-2 text-sm text-muted-foreground">
+    <section className="space-y-6" id="ai-workflow">
+      <h3 className="text-xl font-semibold">AI Workflow Analysis</h3>
+
+      {/* Summary Section: Persona + Intent */}
+      <Card className="border border-border/60 bg-card/30">
+        <CardHeader>
+          <CardTitle>Summary</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4 text-sm">
+          <div>
+            <p className="text-xs uppercase tracking-wide text-muted-foreground mb-2">Persona</p>
             <p className="text-foreground">{workflow.profile.data.persona}</p>
+          </div>
+          <div>
+            <p className="text-xs uppercase tracking-wide text-muted-foreground mb-2">Intent</p>
+            <p className="text-foreground">{workflow.interpretation.data.intent}</p>
+          </div>
+          <div className="grid gap-4 md:grid-cols-2 pt-2 border-t border-border/40">
             <div>
-              <p className="text-xs uppercase tracking-wide">Constraints</p>
-              <ul className="list-disc pl-5">
+              <p className="text-xs uppercase tracking-wide text-muted-foreground mb-2">Key Constraints</p>
+              <ul className="list-disc pl-5 space-y-1">
                 {workflow.profile.data.highlightedConstraints.map((constraint, i) => (
-                  <li key={i}>{constraint}</li>
+                  <li key={i} className="text-muted-foreground">{constraint}</li>
                 ))}
               </ul>
             </div>
-            <p>Tone guidance: {workflow.profile.data.toneGuidance}</p>
-          </CardContent>
-        </Card>
+            <div>
+              <p className="text-xs uppercase tracking-wide text-muted-foreground mb-2">Success Signals</p>
+              <ul className="list-disc pl-5 space-y-1">
+                {workflow.interpretation.data.successSignals.map((signal, i) => (
+                  <li key={i} className="text-muted-foreground">{signal}</li>
+                ))}
+              </ul>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Issues & Risks Section: Conflicts + Risk Signals */}
+      {(sortedConflicts.length > 0 || workflow.interpretation.data.riskSignals.length > 0) && (
         <Card className="border border-border/60 bg-card/30">
           <CardHeader>
-            <CardTitle>Routine interpretation</CardTitle>
-            <CardDescription>{workflow.interpretation.agent}</CardDescription>
+            <CardTitle>Issues & Risks</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-2 text-sm text-muted-foreground">
-            <p className="text-foreground">{workflow.interpretation.data.intent}</p>
-            <div>
-              <p className="text-xs uppercase tracking-wide">Success signals</p>
-              <ul className="list-disc pl-5">
-                {workflow.interpretation.data.successSignals.map((signal, i) => (
-                  <li key={i}>{signal}</li>
-                ))}
-              </ul>
-            </div>
+          <CardContent className="space-y-4 text-sm">
+            {sortedConflicts.length > 0 && (
+              <div>
+                <p className="text-xs uppercase tracking-wide text-muted-foreground mb-3">Conflicts</p>
+                <div className="space-y-3">
+                  {sortedConflicts.map((conflict) => (
+                    <div key={conflict.id} className="rounded-xl border border-border/40 bg-background/30 p-3">
+                      <div className="flex items-start justify-between gap-2 mb-1">
+                        <p className="font-medium text-foreground">{conflict.label}</p>
+                        <Badge
+                          variant="outline"
+                          className={
+                            conflict.severity === 'high'
+                              ? 'border-red-500/50 text-red-500'
+                              : conflict.severity === 'medium'
+                                ? 'border-yellow-500/50 text-yellow-500'
+                                : 'border-blue-500/50 text-blue-500'
+                          }
+                        >
+                          {conflict.severity}
+                        </Badge>
+                      </div>
+                      <p className="text-muted-foreground">{conflict.rationale}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
             {workflow.interpretation.data.riskSignals.length > 0 && (
               <div>
-                <p className="text-xs uppercase tracking-wide">Risk signals</p>
-                <ul className="list-disc pl-5">
+                <p className="text-xs uppercase tracking-wide text-muted-foreground mb-2">Risk Signals</p>
+                <ul className="list-disc pl-5 space-y-1">
                   {workflow.interpretation.data.riskSignals.map((signal, i) => (
-                    <li key={i}>{signal}</li>
+                    <li key={i} className="text-muted-foreground">{signal}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+            {workflow.conflicts.data.assumptions.length > 0 && (
+              <div className="pt-2 border-t border-border/40">
+                <p className="text-xs uppercase tracking-wide text-muted-foreground mb-2">Assumptions</p>
+                <ul className="list-disc pl-5 space-y-1">
+                  {workflow.conflicts.data.assumptions.map((assumption, i) => (
+                    <li key={i} className="text-muted-foreground">{assumption}</li>
                   ))}
                 </ul>
               </div>
             )}
           </CardContent>
         </Card>
-      </div>
+      )}
 
-      <div className="grid gap-4 md:grid-cols-2">
+      {/* Recommendations Section: Optimization Proposals */}
+      {workflow.optimizations.data.proposals.length > 0 && (
         <Card className="border border-border/60 bg-card/30">
           <CardHeader>
-            <CardTitle>Conflicts</CardTitle>
-            <CardDescription>{workflow.conflicts.agent}</CardDescription>
+            <CardTitle>Recommendations</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-2 text-sm text-muted-foreground">
-            {workflow.conflicts.data.conflicts.map((conflict) => (
-              <div key={conflict.id} className="rounded-xl border border-border/40 bg-background/30 p-3">
-                <p className="font-medium text-foreground">{conflict.label}</p>
-                <p className="text-xs uppercase tracking-wide text-muted-foreground">{conflict.severity}</p>
-                <p>{conflict.rationale}</p>
-              </div>
-            ))}
-            <div>
-              <p className="text-xs uppercase tracking-wide">Assumptions</p>
-              <ul className="list-disc pl-5">
-                {workflow.conflicts.data.assumptions.map((assumption, i) => (
-                  <li key={i}>{assumption}</li>
-                ))}
-              </ul>
-            </div>
-          </CardContent>
-        </Card>
-        <Card className="border border-border/60 bg-card/30">
-          <CardHeader>
-            <CardTitle>Optimization proposals</CardTitle>
-            <CardDescription>{workflow.optimizations.agent}</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-3 text-sm text-muted-foreground">
+          <CardContent className="space-y-3 text-sm">
             {workflow.optimizations.data.proposals.map((proposal) => (
               <div key={proposal.id} className="rounded-xl border border-border/40 bg-background/30 p-3">
-                <p className="font-semibold text-foreground">{proposal.title}</p>
-                <p>{proposal.description}</p>
-                <p className="text-xs">Trade-offs: {proposal.tradeOffs.join(', ')}</p>
-                <p className="text-[10px] uppercase tracking-wide">
-                  {proposal.aiOnly ? 'AI-only suggestion' : 'Requires human execution'}
-                </p>
+                <div className="flex items-start justify-between gap-2 mb-1">
+                  <p className="font-semibold text-foreground">{proposal.title}</p>
+                  <Badge variant="outline" className="text-[10px]">
+                    {proposal.aiOnly ? 'AI-only' : 'Human required'}
+                  </Badge>
+                </div>
+                <p className="text-muted-foreground mb-2">{proposal.description}</p>
+                {proposal.tradeOffs.length > 0 && (
+                  <p className="text-xs text-muted-foreground">
+                    <span className="font-medium">Trade-offs:</span> {proposal.tradeOffs.join(', ')}
+                  </p>
+                )}
               </div>
             ))}
           </CardContent>
         </Card>
-      </div>
+      )}
 
-      <div className="grid gap-4 md:grid-cols-2">
-        <Card className="border border-border/60 bg-card/30">
-          <CardHeader>
-            <CardTitle>Future simulation</CardTitle>
-            <CardDescription>{workflow.futureSimulation.agent}</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-2 text-sm text-muted-foreground">
+      {/* Future Outlook Section */}
+      <Card className="border border-border/60 bg-card/30">
+        <CardHeader>
+          <CardTitle>Future Outlook</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4 text-sm">
+          <div>
+            <p className="text-xs uppercase tracking-wide text-muted-foreground mb-2">Outlook</p>
             <p className="text-foreground">{workflow.futureSimulation.data.outlook}</p>
+          </div>
+          {workflow.futureSimulation.data.guardrails.length > 0 && (
             <div>
-              <p className="text-xs uppercase tracking-wide">Guardrails</p>
-              <ul className="list-disc pl-5">
+              <p className="text-xs uppercase tracking-wide text-muted-foreground mb-2">Guardrails</p>
+              <ul className="list-disc pl-5 space-y-1">
                 {workflow.futureSimulation.data.guardrails.map((guardrail, i) => (
-                  <li key={i}>{guardrail}</li>
+                  <li key={i} className="text-muted-foreground">{guardrail}</li>
                 ))}
               </ul>
+            </div>
+          )}
+          {workflow.futureSimulation.data.followUpQuestions.length > 0 && (
+            <div>
+              <p className="text-xs uppercase tracking-wide text-muted-foreground mb-2">Follow-up Questions</p>
+              <ul className="list-disc pl-5 space-y-1">
+                {workflow.futureSimulation.data.followUpQuestions.map((question, i) => (
+                  <li key={i} className="text-muted-foreground">{question}</li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Quality Assessment Section */}
+      <Card className="border border-border/60 bg-card/30">
+        <CardHeader>
+          <CardTitle>Quality Assessment</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3 text-sm">
+          <div>
+            <p className="text-xs uppercase tracking-wide text-muted-foreground mb-2">Verdict</p>
+            <Badge
+              variant="outline"
+              className={
+                workflow.evaluation.data.verdict === 'approve'
+                  ? 'border-green-500/50 text-green-500'
+                  : 'border-yellow-500/50 text-yellow-500'
+              }
+            >
+              {workflow.evaluation.data.verdict === 'approve' ? 'Approved' : 'Needs Revision'}
+            </Badge>
+          </div>
+          <div className="grid gap-3 md:grid-cols-3 pt-2 border-t border-border/40">
+            <div>
+              <p className="text-xs uppercase tracking-wide text-muted-foreground mb-1">Clarity</p>
+              <p className="text-foreground font-medium">{workflow.evaluation.data.clarity.score}/10</p>
+              <p className="text-xs text-muted-foreground mt-1">{workflow.evaluation.data.clarity.rationale}</p>
             </div>
             <div>
-              <p className="text-xs uppercase tracking-wide">Follow-up</p>
-              <ul className="list-disc pl-5">
-                {workflow.futureSimulation.data.followUpQuestions.map((question, i) => (
-                  <li key={i}>{question}</li>
-                ))}
-              </ul>
+              <p className="text-xs uppercase tracking-wide text-muted-foreground mb-1">Consistency</p>
+              <p className="text-foreground font-medium">{workflow.evaluation.data.consistency.score}/10</p>
+              <p className="text-xs text-muted-foreground mt-1">{workflow.evaluation.data.consistency.rationale}</p>
             </div>
-          </CardContent>
-        </Card>
-        <Card className="border border-border/60 bg-card/30">
-          <CardHeader>
-            <CardTitle>Evaluation</CardTitle>
-            <CardDescription>{workflow.evaluation.agent}</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-2 text-sm text-muted-foreground">
-            <p className="text-foreground">Verdict: {workflow.evaluation.data.verdict}</p>
-            <ul className="list-disc pl-5">
-              <li>Clarity: {workflow.evaluation.data.clarity.score} ({workflow.evaluation.data.clarity.rationale})</li>
-              <li>
-                Consistency: {workflow.evaluation.data.consistency.score} ({workflow.evaluation.data.consistency.rationale})
-              </li>
-              <li>
-                Explanation: {workflow.evaluation.data.explanationQuality.score} ({workflow.evaluation.data.explanationQuality.rationale})
-              </li>
-            </ul>
-          </CardContent>
-        </Card>
-      </div>
+            <div>
+              <p className="text-xs uppercase tracking-wide text-muted-foreground mb-1">Explanation</p>
+              <p className="text-foreground font-medium">{workflow.evaluation.data.explanationQuality.score}/10</p>
+              <p className="text-xs text-muted-foreground mt-1">{workflow.evaluation.data.explanationQuality.rationale}</p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
     </section>
   );
 };

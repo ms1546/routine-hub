@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react';
-import { RoutineCard } from './routine-card';
-import { mockRoutineListItem } from '@/stories/routine-fixtures';
-import { stubToggleVisibility } from '@/stories/routine-action-stubs';
+import { RoutineCard } from '@/features/routines/components/routines/routine-card';
+import { mockRoutineListItem } from '../../../../routine-fixtures';
+import { stubToggleVisibility } from '../../../../routine-action-stubs';
 
 const meta: Meta<typeof RoutineCard> = {
   title: 'Routines/RoutineCard',

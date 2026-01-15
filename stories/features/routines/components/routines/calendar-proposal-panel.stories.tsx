@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react';
-import { CalendarProposalPanel } from './calendar-proposal-panel';
-import { mockProposedEvents, mockExistingEvents } from '@/stories/routine-fixtures';
+import { CalendarProposalPanel } from '@/features/routines/components/routines/calendar-proposal-panel';
+import { mockProposedEvents, mockExistingEvents } from '../../../../routine-fixtures';
 
 const meta: Meta<typeof CalendarProposalPanel> = {
   title: 'Routines/CalendarProposalPanel',

@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react';
-import { ApplyRoutineForm } from './apply-routine-form';
-import { stubApplyRoutine } from '@/features/routines/test-helpers/action-stubs';
+import { ApplyRoutineForm } from '@/features/routines/components/routines/apply-routine-form';
+import { stubApplyRoutine } from '../../../../routine-action-stubs';
 
 const meta: Meta<typeof ApplyRoutineForm> = {
   title: 'Routines/ApplyRoutineForm',
