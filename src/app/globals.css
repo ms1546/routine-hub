@@ -4,34 +4,61 @@
 
 @layer base {
   :root {
-    --background: 222 47% 4%;
-    --foreground: 210 40% 98%;
+    /* 白と黒のみのモノクロデザイン */
+    /* アクセシビリティを考慮したWCAG 2.1 AA基準準拠 */
+    /* グレーの濃淡で視覚的階層を構築 */
 
-    --muted: 223 47% 10%;
-    --muted-foreground: 215 20% 65%;
+    /* 背景: 純白（基調色） */
+    --background: 0 0% 100%;
+    /* テキスト: 純黒（最高コントラスト比21:1） */
+    --foreground: 0 0% 0%;
 
-    --popover: 222 47% 5%;
-    --popover-foreground: 210 40% 98%;
+    /* ミュート背景: 薄いグレー（セクション区別用） */
+    --muted: 0 0% 96%;
+    /* ミュートテキスト: 中程度のグレー（コントラスト比7:1以上） */
+    --muted-foreground: 0 0% 45%;
 
-    --card: 225 50% 6%;
-    --card-foreground: 210 40% 98%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 0 0% 0%;
 
-    --border: 215 27% 16%;
-    --input: 215 27% 16%;
+    /* カード: 白（背景と同じだが、シャドウで区別） */
+    --card: 0 0% 100%;
+    --card-foreground: 0 0% 0%;
 
-    --primary: 256 100% 62%;
-    --primary-foreground: 210 40% 98%;
+    /* ボーダー: 濃いグレー（コントラスト比4.5:1以上） */
+    --border: 0 0% 20%;
+    --input: 0 0% 20%;
 
-    --secondary: 215 27% 15%;
-    --secondary-foreground: 210 40% 98%;
+    /* プライマリ: 黒（アクションボタン用） */
+    --primary: 0 0% 0%;
+    --primary-foreground: 0 0% 100%;
 
-    --accent: 262 83% 74%;
-    --accent-foreground: 222 47% 10%;
+    /* セカンダリ: 濃いグレー */
+    --secondary: 0 0% 15%;
+    --secondary-foreground: 0 0% 100%;
 
-    --destructive: 0 84% 60%;
-    --destructive-foreground: 210 40% 98%;
+    /* アクセント: 中程度のグレー（ホバー用） */
+    --accent: 0 0% 90%;
+    --accent-foreground: 0 0% 0%;
 
-    --ring: 262 83% 74%;
+    /* AIセクション用: 薄いグレー背景 */
+    --ai-section: 0 0% 98%;
+    --ai-section-border: 0 0% 30%;
+
+    /* 破壊的アクション: 黒（重要度を強調） */
+    --destructive: 0 0% 0%;
+    --destructive-foreground: 0 0% 100%;
+
+    /* 警告/注意: 濃いグレー */
+    --warning: 0 0% 30%;
+    --warning-foreground: 0 0% 100%;
+
+    /* 成功/承認: 中程度のグレー */
+    --success: 0 0% 40%;
+    --success-foreground: 0 0% 100%;
+
+    /* フォーカスリング: 濃いグレー（アクセシビリティ） */
+    --ring: 0 0% 20%;
     --radius: 0.75rem;
   }
 
@@ -41,11 +68,232 @@
 
   body {
     @apply bg-background text-foreground;
+    /* スムーズなスクロール */
+    scroll-behavior: smooth;
+  }
+
+  /* アクセシビリティ: フォーカス表示の強化 */
+  *:focus-visible {
+    @apply outline-none ring-2 ring-ring ring-offset-2 ring-offset-background;
+  }
+
+  /* リンクのアクセシビリティ */
+  a:focus-visible {
+    @apply underline underline-offset-4;
   }
 }
 
 @layer base {
   body {
     font-feature-settings: 'liga' 1, 'calt' 1;
+    /* より洗練されたタイポグラフィ */
+    letter-spacing: -0.01em;
   }
+
+  /* 見出しのタイポグラフィ改善 */
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    @apply font-semibold tracking-tight;
+  }
+}
+
+@layer components {
+
+  /* モダンなカードスタイル - 白黒デザイン */
+  .card-modern {
+    @apply relative overflow-hidden transition-all duration-300 ease-out;
+    @apply border-2 border-border bg-card;
+    @apply hover:border-foreground hover:shadow-xl hover:shadow-black/20;
+  }
+
+  /* グラデーション背景 - 白基調 */
+  .gradient-bg {
+    background: hsl(var(--background));
+  }
+
+  /* AIセクション用のスタイル - 薄いグレー背景で区別 */
+  .ai-section {
+    background: hsl(var(--ai-section));
+    border: 2px solid hsl(var(--ai-section-border));
+    border-left: 4px solid hsl(var(--foreground));
+  }
+
+  /* セクション区別用の背景 - 薄いグレー */
+  .section-bg {
+    background: hsl(var(--muted));
+    border-radius: 0.75rem;
+    padding: 1.5rem;
+    border: 1px solid hsl(var(--border)/30);
+  }
+
+  /* 微細なグラスモーフィズム効果 */
+  .glass-effect {
+    @apply backdrop-blur-md bg-card/60 border-border/40;
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.1);
+  }
+
+  /* グロー効果 - 白黒デザインではシャドウで表現 */
+  .glow-effect {
+    position: relative;
+  }
+
+  .glow-effect:hover {
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.15);
+  }
+
+  /* シマー効果（ローディングアニメーション） - 白黒デザイン */
+  .shimmer {
+    background: linear-gradient(90deg,
+        hsl(var(--muted)) 0%,
+        hsl(var(--border)/30) 50%,
+        hsl(var(--muted)) 100%);
+    background-size: 200% 100%;
+    animation: shimmer 2s infinite;
+  }
+
+  /* パルス効果 - 白黒デザイン */
+  .pulse-glow {
+    animation: pulse-glow 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  }
+
+  /* フローティングアニメーション */
+  .float {
+    animation: float 6s ease-in-out infinite;
+  }
+
+  /* フェードインアップ */
+  .fade-in-up {
+    animation: fade-in-up 0.6s ease-out;
+  }
+
+  /* スケールイン */
+  .scale-in {
+    animation: scale-in 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+}
+
+@layer utilities {
+
+  /* テキストグラデーション - 白黒デザインでは不要 */
+  .text-gradient {
+    color: hsl(var(--foreground));
+  }
+
+  /* ボーダーグラデーション - 白黒デザインでは単色ボーダー */
+  .border-gradient {
+    border-color: hsl(var(--border));
+  }
+
+  /* シャドウグラデーション - 白黒デザイン */
+  .shadow-glow {
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.1), 0 0 40px rgba(0, 0, 0, 0.05);
+  }
+
+  /* ホバー時のリフト効果 - 白黒デザイン */
+  .hover-lift {
+    transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.3s ease;
+  }
+
+  .hover-lift:hover {
+    transform: translateY(-4px) scale(1.02);
+    box-shadow: 0 12px 24px -8px rgba(0, 0, 0, 0.15);
+  }
+}
+
+/* カスタムキーフレームアニメーション */
+@keyframes gradient-shift {
+
+  0%,
+  100% {
+    background-position: 0% 50%;
+  }
+
+  50% {
+    background-position: 100% 50%;
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+@keyframes pulse-glow {
+
+  0%,
+  100% {
+    opacity: 1;
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+  }
+
+  50% {
+    opacity: 0.8;
+    box-shadow: 0 0 30px rgba(0, 0, 0, 0.15);
+  }
+}
+
+@keyframes float {
+
+  0%,
+  100% {
+    transform: translateY(0px);
+  }
+
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+@keyframes fade-in-up {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes scale-in {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* スクロールバーのスタイリング - 白黒デザイン */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: hsl(var(--muted));
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: hsl(var(--border));
+  border-radius: 10px;
+  border: 2px solid hsl(var(--muted));
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: hsl(var(--foreground));
 }

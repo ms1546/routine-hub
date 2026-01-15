@@ -7,7 +7,7 @@ import { Input } from '@/shared/ui/input';
 import { Textarea } from '@/shared/ui/textarea';
 import { Label } from '@/shared/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/ui/card';
-import type { ActionResult } from '@/shared/types';
+import type { ActionResult } from '@/shared/types/actionResult';
 import type { Routine } from '@/features/routines';
 
 const defaultBlock = {
@@ -42,10 +42,14 @@ export function RoutineComposer({ action }: RoutineComposerProps) {
     });
   };
 
+  const selectClassName =
+    'relative h-11 w-full rounded-lg border border-input/60 bg-background px-4 py-2.5 text-sm text-foreground transition-all duration-300 hover:border-primary/40 hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:border-ring/50 focus-visible:shadow-lg focus-visible:shadow-ring/20';
+
   return (
-    <Card className="border border-border/60 bg-card/30">
+    <Card className="fade-in-up">
       <CardHeader>
-        <CardTitle className="text-xl">Compose a routine</CardTitle>
+        <CardTitle className="text-2xl">Compose a routine</CardTitle>
+        <p className="text-sm text-muted-foreground mt-1">Create a new routine with custom time blocks</p>
       </CardHeader>
       <CardContent>
         <form className="space-y-6" onSubmit={handleSubmit}>
@@ -77,27 +81,17 @@ export function RoutineComposer({ action }: RoutineComposerProps) {
           </div>
 
           <div className="grid gap-4 md:grid-cols-2">
-            <div className="space-y-2">
+            <div className="space-y-2.5">
               <Label htmlFor="durationType">Duration</Label>
-              <select
-                name="durationType"
-                id="durationType"
-                defaultValue="weekly"
-                className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-              >
+              <select name="durationType" id="durationType" defaultValue="weekly" className={selectClassName}>
                 <option value="half-day">Half-day</option>
                 <option value="full-day">Full-day</option>
                 <option value="weekly">Weekly</option>
               </select>
             </div>
-            <div className="space-y-2">
+            <div className="space-y-2.5">
               <Label htmlFor="visibility">Visibility</Label>
-              <select
-                name="visibility"
-                id="visibility"
-                defaultValue="private"
-                className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-              >
+              <select name="visibility" id="visibility" defaultValue="private" className={selectClassName}>
                 <option value="public">Public</option>
                 <option value="private">Private</option>
               </select>
@@ -105,14 +99,14 @@ export function RoutineComposer({ action }: RoutineComposerProps) {
           </div>
 
           <div className="grid gap-4 md:grid-cols-4">
-            <div className="space-y-2">
+            <div className="space-y-2.5">
               <Label htmlFor="blockDay">Block Day</Label>
               <select
                 name="blockDay"
                 id="blockDay"
                 value={blockState.blockDay}
                 onChange={(event) => setBlockState((prev) => ({ ...prev, blockDay: event.target.value }))}
-                className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                className={selectClassName}
               >
                 {['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'].map((day) => (
                   <option key={day} value={day}>
@@ -147,14 +141,14 @@ export function RoutineComposer({ action }: RoutineComposerProps) {
                 required
               />
             </div>
-            <div className="space-y-2">
+            <div className="space-y-2.5">
               <Label htmlFor="blockEnergy">Energy</Label>
               <select
                 name="blockEnergy"
                 id="blockEnergy"
                 value={blockState.blockEnergy}
                 onChange={(event) => setBlockState((prev) => ({ ...prev, blockEnergy: event.target.value }))}
-                className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                className={selectClassName}
               >
                 <option value="low">Low</option>
                 <option value="medium">Medium</option>
@@ -164,21 +158,21 @@ export function RoutineComposer({ action }: RoutineComposerProps) {
           </div>
 
           <div className="grid gap-4 md:grid-cols-2">
-            <div className="space-y-2">
+            <div className="space-y-2.5">
               <Label htmlFor="blockLabel">Block Label</Label>
               <Input name="blockLabel" id="blockLabel" placeholder="What happens in this block?" required />
             </div>
-            <div className="space-y-2">
+            <div className="space-y-2.5">
               <Label htmlFor="blockObjective">Block Objective</Label>
               <Input name="blockObjective" id="blockObjective" placeholder="Why does this block exist?" required />
             </div>
           </div>
 
-          <div className="flex flex-col gap-3 border-t border-border/40 pt-6 text-sm text-muted-foreground">
+          <div className="flex flex-col gap-4 border-t border-border/50 pt-6">
             <Button type="submit" disabled={pending} className="w-full md:w-auto">
               {pending ? 'Creating…' : 'Create Routine'}
             </Button>
-            <p>{message}</p>
+            {message && <p className="text-sm text-muted-foreground">{message}</p>}
           </div>
         </form>
       </CardContent>

@@ -36,8 +36,8 @@ export function RoutineBlockTimeline({ blocks }: { blocks: RoutineDetailView['ti
       {sortedDays.map((day) => {
         const events = grouped.get(day) ?? [];
         return (
-          <div key={day} className="space-y-3 rounded-2xl border border-border/50 bg-card/20 p-4">
-            <h4 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+          <div key={day} className="space-y-3 rounded-lg border p-3">
+            <h4 className="text-sm font-medium text-muted-foreground">
               {weekdayLabel[day] ?? day}
             </h4>
             <div className="space-y-3">

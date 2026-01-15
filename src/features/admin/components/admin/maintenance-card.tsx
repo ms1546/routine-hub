@@ -30,10 +30,10 @@ export function MaintenanceCard({ state, action }: MaintenanceCardProps) {
   };
 
   return (
-    <section className="space-y-4 rounded-2xl border border-border/60 bg-card/30 p-6">
+    <section className="space-y-4 rounded-lg border p-4">
       <div>
-        <p className="text-xs uppercase tracking-[0.3em] text-muted-foreground">Operations</p>
-        <h2 className="text-2xl font-semibold text-foreground">Maintenance Mode</h2>
+        <p className="text-xs text-muted-foreground mb-1">Operations</p>
+        <h2 className="text-lg font-semibold mb-1">Maintenance Mode</h2>
         <p className="text-sm text-muted-foreground">
           Communicate deliberate downtime. Users must never confuse this with generic errors.
         </p>

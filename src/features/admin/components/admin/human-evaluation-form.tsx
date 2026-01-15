@@ -42,10 +42,10 @@ export function HumanEvaluationForm({ executions, action }: HumanEvaluationFormP
   };
 
   return (
-    <section className="space-y-4 rounded-2xl border border-border/60 bg-card/30 p-6">
+    <section className="space-y-4 rounded-lg border p-4">
       <div>
-        <p className="text-xs uppercase tracking-[0.3em] text-muted-foreground">Human-in-the-loop</p>
-        <h2 className="text-2xl font-semibold text-foreground">Add Evaluation</h2>
+        <p className="text-xs text-muted-foreground mb-1">Human-in-the-loop</p>
+        <h2 className="text-lg font-semibold mb-1">Add Evaluation</h2>
         <p className="text-sm text-muted-foreground">Judgments live only inside the admin console.</p>
       </div>
       <form className="space-y-4" onSubmit={handleSubmit}>
@@ -55,7 +55,7 @@ export function HumanEvaluationForm({ executions, action }: HumanEvaluationFormP
             id="execution-select"
             value={selectedId}
             onChange={(event) => setSelectedId(event.target.value)}
-            className="w-full rounded-md border border-border/60 bg-background px-3 py-2 text-sm text-foreground"
+            className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground"
           >
             {executions.length === 0 ? (
               <option value="" disabled>

@@ -102,24 +102,27 @@ export function useStreamWorkflow(routineId: string | null) {
               } else if (chunk.type === 'text') {
                 // 文字列全体をキューに追加（順番を保証するため）
                 const textToAdd = chunk.text;
-                if (textToAdd) {
+                if (textToAdd && typeof textToAdd === 'string') {
                   // 文字列を1文字ずつキューに追加
                   for (let i = 0; i < textToAdd.length; i++) {
-                    textQueueRef.current.push(textToAdd[i]);
+                    const char = textToAdd[i];
+                    if (char !== undefined) {
+                      textQueueRef.current.push(char);
+                    }
                   }
 
                   // 既に処理中でない場合、処理を開始
                   if (!isProcessingRef.current) {
                     isProcessingRef.current = true;
                     const processQueue = () => {
-                      if (textQueueRef.current.length > 0) {
-                        const char = textQueueRef.current.shift();
-                        if (char) {
-                          setState((prev) => ({
-                            ...prev,
-                            streamingText: prev.streamingText + char
-                          }));
-                        }
+                    if (textQueueRef.current.length > 0) {
+                      const char = textQueueRef.current.shift();
+                      if (char !== undefined) {
+                        setState((prev) => ({
+                          ...prev,
+                          streamingText: prev.streamingText + char
+                        }));
+                      }
                         displayTimerRef.current = setTimeout(processQueue, 20); // 約50文字/秒
                       } else {
                         isProcessingRef.current = false;
@@ -130,20 +133,7 @@ export function useStreamWorkflow(routineId: string | null) {
                 }
               } else if (chunk.type === 'step') {
                 setState((prev) => {
-                  const current = prev.partialWorkflow || {
-                    profile: null,
-                    interpretation: null,
-                    conflicts: null,
-                    optimizations: null,
-                    futureSimulation: null,
-                    evaluation: null,
-                    meta: {
-                      executionId: '',
-                      mastraTraceId: '',
-                      proposalsOnly: true,
-                      langfuseTraceId: null
-                    }
-                  } as Partial<RoutineAiWorkflowResult>;
+                  const current: Partial<RoutineAiWorkflowResult> = prev.partialWorkflow || {};
 
                   const updated = {
                     ...current,

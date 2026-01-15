@@ -4,8 +4,9 @@ import { useState, useTransition } from 'react';
 import type { FormEvent } from 'react';
 import { Button } from '@/shared/ui/button';
 import { Input } from '@/shared/ui/input';
+import { Label } from '@/shared/ui/label';
 import { Card } from '@/shared/ui/card';
-import type { ActionResult } from '@/shared/types';
+import type { ActionResult } from '@/shared/types/actionResult';
 import type { Routine } from '@/features/routines';
 import type { ForkRoutinePayload } from '@/features/routines/actions/routines';
 
@@ -36,22 +37,28 @@ export function ForkRoutineForm({ routineId, defaultName, action }: ForkRoutineF
   };
 
   return (
-    <Card className="w-full border border-border/50 bg-card/40 p-4">
-      <form className="flex w-full flex-wrap items-end gap-3" onSubmit={handleSubmit}>
-        <Input
-          type="text"
-          name="name"
-          placeholder={`${defaultName} - My Take`}
-          defaultValue={`${defaultName} Clone`}
-          required
-          className="flex-1"
-        />
-        <Input type="email" name="owner" placeholder="you@example.com" required className="flex-1" />
-        <Button type="submit" disabled={pending} className="mt-3">
+    <Card className="w-full p-5">
+      <form className="flex w-full flex-col gap-4 sm:flex-row sm:items-end sm:gap-3" onSubmit={handleSubmit}>
+        <div className="space-y-2.5 flex-1">
+          <Label htmlFor="fork-name">Routine Name</Label>
+          <Input
+            type="text"
+            name="name"
+            id="fork-name"
+            placeholder={`${defaultName} - My Take`}
+            defaultValue={`${defaultName} Clone`}
+            required
+          />
+        </div>
+        <div className="space-y-2.5 flex-1">
+          <Label htmlFor="fork-owner">Owner Email</Label>
+          <Input type="email" name="owner" id="fork-owner" placeholder="you@example.com" required />
+        </div>
+        <Button type="submit" disabled={pending} className="w-full sm:w-auto">
           {pending ? 'Forking…' : 'Fork Routine'}
         </Button>
-        <p className="text-sm text-muted-foreground">{status}</p>
       </form>
+      {status && <p className="text-sm text-muted-foreground mt-3">{status}</p>}
     </Card>
   );
 }

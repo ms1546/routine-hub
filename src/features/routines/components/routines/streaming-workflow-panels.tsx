@@ -38,8 +38,8 @@ export function StreamingWorkflowPanels({ routineId, initialWorkflow }: Streamin
 
   if (error) {
     return (
-      <section className="space-y-2 rounded-2xl border border-dashed border-red-500/60 bg-card/10 p-4 text-sm text-red-500">
-        <p className="text-xs uppercase tracking-[0.3em]">エラー</p>
+      <section className="space-y-2 rounded-lg border border-dashed border-destructive p-3 text-sm text-destructive">
+        <p className="text-xs">エラー</p>
         <p>{error}</p>
       </section>
     );
@@ -51,21 +51,19 @@ export function StreamingWorkflowPanels({ routineId, initialWorkflow }: Streamin
 
   return (
     <section className="space-y-4" id="ai-workflow">
-      <h3 className="text-xl font-semibold">AI Workflow Analysis</h3>
+      <h3 className="text-lg font-semibold">AI Workflow Analysis</h3>
       {streamingText ? (
-        <Card className="border border-border/60 bg-card/30">
-          <CardContent className="p-6">
-            <div className="prose prose-invert max-w-none">
-              <pre className="whitespace-pre-wrap font-sans text-sm text-foreground leading-relaxed">
-                {streamingText}
-                {isLoading && <span className="animate-pulse">▊</span>}
-              </pre>
-            </div>
+        <Card>
+          <CardContent className="p-4">
+            <pre className="whitespace-pre-wrap font-sans text-sm leading-relaxed">
+              {streamingText}
+              {isLoading && <span className="animate-pulse">▊</span>}
+            </pre>
           </CardContent>
         </Card>
       ) : (
-        <div className="space-y-2 rounded-2xl border border-dashed border-border/60 bg-card/10 p-4 text-sm text-muted-foreground">
-          <p className="text-xs uppercase tracking-[0.3em] text-muted-foreground">AI commentary</p>
+        <div className="rounded-lg border border-dashed p-4 text-sm text-muted-foreground">
+          <p className="text-xs text-muted-foreground mb-1">AI commentary</p>
           {progressMessage ? (
             <p>{progressMessage}</p>
           ) : (
@@ -126,43 +124,43 @@ function PartialWorkflowPanels({
     <div className="space-y-6">
       {/* Summary Section */}
       {(workflow.profile || workflow.interpretation) && (
-        <Card className="border border-border/60 bg-card/30">
+        <Card>
           <CardHeader>
             <CardTitle>Summary</CardTitle>
             {currentStep && (currentStep === 'profile' || currentStep === 'interpretation') && (
               <CardDescription className="text-xs">生成中...</CardDescription>
             )}
           </CardHeader>
-          <CardContent className="space-y-4 text-sm">
+          <CardContent className="space-y-4">
             {workflow.profile && (
               <div>
-                <p className="text-xs uppercase tracking-wide text-muted-foreground mb-2">Persona</p>
-                <p className="text-foreground">{workflow.profile.data.persona}</p>
+                <p className="text-xs text-muted-foreground mb-1">Persona</p>
+                <p className="text-sm">{workflow.profile.data.persona}</p>
               </div>
             )}
             {workflow.interpretation && (
               <div>
-                <p className="text-xs uppercase tracking-wide text-muted-foreground mb-2">Intent</p>
-                <p className="text-foreground">{workflow.interpretation.data.intent}</p>
+                <p className="text-xs text-muted-foreground mb-1">Intent</p>
+                <p className="text-sm">{workflow.interpretation.data.intent}</p>
               </div>
             )}
-            {(workflow.profile?.data.highlightedConstraints.length || workflow.interpretation?.data.successSignals.length) && (
-              <div className="grid gap-4 md:grid-cols-2 pt-2 border-t border-border/40">
-                {workflow.profile?.data.highlightedConstraints.length > 0 && (
+            {((workflow.profile?.data.highlightedConstraints?.length ?? 0) > 0 || (workflow.interpretation?.data.successSignals?.length ?? 0) > 0) && (
+              <div className="grid gap-4 md:grid-cols-2 pt-3 border-t">
+                {(workflow.profile?.data.highlightedConstraints?.length ?? 0) > 0 && (
                   <div>
-                    <p className="text-xs uppercase tracking-wide text-muted-foreground mb-2">Key Constraints</p>
-                    <ul className="list-disc pl-5 space-y-1">
-                      {workflow.profile.data.highlightedConstraints.map((constraint, i) => (
+                    <p className="text-xs text-muted-foreground mb-1.5">Key Constraints</p>
+                    <ul className="list-disc pl-5 space-y-0.5 text-sm">
+                      {workflow.profile!.data.highlightedConstraints.map((constraint, i) => (
                         <li key={i} className="text-muted-foreground">{constraint}</li>
                       ))}
                     </ul>
                   </div>
                 )}
-                {workflow.interpretation?.data.successSignals.length > 0 && (
+                {(workflow.interpretation?.data.successSignals?.length ?? 0) > 0 && (
                   <div>
-                    <p className="text-xs uppercase tracking-wide text-muted-foreground mb-2">Success Signals</p>
-                    <ul className="list-disc pl-5 space-y-1">
-                      {workflow.interpretation.data.successSignals.map((signal, i) => (
+                    <p className="text-xs text-muted-foreground mb-1.5">Success Signals</p>
+                    <ul className="list-disc pl-5 space-y-0.5 text-sm">
+                      {workflow.interpretation!.data.successSignals.map((signal, i) => (
                         <li key={i} className="text-muted-foreground">{signal}</li>
                       ))}
                     </ul>
@@ -176,56 +174,45 @@ function PartialWorkflowPanels({
 
       {/* Issues & Risks Section */}
       {(sortedConflicts.length > 0 ||
-        workflow.interpretation?.data.riskSignals.length ||
-        workflow.conflicts?.data.assumptions.length) && (
-        <Card className="border border-border/60 bg-card/30">
+        (workflow.interpretation?.data.riskSignals?.length ?? 0) > 0 ||
+        (workflow.conflicts?.data.assumptions?.length ?? 0) > 0) && (
+        <Card>
           <CardHeader>
             <CardTitle>Issues & Risks</CardTitle>
             {currentStep === 'conflicts' && <CardDescription className="text-xs">生成中...</CardDescription>}
           </CardHeader>
-          <CardContent className="space-y-4 text-sm">
+          <CardContent className="space-y-4">
             {sortedConflicts.length > 0 && (
               <div>
-                <p className="text-xs uppercase tracking-wide text-muted-foreground mb-3">Conflicts</p>
-                <div className="space-y-3">
+                <p className="text-xs text-muted-foreground mb-2">Conflicts</p>
+                <div className="space-y-2">
                   {sortedConflicts.map((conflict) => (
-                    <div key={conflict.id} className="rounded-xl border border-border/40 bg-background/30 p-3">
+                    <div key={conflict.id} className="rounded-md border p-3">
                       <div className="flex items-start justify-between gap-2 mb-1">
-                        <p className="font-medium text-foreground">{conflict.label}</p>
-                        <Badge
-                          variant="outline"
-                          className={
-                            conflict.severity === 'high'
-                              ? 'border-red-500/50 text-red-500'
-                              : conflict.severity === 'medium'
-                                ? 'border-yellow-500/50 text-yellow-500'
-                                : 'border-blue-500/50 text-blue-500'
-                          }
-                        >
-                          {conflict.severity}
-                        </Badge>
+                        <p className="font-medium text-sm">{conflict.label}</p>
+                        <Badge variant="outline">{conflict.severity}</Badge>
                       </div>
-                      <p className="text-muted-foreground">{conflict.rationale}</p>
+                      <p className="text-sm text-muted-foreground">{conflict.rationale}</p>
                     </div>
                   ))}
                 </div>
               </div>
             )}
-            {workflow.interpretation?.data.riskSignals.length > 0 && (
+            {(workflow.interpretation?.data.riskSignals?.length ?? 0) > 0 && (
               <div>
-                <p className="text-xs uppercase tracking-wide text-muted-foreground mb-2">Risk Signals</p>
-                <ul className="list-disc pl-5 space-y-1">
-                  {workflow.interpretation.data.riskSignals.map((signal, i) => (
+                <p className="text-xs text-muted-foreground mb-1.5">Risk Signals</p>
+                <ul className="list-disc pl-5 space-y-0.5 text-sm">
+                  {workflow.interpretation!.data.riskSignals.map((signal, i) => (
                     <li key={i} className="text-muted-foreground">{signal}</li>
                   ))}
                 </ul>
               </div>
             )}
-            {workflow.conflicts?.data.assumptions.length > 0 && (
-              <div className="pt-2 border-t border-border/40">
-                <p className="text-xs uppercase tracking-wide text-muted-foreground mb-2">Assumptions</p>
-                <ul className="list-disc pl-5 space-y-1">
-                  {workflow.conflicts.data.assumptions.map((assumption, i) => (
+            {(workflow.conflicts?.data.assumptions?.length ?? 0) > 0 && (
+              <div className="pt-3 border-t">
+                <p className="text-xs text-muted-foreground mb-1.5">Assumptions</p>
+                <ul className="list-disc pl-5 space-y-0.5 text-sm">
+                  {workflow.conflicts!.data.assumptions.map((assumption, i) => (
                     <li key={i} className="text-muted-foreground">{assumption}</li>
                   ))}
                 </ul>
@@ -236,22 +223,22 @@ function PartialWorkflowPanels({
       )}
 
       {/* Recommendations Section */}
-      {workflow.optimizations?.data.proposals.length > 0 && (
-        <Card className="border border-border/60 bg-card/30">
+      {(workflow.optimizations?.data.proposals?.length ?? 0) > 0 && (
+        <Card>
           <CardHeader>
             <CardTitle>Recommendations</CardTitle>
             {currentStep === 'optimizations' && <CardDescription className="text-xs">生成中...</CardDescription>}
           </CardHeader>
-          <CardContent className="space-y-3 text-sm">
-            {workflow.optimizations.data.proposals.map((proposal) => (
-              <div key={proposal.id} className="rounded-xl border border-border/40 bg-background/30 p-3">
+          <CardContent className="space-y-3">
+            {workflow.optimizations!.data.proposals.map((proposal) => (
+              <div key={proposal.id} className="rounded-md border p-3">
                 <div className="flex items-start justify-between gap-2 mb-1">
-                  <p className="font-semibold text-foreground">{proposal.title}</p>
-                  <Badge variant="outline" className="text-[10px]">
+                  <p className="font-medium text-sm">{proposal.title}</p>
+                  <Badge variant="outline" className="text-xs">
                     {proposal.aiOnly ? 'AI-only' : 'Human required'}
                   </Badge>
                 </div>
-                <p className="text-muted-foreground mb-2">{proposal.description}</p>
+                <p className="text-sm text-muted-foreground mb-1.5">{proposal.description}</p>
                 {proposal.tradeOffs.length > 0 && (
                   <p className="text-xs text-muted-foreground">
                     <span className="font-medium">Trade-offs:</span> {proposal.tradeOffs.join(', ')}
@@ -265,20 +252,20 @@ function PartialWorkflowPanels({
 
       {/* Future Outlook Section */}
       {workflow.futureSimulation && (
-        <Card className="border border-border/60 bg-card/30">
+        <Card>
           <CardHeader>
             <CardTitle>Future Outlook</CardTitle>
             {currentStep === 'futureSimulation' && <CardDescription className="text-xs">生成中...</CardDescription>}
           </CardHeader>
-          <CardContent className="space-y-4 text-sm">
+          <CardContent className="space-y-4">
             <div>
-              <p className="text-xs uppercase tracking-wide text-muted-foreground mb-2">Outlook</p>
-              <p className="text-foreground">{workflow.futureSimulation.data.outlook}</p>
+              <p className="text-xs text-muted-foreground mb-1">Outlook</p>
+              <p className="text-sm">{workflow.futureSimulation.data.outlook}</p>
             </div>
             {workflow.futureSimulation.data.guardrails.length > 0 && (
               <div>
-                <p className="text-xs uppercase tracking-wide text-muted-foreground mb-2">Guardrails</p>
-                <ul className="list-disc pl-5 space-y-1">
+                <p className="text-xs text-muted-foreground mb-1.5">Guardrails</p>
+                <ul className="list-disc pl-5 space-y-0.5 text-sm">
                   {workflow.futureSimulation.data.guardrails.map((guardrail, i) => (
                     <li key={i} className="text-muted-foreground">{guardrail}</li>
                   ))}
@@ -287,8 +274,8 @@ function PartialWorkflowPanels({
             )}
             {workflow.futureSimulation.data.followUpQuestions.length > 0 && (
               <div>
-                <p className="text-xs uppercase tracking-wide text-muted-foreground mb-2">Follow-up Questions</p>
-                <ul className="list-disc pl-5 space-y-1">
+                <p className="text-xs text-muted-foreground mb-1.5">Follow-up Questions</p>
+                <ul className="list-disc pl-5 space-y-0.5 text-sm">
                   {workflow.futureSimulation.data.followUpQuestions.map((question, i) => (
                     <li key={i} className="text-muted-foreground">{question}</li>
                   ))}
@@ -301,39 +288,32 @@ function PartialWorkflowPanels({
 
       {/* Quality Assessment Section */}
       {workflow.evaluation && (
-        <Card className="border border-border/60 bg-card/30">
+        <Card>
           <CardHeader>
             <CardTitle>Quality Assessment</CardTitle>
             {currentStep === 'evaluation' && <CardDescription className="text-xs">生成中...</CardDescription>}
           </CardHeader>
-          <CardContent className="space-y-3 text-sm">
+          <CardContent className="space-y-3">
             <div>
-              <p className="text-xs uppercase tracking-wide text-muted-foreground mb-2">Verdict</p>
-              <Badge
-                variant="outline"
-                className={
-                  workflow.evaluation.data.verdict === 'approve'
-                    ? 'border-green-500/50 text-green-500'
-                    : 'border-yellow-500/50 text-yellow-500'
-                }
-              >
+              <p className="text-xs text-muted-foreground mb-1.5">Verdict</p>
+              <Badge variant="outline">
                 {workflow.evaluation.data.verdict === 'approve' ? 'Approved' : 'Needs Revision'}
               </Badge>
             </div>
-            <div className="grid gap-3 md:grid-cols-3 pt-2 border-t border-border/40">
+            <div className="grid gap-4 md:grid-cols-3 pt-3 border-t">
               <div>
-                <p className="text-xs uppercase tracking-wide text-muted-foreground mb-1">Clarity</p>
-                <p className="text-foreground font-medium">{workflow.evaluation.data.clarity.score}/10</p>
+                <p className="text-xs text-muted-foreground mb-1">Clarity</p>
+                <p className="font-medium">{workflow.evaluation.data.clarity.score}/10</p>
                 <p className="text-xs text-muted-foreground mt-1">{workflow.evaluation.data.clarity.rationale}</p>
               </div>
               <div>
-                <p className="text-xs uppercase tracking-wide text-muted-foreground mb-1">Consistency</p>
-                <p className="text-foreground font-medium">{workflow.evaluation.data.consistency.score}/10</p>
+                <p className="text-xs text-muted-foreground mb-1">Consistency</p>
+                <p className="font-medium">{workflow.evaluation.data.consistency.score}/10</p>
                 <p className="text-xs text-muted-foreground mt-1">{workflow.evaluation.data.consistency.rationale}</p>
               </div>
               <div>
-                <p className="text-xs uppercase tracking-wide text-muted-foreground mb-1">Explanation</p>
-                <p className="text-foreground font-medium">{workflow.evaluation.data.explanationQuality.score}/10</p>
+                <p className="text-xs text-muted-foreground mb-1">Explanation</p>
+                <p className="font-medium">{workflow.evaluation.data.explanationQuality.score}/10</p>
                 <p className="text-xs text-muted-foreground mt-1">{workflow.evaluation.data.explanationQuality.rationale}</p>
               </div>
             </div>
@@ -353,34 +333,34 @@ const WorkflowPanels = ({ workflow }: { workflow: RoutineAiWorkflowResult }) => 
 
   return (
     <section className="space-y-6" id="ai-workflow">
-      <h3 className="text-xl font-semibold">AI Workflow Analysis</h3>
+      <h3 className="text-lg font-semibold">AI Workflow Analysis</h3>
 
       {/* Summary Section: Persona + Intent */}
-      <Card className="border border-border/60 bg-card/30">
+      <Card>
         <CardHeader>
           <CardTitle>Summary</CardTitle>
         </CardHeader>
-        <CardContent className="space-y-4 text-sm">
+        <CardContent className="space-y-4">
           <div>
-            <p className="text-xs uppercase tracking-wide text-muted-foreground mb-2">Persona</p>
-            <p className="text-foreground">{workflow.profile.data.persona}</p>
+            <p className="text-xs text-muted-foreground mb-1">Persona</p>
+            <p className="text-sm">{workflow.profile.data.persona}</p>
           </div>
           <div>
-            <p className="text-xs uppercase tracking-wide text-muted-foreground mb-2">Intent</p>
-            <p className="text-foreground">{workflow.interpretation.data.intent}</p>
+            <p className="text-xs text-muted-foreground mb-1">Intent</p>
+            <p className="text-sm">{workflow.interpretation.data.intent}</p>
           </div>
-          <div className="grid gap-4 md:grid-cols-2 pt-2 border-t border-border/40">
+          <div className="grid gap-4 md:grid-cols-2 pt-3 border-t">
             <div>
-              <p className="text-xs uppercase tracking-wide text-muted-foreground mb-2">Key Constraints</p>
-              <ul className="list-disc pl-5 space-y-1">
+              <p className="text-xs text-muted-foreground mb-1.5">Key Constraints</p>
+              <ul className="list-disc pl-5 space-y-0.5 text-sm">
                 {workflow.profile.data.highlightedConstraints.map((constraint, i) => (
                   <li key={i} className="text-muted-foreground">{constraint}</li>
                 ))}
               </ul>
             </div>
             <div>
-              <p className="text-xs uppercase tracking-wide text-muted-foreground mb-2">Success Signals</p>
-              <ul className="list-disc pl-5 space-y-1">
+              <p className="text-xs text-muted-foreground mb-1.5">Success Signals</p>
+              <ul className="list-disc pl-5 space-y-0.5 text-sm">
                 {workflow.interpretation.data.successSignals.map((signal, i) => (
                   <li key={i} className="text-muted-foreground">{signal}</li>
                 ))}
@@ -392,33 +372,22 @@ const WorkflowPanels = ({ workflow }: { workflow: RoutineAiWorkflowResult }) => 
 
       {/* Issues & Risks Section: Conflicts + Risk Signals */}
       {(sortedConflicts.length > 0 || workflow.interpretation.data.riskSignals.length > 0) && (
-        <Card className="border border-border/60 bg-card/30">
+        <Card>
           <CardHeader>
             <CardTitle>Issues & Risks</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4 text-sm">
+          <CardContent className="space-y-4">
             {sortedConflicts.length > 0 && (
               <div>
-                <p className="text-xs uppercase tracking-wide text-muted-foreground mb-3">Conflicts</p>
-                <div className="space-y-3">
+                <p className="text-xs text-muted-foreground mb-2">Conflicts</p>
+                <div className="space-y-2">
                   {sortedConflicts.map((conflict) => (
-                    <div key={conflict.id} className="rounded-xl border border-border/40 bg-background/30 p-3">
+                    <div key={conflict.id} className="rounded-md border p-3">
                       <div className="flex items-start justify-between gap-2 mb-1">
-                        <p className="font-medium text-foreground">{conflict.label}</p>
-                        <Badge
-                          variant="outline"
-                          className={
-                            conflict.severity === 'high'
-                              ? 'border-red-500/50 text-red-500'
-                              : conflict.severity === 'medium'
-                                ? 'border-yellow-500/50 text-yellow-500'
-                                : 'border-blue-500/50 text-blue-500'
-                          }
-                        >
-                          {conflict.severity}
-                        </Badge>
+                        <p className="font-medium text-sm">{conflict.label}</p>
+                        <Badge variant="outline">{conflict.severity}</Badge>
                       </div>
-                      <p className="text-muted-foreground">{conflict.rationale}</p>
+                      <p className="text-sm text-muted-foreground">{conflict.rationale}</p>
                     </div>
                   ))}
                 </div>
@@ -426,8 +395,8 @@ const WorkflowPanels = ({ workflow }: { workflow: RoutineAiWorkflowResult }) => 
             )}
             {workflow.interpretation.data.riskSignals.length > 0 && (
               <div>
-                <p className="text-xs uppercase tracking-wide text-muted-foreground mb-2">Risk Signals</p>
-                <ul className="list-disc pl-5 space-y-1">
+                <p className="text-xs text-muted-foreground mb-1.5">Risk Signals</p>
+                <ul className="list-disc pl-5 space-y-0.5 text-sm">
                   {workflow.interpretation.data.riskSignals.map((signal, i) => (
                     <li key={i} className="text-muted-foreground">{signal}</li>
                   ))}
@@ -435,9 +404,9 @@ const WorkflowPanels = ({ workflow }: { workflow: RoutineAiWorkflowResult }) => 
               </div>
             )}
             {workflow.conflicts.data.assumptions.length > 0 && (
-              <div className="pt-2 border-t border-border/40">
-                <p className="text-xs uppercase tracking-wide text-muted-foreground mb-2">Assumptions</p>
-                <ul className="list-disc pl-5 space-y-1">
+              <div className="pt-3 border-t">
+                <p className="text-xs text-muted-foreground mb-1.5">Assumptions</p>
+                <ul className="list-disc pl-5 space-y-0.5 text-sm">
                   {workflow.conflicts.data.assumptions.map((assumption, i) => (
                     <li key={i} className="text-muted-foreground">{assumption}</li>
                   ))}
@@ -450,20 +419,20 @@ const WorkflowPanels = ({ workflow }: { workflow: RoutineAiWorkflowResult }) => 
 
       {/* Recommendations Section: Optimization Proposals */}
       {workflow.optimizations.data.proposals.length > 0 && (
-        <Card className="border border-border/60 bg-card/30">
+        <Card>
           <CardHeader>
             <CardTitle>Recommendations</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-3 text-sm">
+          <CardContent className="space-y-3">
             {workflow.optimizations.data.proposals.map((proposal) => (
-              <div key={proposal.id} className="rounded-xl border border-border/40 bg-background/30 p-3">
+              <div key={proposal.id} className="rounded-md border p-3">
                 <div className="flex items-start justify-between gap-2 mb-1">
-                  <p className="font-semibold text-foreground">{proposal.title}</p>
-                  <Badge variant="outline" className="text-[10px]">
+                  <p className="font-medium text-sm">{proposal.title}</p>
+                  <Badge variant="outline" className="text-xs">
                     {proposal.aiOnly ? 'AI-only' : 'Human required'}
                   </Badge>
                 </div>
-                <p className="text-muted-foreground mb-2">{proposal.description}</p>
+                <p className="text-sm text-muted-foreground mb-1.5">{proposal.description}</p>
                 {proposal.tradeOffs.length > 0 && (
                   <p className="text-xs text-muted-foreground">
                     <span className="font-medium">Trade-offs:</span> {proposal.tradeOffs.join(', ')}
@@ -476,19 +445,19 @@ const WorkflowPanels = ({ workflow }: { workflow: RoutineAiWorkflowResult }) => 
       )}
 
       {/* Future Outlook Section */}
-      <Card className="border border-border/60 bg-card/30">
+      <Card>
         <CardHeader>
           <CardTitle>Future Outlook</CardTitle>
         </CardHeader>
-        <CardContent className="space-y-4 text-sm">
+        <CardContent className="space-y-4">
           <div>
-            <p className="text-xs uppercase tracking-wide text-muted-foreground mb-2">Outlook</p>
-            <p className="text-foreground">{workflow.futureSimulation.data.outlook}</p>
+            <p className="text-xs text-muted-foreground mb-1">Outlook</p>
+            <p className="text-sm">{workflow.futureSimulation.data.outlook}</p>
           </div>
           {workflow.futureSimulation.data.guardrails.length > 0 && (
             <div>
-              <p className="text-xs uppercase tracking-wide text-muted-foreground mb-2">Guardrails</p>
-              <ul className="list-disc pl-5 space-y-1">
+              <p className="text-xs text-muted-foreground mb-1.5">Guardrails</p>
+              <ul className="list-disc pl-5 space-y-0.5 text-sm">
                 {workflow.futureSimulation.data.guardrails.map((guardrail, i) => (
                   <li key={i} className="text-muted-foreground">{guardrail}</li>
                 ))}
@@ -497,8 +466,8 @@ const WorkflowPanels = ({ workflow }: { workflow: RoutineAiWorkflowResult }) => 
           )}
           {workflow.futureSimulation.data.followUpQuestions.length > 0 && (
             <div>
-              <p className="text-xs uppercase tracking-wide text-muted-foreground mb-2">Follow-up Questions</p>
-              <ul className="list-disc pl-5 space-y-1">
+              <p className="text-xs text-muted-foreground mb-1.5">Follow-up Questions</p>
+              <ul className="list-disc pl-5 space-y-0.5 text-sm">
                 {workflow.futureSimulation.data.followUpQuestions.map((question, i) => (
                   <li key={i} className="text-muted-foreground">{question}</li>
                 ))}
@@ -509,38 +478,31 @@ const WorkflowPanels = ({ workflow }: { workflow: RoutineAiWorkflowResult }) => 
       </Card>
 
       {/* Quality Assessment Section */}
-      <Card className="border border-border/60 bg-card/30">
+      <Card>
         <CardHeader>
           <CardTitle>Quality Assessment</CardTitle>
         </CardHeader>
-        <CardContent className="space-y-3 text-sm">
+        <CardContent className="space-y-3">
           <div>
-            <p className="text-xs uppercase tracking-wide text-muted-foreground mb-2">Verdict</p>
-            <Badge
-              variant="outline"
-              className={
-                workflow.evaluation.data.verdict === 'approve'
-                  ? 'border-green-500/50 text-green-500'
-                  : 'border-yellow-500/50 text-yellow-500'
-              }
-            >
+            <p className="text-xs text-muted-foreground mb-1.5">Verdict</p>
+            <Badge variant="outline">
               {workflow.evaluation.data.verdict === 'approve' ? 'Approved' : 'Needs Revision'}
             </Badge>
           </div>
-          <div className="grid gap-3 md:grid-cols-3 pt-2 border-t border-border/40">
+          <div className="grid gap-4 md:grid-cols-3 pt-3 border-t">
             <div>
-              <p className="text-xs uppercase tracking-wide text-muted-foreground mb-1">Clarity</p>
-              <p className="text-foreground font-medium">{workflow.evaluation.data.clarity.score}/10</p>
+              <p className="text-xs text-muted-foreground mb-1">Clarity</p>
+              <p className="font-medium">{workflow.evaluation.data.clarity.score}/10</p>
               <p className="text-xs text-muted-foreground mt-1">{workflow.evaluation.data.clarity.rationale}</p>
             </div>
             <div>
-              <p className="text-xs uppercase tracking-wide text-muted-foreground mb-1">Consistency</p>
-              <p className="text-foreground font-medium">{workflow.evaluation.data.consistency.score}/10</p>
+              <p className="text-xs text-muted-foreground mb-1">Consistency</p>
+              <p className="font-medium">{workflow.evaluation.data.consistency.score}/10</p>
               <p className="text-xs text-muted-foreground mt-1">{workflow.evaluation.data.consistency.rationale}</p>
             </div>
             <div>
-              <p className="text-xs uppercase tracking-wide text-muted-foreground mb-1">Explanation</p>
-              <p className="text-foreground font-medium">{workflow.evaluation.data.explanationQuality.score}/10</p>
+              <p className="text-xs text-muted-foreground mb-1">Explanation</p>
+              <p className="font-medium">{workflow.evaluation.data.explanationQuality.score}/10</p>
               <p className="text-xs text-muted-foreground mt-1">{workflow.evaluation.data.explanationQuality.rationale}</p>
             </div>
           </div>

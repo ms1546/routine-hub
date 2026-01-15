@@ -2,7 +2,7 @@
 
 import { useTransition } from 'react';
 import { Button } from '@/shared/ui/button';
-import type { ActionResult } from '@/shared/types';
+import type { ActionResult } from '@/shared/types/actionResult';
 import type { Routine } from '@/features/routines';
 import type { VisibilityTogglePayload } from '@/features/routines/actions/routines';
 

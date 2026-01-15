@@ -3,6 +3,7 @@
 import { useState, useTransition } from 'react';
 import type { ProposedCalendarEvent, CalendarEvent } from '@/features/calendar/domain/types';
 import { Button } from '@/shared/ui/button';
+import { Card } from '@/shared/ui/card';
 import { confirmProposedEventsAction, type CalendarConfirmationResult } from '@/app/actions/calendar';
 
 type AiAccessInfo = {
@@ -67,100 +68,108 @@ export function CalendarProposalPanel({
   };
 
   return (
-    <div className="space-y-4 rounded-2xl border border-border/60 bg-card/20 p-5">
-      <div>
-        <h4 className="text-lg font-semibold text-foreground">Proposed Calendar Events</h4>
-        {isCalendarConnected ? (
-          <p className="text-sm text-muted-foreground">
-            AI suggestions require your confirmation before they are written to Google Calendar.
-          </p>
-        ) : (
-          <div className="space-y-2 text-sm text-muted-foreground">
-            <p>You need to connect Google Calendar before inserting events.</p>
-            {connectUrl ? (
-              <Button type="button" variant="secondary" asChild>
-                <a href={connectUrl}>Connect Calendar</a>
-              </Button>
-            ) : null}
-          </div>
-        )}
-      </div>
-
-      {aiAccess ? (
-        <div className="rounded-xl border border-border/40 bg-background/40 p-3 text-xs">
-          {aiAccess.allowed ? (
-            <p className="text-muted-foreground">
-              {aiAccess.remaining === null || aiAccess.limit === null
-                ? 'Admin account: unlimited AI previews.'
-                : `AI previews remaining: ${aiAccess.remaining} / ${aiAccess.limit}`}
+    <Card className="p-6">
+      <div className="space-y-6">
+        <div>
+          <h4 className="text-xl font-bold tracking-tight mb-2">Proposed Calendar Events</h4>
+          {isCalendarConnected ? (
+            <p className="text-sm text-muted-foreground leading-relaxed">
+              AI suggestions require your confirmation before they are written to Google Calendar.
             </p>
           ) : (
-            <p className="text-destructive">{aiAccess.message ?? 'AI preview limit reached.'}</p>
+            <div className="space-y-3">
+              <p className="text-sm text-muted-foreground">You need to connect Google Calendar before inserting events.</p>
+              {connectUrl ? (
+                <Button type="button" variant="secondary" asChild>
+                  <a href={connectUrl}>Connect Calendar</a>
+                </Button>
+              ) : null}
+            </div>
           )}
         </div>
-      ) : null}
 
-      <ul className="space-y-3">
-        {proposedEvents.map((event) => (
-          <li key={event.proposalId} className="flex items-start gap-3 rounded-xl border border-border/40 p-3">
-            <input
-              type="checkbox"
-              checked={selectedIds.includes(event.proposalId)}
-              onChange={() => toggleSelection(event.proposalId)}
-              className="mt-1"
-            />
-            <div>
-              <p className="font-medium text-foreground">{event.title}</p>
-              <p className="text-xs text-muted-foreground">
-                {new Date(event.start).toLocaleString()} → {new Date(event.end).toLocaleString()}
+        {aiAccess ? (
+          <div className="rounded-lg border border-border/60 bg-muted/30 p-4">
+            {aiAccess.allowed ? (
+              <p className="text-sm text-muted-foreground">
+                {aiAccess.remaining === null || aiAccess.limit === null
+                  ? 'Admin account: unlimited AI previews.'
+                  : `AI previews remaining: ${aiAccess.remaining} / ${aiAccess.limit}`}
               </p>
-              <p className="text-xs text-muted-foreground">{event.description}</p>
-            </div>
-          </li>
-        ))}
-      </ul>
-
-      <div className="space-y-2 rounded-xl border border-border/30 bg-card/10 p-3 text-sm text-muted-foreground">
-        <p className="font-semibold text-foreground">Existing events (sample)</p>
-        {existingEvents.length === 0 ? (
-          <p>No events in this window.</p>
-        ) : (
-          <ul className="list-disc pl-5">
-            {existingEvents.map((event) => (
-              <li key={event.id}>
-                {event.title} · {new Date(event.start).toLocaleString()}
-              </li>
-            ))}
-          </ul>
-        )}
-      </div>
-
-      <div className="flex flex-col gap-2 text-sm text-muted-foreground">
-        <Button
-          type="button"
-          variant="secondary"
-          disabled={pending || selectedIds.length === 0}
-          onClick={handleConfirm}
-        >
-          {pending ? 'Applying…' : 'Confirm and insert'}
-        </Button>
-        {status ? <p>{status}</p> : null}
-        {result ? (
-          <div className="rounded-xl bg-border/20 p-3">
-            <p className="text-foreground">
-              Successful: {result.successCount} · Failed: {result.failureCount}
-            </p>
-            {result.failedEvents.length > 0 ? (
-              <ul className="list-disc pl-5">
-                {result.failedEvents.map((failure) => (
-                  <li key={failure.proposalId}>{failure.reason}</li>
-                ))}
-              </ul>
-            ) : null}
+            ) : (
+              <p className="text-sm text-destructive">{aiAccess.message ?? 'AI preview limit reached.'}</p>
+            )}
           </div>
         ) : null}
-        {error ? <p className="text-destructive">{error}</p> : null}
+
+        <div className="space-y-3">
+          {proposedEvents.map((event) => (
+            <label
+              key={event.proposalId}
+              className="flex items-start gap-4 rounded-lg border border-border/60 bg-card p-4 cursor-pointer transition-all duration-200 hover:border-accent/50 hover:bg-accent/5"
+            >
+              <input
+                type="checkbox"
+                checked={selectedIds.includes(event.proposalId)}
+                onChange={() => toggleSelection(event.proposalId)}
+                className="mt-1 h-4 w-4 rounded border-input text-primary focus:ring-2 focus:ring-ring"
+              />
+              <div className="flex-1 space-y-1.5">
+                <p className="font-semibold text-foreground">{event.title}</p>
+                <p className="text-xs text-muted-foreground">
+                  {new Date(event.start).toLocaleString()} → {new Date(event.end).toLocaleString()}
+                </p>
+                {event.description && (
+                  <p className="text-sm text-muted-foreground leading-relaxed">{event.description}</p>
+                )}
+              </div>
+            </label>
+          ))}
+        </div>
+
+        <div className="rounded-lg border border-border/60 bg-muted/20 p-4 space-y-2">
+          <p className="font-semibold text-sm text-foreground">Existing events (sample)</p>
+          {existingEvents.length === 0 ? (
+            <p className="text-sm text-muted-foreground">No events in this window.</p>
+          ) : (
+            <ul className="list-disc pl-5 space-y-1 text-sm text-muted-foreground">
+              {existingEvents.map((event) => (
+                <li key={event.id}>
+                  {event.title} · {new Date(event.start).toLocaleString()}
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+
+        <div className="flex flex-col gap-4 pt-2">
+          <Button
+            type="button"
+            variant="default"
+            disabled={pending || selectedIds.length === 0}
+            onClick={handleConfirm}
+            className="w-full sm:w-auto"
+          >
+            {pending ? 'Applying…' : 'Confirm and insert'}
+          </Button>
+          {status && <p className="text-sm text-muted-foreground">{status}</p>}
+          {result && (
+            <div className="rounded-lg border border-border/60 bg-card p-4 space-y-2">
+              <p className="text-sm font-semibold text-foreground">
+                Successful: {result.successCount} · Failed: {result.failureCount}
+              </p>
+              {result.failedEvents.length > 0 && (
+                <ul className="list-disc pl-5 space-y-1 text-sm text-muted-foreground">
+                  {result.failedEvents.map((failure) => (
+                    <li key={failure.proposalId}>{failure.reason}</li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          )}
+          {error && <p className="text-sm text-destructive">{error}</p>}
+        </div>
       </div>
-    </div>
+    </Card>
   );
 }

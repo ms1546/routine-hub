@@ -153,7 +153,7 @@ async function* streamWorkflow(
       meta: {
         executionId,
         mastraTraceId: executionId,
-        proposalsOnly: true,
+        proposalsOnly: true as const,
         langfuseTraceId: null
       }
     };
