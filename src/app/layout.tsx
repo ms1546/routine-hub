@@ -5,6 +5,7 @@ import { cn } from '@/shared/utils';
 import './globals.css';
 import { getMaintenanceState } from '@/infrastructure/system/maintenance';
 import { MaintenanceScreen } from '@/shared/components/maintenance-screen';
+import { SessionProvider } from '@/shared/components/session-provider';
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -20,9 +21,11 @@ export default function RootLayout({
 }>) {
   const maintenance = getMaintenanceState();
   return (
-    <html lang="en">
+    <html lang="ja">
       <body className={cn('min-h-screen bg-background font-sans antialiased text-foreground', inter.className)}>
-        {maintenance.enabled ? <MaintenanceScreen message={maintenance.message} /> : children}
+        <SessionProvider>
+          {maintenance.enabled ? <MaintenanceScreen message={maintenance.message} /> : children}
+        </SessionProvider>
       </body>
     </html>
   );

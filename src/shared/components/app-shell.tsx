@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import Link from 'next/link';
 import { cn } from '@/shared/utils';
+import { AuthButton } from './auth-button';
 
 type AppShellProps = {
   title: string;
@@ -36,11 +37,10 @@ export function AppShell({ title, description, children, actions, breadcrumb }: 
                 <p className="max-w-2xl text-muted-foreground">{description}</p>
               )}
             </div>
-            {actions ? (
-              <div className={cn('flex flex-wrap items-start gap-2', breadcrumb && 'pt-6 md:pt-0')}>
-                {actions}
-              </div>
-            ) : null}
+            <div className={cn('flex flex-wrap items-start gap-2', breadcrumb && 'pt-6 md:pt-0')}>
+              {actions}
+              <AuthButton />
+            </div>
           </div>
         </header>
         <main className="space-y-6">{children}</main>

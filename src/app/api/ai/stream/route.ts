@@ -218,7 +218,7 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    const user = getCurrentUser();
+    const user = await getCurrentUser();
     if (!canExecuteWorkflow(user)) {
       return new Response(JSON.stringify({ error: 'AI preview limit reached' }), {
         status: 403,
@@ -226,13 +226,24 @@ export async function POST(request: NextRequest) {
       });
     }
 
+    // ユーザー設定を取得（なければデフォルト値で作成）
+    const { userSettingsRepository } = await import('@/features/users');
+    const settings = await userSettingsRepository.getOrCreate(user.id, {
+      displayName: user.displayName,
+      timezone: 'Asia/Tokyo',
+      requiredSleepHours: 7,
+      priorities: ['集中時間を守る', 'カレンダーの権威を尊重'],
+      constraints: ['手動確認を好む'],
+      energyLevel: 'medium'
+    });
+
     const input: RoutineAiWorkflowInput = {
       routine,
       user: {
-        timezone: 'Asia/Tokyo',
-        priorities: ['集中を守る', '丁寧な合意形成'],
-        constraints: ['出張が多い'],
-        energyLevel: 'medium'
+        timezone: settings.timezone,
+        priorities: settings.priorities,
+        constraints: settings.constraints,
+        energyLevel: settings.energyLevel
       },
       calendarWindow: {
         startDate: new Date().toISOString().slice(0, 10),

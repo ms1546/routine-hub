@@ -27,7 +27,7 @@ export async function previewRoutineAiAction(routineId: string) {
   if (!routine) {
     throw new Error('Routine not found');
   }
-  const user = getCurrentUser();
+  const user = await getCurrentUser();
   if (!canExecuteWorkflow(user)) {
     throw new Error('AI preview limit reached for this account.');
   }

@@ -9,7 +9,7 @@ export async function addHumanEvaluationAction(input: {
   score: number;
   comment: string;
 }) {
-  const user = getCurrentUser();
+  const user = await getCurrentUser();
   assertAdminUser(user);
   if (!Number.isFinite(input.score) || input.score < 1 || input.score > 5) {
     throw new Error('Score must be between 1 and 5.');
@@ -23,7 +23,7 @@ export async function addHumanEvaluationAction(input: {
 }
 
 export async function setMaintenanceModeAction(input: { enabled: boolean; message?: string }) {
-  const user = getCurrentUser();
+  const user = await getCurrentUser();
   assertAdminUser(user);
   setMaintenanceState(input.enabled, input.message);
   return getMaintenanceState();

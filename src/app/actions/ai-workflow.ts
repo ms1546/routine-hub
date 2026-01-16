@@ -3,19 +3,13 @@
 import { runRoutineAiWorkflow } from '@/features/ai';
 import { routinesRepository } from '@/features/routines';
 import { getCurrentUser } from '@/infrastructure/auth/session';
+import { userSettingsRepository } from '@/features/users';
 import {
   canExecuteWorkflow,
   recordWorkflowFailure,
   recordWorkflowSuccess,
   registerExecutionUsage
 } from '@/features/ai/execution-log';
-
-const defaultUserContext = {
-  timezone: 'UTC',
-  priorities: ['protect focus blocks', 'respect calendar authority'],
-  constraints: ['prefers manual confirmation'],
-  energyLevel: 'medium' as const
-};
 
 const defaultWindow = {
   startDate: new Date().toISOString().slice(0, 10),
@@ -27,15 +21,32 @@ export async function previewRoutineAiAction(routineId: string) {
   if (!routine) {
     throw new Error('Routine not found');
   }
-  const user = getCurrentUser();
+  const user = await getCurrentUser();
   if (!canExecuteWorkflow(user)) {
     throw new Error('AI preview limit reached for this account.');
   }
 
+  // ユーザー設定を取得（なければデフォルト値で作成）
+  const settings = await userSettingsRepository.getOrCreate(user.id, {
+    displayName: user.displayName,
+    timezone: 'Asia/Tokyo',
+    requiredSleepHours: 7,
+    priorities: ['集中時間を守る', 'カレンダーの権威を尊重'],
+    constraints: ['手動確認を好む'],
+    energyLevel: 'medium'
+  });
+
+  const userContext = {
+    timezone: settings.timezone,
+    priorities: settings.priorities,
+    constraints: settings.constraints,
+    energyLevel: settings.energyLevel
+  };
+
   try {
     const result = await runRoutineAiWorkflow({
       routine,
-      user: defaultUserContext,
+      user: userContext,
       calendarWindow: defaultWindow
     });
     registerExecutionUsage(user);

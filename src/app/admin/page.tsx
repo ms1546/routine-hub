@@ -8,8 +8,8 @@ import { MaintenanceCard } from '@/features/admin/components/admin/maintenance-c
 import { addHumanEvaluationAction, setMaintenanceModeAction } from '@/features/admin/actions/admin';
 import { getMaintenanceState } from '@/infrastructure/system/maintenance';
 
-export default function AdminPage() {
-  const user = getCurrentUser();
+export default async function AdminPage() {
+  const user = await getCurrentUser();
   if (!isAdminUser(user)) {
     notFound();
   }

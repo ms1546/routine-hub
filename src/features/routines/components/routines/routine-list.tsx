@@ -12,7 +12,7 @@ type RoutineListProps = {
 };
 
 export const RoutineList = async ({ routines, onToggleVisibility }: RoutineListProps) => {
-  const currentUser = getCurrentUser();
+  const currentUser = await getCurrentUser();
 
   if (routines.length === 0) {
     return (
