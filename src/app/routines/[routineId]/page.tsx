@@ -11,7 +11,8 @@ import {
   updateRoutineVisibilityAction,
   updateRoutineBlockAction,
   deleteRoutineBlockAction,
-  reorderRoutineBlocksAction
+  reorderRoutineBlocksAction,
+  toggleRoutineLikeAction
 } from '@/features/routines/actions/routines';
 import { planRoutineWithCalendar } from '@/features/calendar/domain/planner';
 import { getCurrentUser, type AuthenticatedUser } from '@/infrastructure/auth/session';
@@ -59,6 +60,7 @@ type RoutineDetailContentProps = {
 async function RoutineDetailContent({ routine, detail, insights, currentUser }: RoutineDetailContentProps) {
   const calendarPlan = await planRoutineWithCalendar(routine, currentUser);
   const canEdit = currentUser.email === routine.owner || currentUser.role === 'admin';
+  const isLiked = routinesRepository.isLikedByUser(routine.id, currentUser.id);
 
   return (
     <RoutineDetail
@@ -70,6 +72,9 @@ async function RoutineDetailContent({ routine, detail, insights, currentUser }: 
       onUpdateBlock={canEdit ? updateRoutineBlockAction : undefined}
       onDeleteBlock={canEdit ? deleteRoutineBlockAction : undefined}
       onReorderBlocks={canEdit ? reorderRoutineBlocksAction : undefined}
+      onToggleLike={toggleRoutineLikeAction}
+      userId={currentUser.id}
+      isLiked={isLiked}
       canEdit={canEdit}
       calendarPlan={{
         proposedEvents: calendarPlan.proposedEvents,
@@ -82,13 +87,17 @@ async function RoutineDetailContent({ routine, detail, insights, currentUser }: 
   );
 }
 
-function RoutineDetailFallback({
+async function RoutineDetailFallback({
   routine,
   insights
 }: {
   routine: RoutineDetailView;
   insights: RoutineInsight[];
 }) {
+  const currentUser = getCurrentUser();
+  const fullRoutine = await routinesRepository.get(routine.id);
+  const isLiked = fullRoutine ? routinesRepository.isLikedByUser(routine.id, currentUser.id) : false;
+
   return (
     <RoutineDetail
       routine={routine}
@@ -96,6 +105,9 @@ function RoutineDetailFallback({
       onToggleVisibility={updateRoutineVisibilityAction}
       onApplyRoutine={applyRoutineAction}
       onForkRoutine={forkRoutineAction}
+      onToggleLike={toggleRoutineLikeAction}
+      userId={currentUser.id}
+      isLiked={isLiked}
       workflow={null}
     />
   );

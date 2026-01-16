@@ -8,6 +8,8 @@ import {
 } from '@/shared/ui/card';
 import { CalendarProposalPanel } from './calendar-proposal-panel';
 import { RoutineBlockEditor } from './routine-block-editor';
+import { RoutineScheduleVisualization } from './routine-schedule-visualization';
+import { LikeButton } from './like-button';
 import type { ProposedCalendarEvent, CalendarEvent } from '@/features/calendar/domain/types';
 import type { RoutineAiWorkflowResult } from '@/features/ai/types';
 import type { RoutineDetailView, Routine } from '@/features/routines';
@@ -18,7 +20,8 @@ import type {
   VisibilityTogglePayload,
   UpdateBlockPayload,
   DeleteBlockPayload,
-  ReorderBlocksPayload
+  ReorderBlocksPayload,
+  ToggleLikePayload
 } from '@/features/routines/actions/routines';
 import type { ActionResult } from '@/shared/types/actionResult';
 import type { RoutineApplicationPreview } from '@/features/calendar/domain/mock';
@@ -50,6 +53,9 @@ type RoutineDetailProps = {
   onUpdateBlock?: (payload: UpdateBlockPayload) => Promise<ActionResult<Routine>>;
   onDeleteBlock?: (payload: DeleteBlockPayload) => Promise<ActionResult<Routine>>;
   onReorderBlocks?: (payload: ReorderBlocksPayload) => Promise<ActionResult<Routine>>;
+  onToggleLike?: (payload: ToggleLikePayload) => Promise<ActionResult<{ liked: boolean; likes: number }>>;
+  userId?: string;
+  isLiked?: boolean;
   canEdit?: boolean;
   calendarPlan?: CalendarPlanView;
   workflow?: RoutineAiWorkflowResult | null;
@@ -64,6 +70,9 @@ export const RoutineDetail = ({
   onUpdateBlock,
   onDeleteBlock,
   onReorderBlocks,
+  onToggleLike,
+  userId,
+  isLiked = false,
   canEdit = false,
   calendarPlan,
   workflow
@@ -101,6 +110,15 @@ export const RoutineDetail = ({
           </dl>
 
           <div className="flex flex-wrap gap-2 pt-2 border-t border-border/50">
+            {onToggleLike && userId && (
+              <LikeButton
+                routineId={routine.id}
+                userId={userId}
+                initialLikes={routine.stats.likes}
+                initialLiked={isLiked}
+                action={onToggleLike}
+              />
+            )}
             <VisibilityToggleButton
               routineId={routine.id}
               visibility={routine.visibility}
@@ -120,6 +138,9 @@ export const RoutineDetail = ({
           </div>
           <Badge variant="secondary">{routine.timeBlocks.length} blocks</Badge>
         </div>
+        <Card className="p-6">
+          <RoutineScheduleVisualization timeBlocks={routine.timeBlocks} />
+        </Card>
         {onUpdateBlock && onDeleteBlock && onReorderBlocks ? (
           <RoutineBlockEditor
             routine={routine}

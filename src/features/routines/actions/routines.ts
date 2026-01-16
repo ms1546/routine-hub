@@ -327,6 +327,26 @@ export async function forkRoutineAction(
 
 export type ApplyRoutinePayload = z.infer<typeof routineApplicationSchema>;
 
+const toggleLikeSchema = z.object({
+  routineId: z.string().uuid(),
+  userId: z.string().min(1)
+});
+
+export type ToggleLikePayload = z.infer<typeof toggleLikeSchema>;
+
+export async function toggleRoutineLikeAction(
+  payload: ToggleLikePayload
+): Promise<ActionResult<{ liked: boolean; likes: number }>> {
+  try {
+    const parsed = toggleLikeSchema.parse(payload);
+    const result = await routinesRepository.toggleLike(parsed.routineId, parsed.userId);
+    revalidateRoutinePaths(parsed.routineId);
+    return { ok: true, data: result };
+  } catch (error) {
+    return handleActionError<{ liked: boolean; likes: number }>(error);
+  }
+}
+
 export async function applyRoutineAction(
   payload: ApplyRoutinePayload
 ): Promise<ActionResult<RoutineApplicationPreview>> {

@@ -36,7 +36,7 @@ const routine: Routine = {
       energyLevel: 'low'
     }
   ],
-  stats: { forks: 0, applications: 0 }
+  stats: { forks: 0, applications: 0, likes: 0 }
 };
 
 describe('Routine AI workflow', () => {

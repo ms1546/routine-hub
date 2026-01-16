@@ -58,7 +58,8 @@ export const routineSchema = z
     timeBlocks: z.array(routineBlockSchema).min(1),
     stats: z.object({
       forks: z.number().int().min(0),
-      applications: z.number().int().min(0)
+      applications: z.number().int().min(0),
+      likes: z.number().int().min(0)
     })
   })
   .superRefine((routine, ctx) => {

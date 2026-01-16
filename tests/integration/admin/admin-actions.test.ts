@@ -68,6 +68,7 @@ const buildWorkflowResult = (): RoutineAiWorkflowResult => {
     },
     meta: {
       executionId: randomUUID(),
+      mastraTraceId: randomUUID(),
       proposalsOnly: true,
       langfuseTraceId: null
     }
@@ -87,7 +88,11 @@ describe('admin actions', () => {
 
   it('allows admins to store human evaluations', async () => {
     process.env.MOCK_USER_EMAIL = 'routinehub.dev@gmail.com';
-    const routine = (await routinesRepository.list())[0];
+    const routines = await routinesRepository.list();
+    const routine = routines[0];
+    if (!routine) {
+      throw new Error('No routine found');
+    }
     const workflow = buildWorkflowResult();
     const user = getCurrentUser();
     recordWorkflowSuccess({ result: workflow, workflowName: 'routine-ai-workflow', routine, user });
@@ -111,7 +116,11 @@ describe('admin actions', () => {
 
   it('surfaces evaluation metadata without exposing prompts', async () => {
     process.env.MOCK_USER_EMAIL = 'routinehub.dev@gmail.com';
-    const routine = (await routinesRepository.list())[0];
+    const routines = await routinesRepository.list();
+    const routine = routines[0];
+    if (!routine) {
+      throw new Error('No routine found');
+    }
     const workflow = buildWorkflowResult();
     const user = getCurrentUser();
     const record = recordWorkflowSuccess({

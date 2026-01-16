@@ -3,16 +3,29 @@ import { Badge } from '@/shared/ui/badge';
 import { buttonVariants } from '@/shared/ui/button-variants';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/shared/ui/card';
 import type { RoutineListItem, Routine } from '@/features/routines';
-import type { VisibilityTogglePayload } from '@/features/routines/actions/routines';
+import type { VisibilityTogglePayload, ToggleLikePayload } from '@/features/routines/actions/routines';
 import type { ActionResult } from '@/shared/types/actionResult';
 import { VisibilityToggleButton } from './visibility-toggle-button';
+import { LikeButton } from './like-button';
+import { RoutineScheduleVisualization } from './routine-schedule-visualization';
+import { routinesRepository } from '@/features/routines';
+import { getCurrentUser } from '@/infrastructure/auth/session';
 
 export type RoutineCardProps = {
   routine: RoutineListItem;
   onToggleVisibility: (payload: VisibilityTogglePayload) => Promise<ActionResult<Routine>>;
+  onToggleLike?: (payload: ToggleLikePayload) => Promise<ActionResult<{ liked: boolean; likes: number }>>;
+  userId?: string;
+  isLiked?: boolean;
 };
 
-export const RoutineCard = ({ routine, onToggleVisibility }: RoutineCardProps) => {
+export const RoutineCard = ({
+  routine,
+  onToggleVisibility,
+  onToggleLike,
+  userId,
+  isLiked = false
+}: RoutineCardProps) => {
   return (
     <Card className="flex h-full flex-col hover-lift">
       <CardHeader className="pb-3">
@@ -23,11 +36,22 @@ export const RoutineCard = ({ routine, onToggleVisibility }: RoutineCardProps) =
               {routine.visibility}
             </Badge>
           </div>
-          <VisibilityToggleButton
-            routineId={routine.id}
-            visibility={routine.visibility}
-            action={onToggleVisibility}
-          />
+          <div className="flex items-center gap-2">
+            {onToggleLike && userId && (
+              <LikeButton
+                routineId={routine.id}
+                userId={userId}
+                initialLikes={routine.stats.likes}
+                initialLiked={isLiked}
+                action={onToggleLike}
+              />
+            )}
+            <VisibilityToggleButton
+              routineId={routine.id}
+              visibility={routine.visibility}
+              action={onToggleVisibility}
+            />
+          </div>
         </div>
         <div className="mt-2">
           <CardTitle>{routine.name}</CardTitle>
@@ -58,8 +82,8 @@ export const RoutineCard = ({ routine, onToggleVisibility }: RoutineCardProps) =
             <dd className="text-lg font-semibold">{routine.stats.forks}</dd>
           </div>
           <div className="p-2 bg-muted/50 rounded-md">
-            <dt className="text-xs text-muted-foreground">Applied</dt>
-            <dd className="text-lg font-semibold">{routine.stats.applications}</dd>
+            <dt className="text-xs text-muted-foreground">Likes</dt>
+            <dd className="text-lg font-semibold">{routine.stats.likes}</dd>
           </div>
         </dl>
       </CardContent>

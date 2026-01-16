@@ -1,14 +1,19 @@
 import type { RoutineListItem, Routine } from '@/features/routines';
-import type { VisibilityTogglePayload } from '@/features/routines/actions/routines';
+import type { VisibilityTogglePayload, ToggleLikePayload } from '@/features/routines/actions/routines';
 import type { ActionResult } from '@/shared/types/actionResult';
 import { RoutineCard } from './routine-card';
+import { routinesRepository } from '@/features/routines';
+import { getCurrentUser } from '@/infrastructure/auth/session';
+import { toggleRoutineLikeAction } from '@/app/actions/routines';
 
 type RoutineListProps = {
   routines: RoutineListItem[];
   onToggleVisibility: (payload: VisibilityTogglePayload) => Promise<ActionResult<Routine>>;
 };
 
-export const RoutineList = ({ routines, onToggleVisibility }: RoutineListProps) => {
+export const RoutineList = async ({ routines, onToggleVisibility }: RoutineListProps) => {
+  const currentUser = getCurrentUser();
+
   if (routines.length === 0) {
     return (
       <div className="text-center py-16 px-4">
@@ -24,9 +29,19 @@ export const RoutineList = ({ routines, onToggleVisibility }: RoutineListProps) 
 
   return (
     <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-      {routines.map((routine) => (
-        <RoutineCard key={routine.id} routine={routine} onToggleVisibility={onToggleVisibility} />
-      ))}
+      {routines.map((routine) => {
+        const isLiked = routinesRepository.isLikedByUser(routine.id, currentUser.id);
+        return (
+          <RoutineCard
+            key={routine.id}
+            routine={routine}
+            onToggleVisibility={onToggleVisibility}
+            onToggleLike={toggleRoutineLikeAction}
+            userId={currentUser.id}
+            isLiked={isLiked}
+          />
+        );
+      })}
     </div>
   );
 };

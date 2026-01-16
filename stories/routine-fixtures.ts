@@ -13,7 +13,7 @@ export const mockRoutineListItem: RoutineListItem = {
   blockCount: 3,
   highlightDay: 'Monday',
   intensity: 'steady',
-  stats: { forks: 41, applications: 180 }
+  stats: { forks: 41, applications: 180, likes: 25 }
 };
 
 export const mockRoutineDetail: RoutineDetailView = {
