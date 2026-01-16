@@ -11,6 +11,11 @@ export type CalendarEvent = {
   };
 };
 
+export type RecurrencePattern =
+  | { type: 'none' }
+  | { type: 'weekly'; interval?: number } // interval=1は毎週、interval=2は隔週
+  | { type: 'monthly'; interval?: number }; // interval=1は毎月
+
 export type ProposedCalendarEvent = {
   proposalId: string;
   routineId: string;
@@ -20,6 +25,7 @@ export type ProposedCalendarEvent = {
   start: string;
   end: string;
   status: 'pending' | 'confirmed';
+  recurrence?: RecurrencePattern;
 };
 
 export type CalendarTimeRange = {

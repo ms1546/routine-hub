@@ -54,9 +54,12 @@ export function CalendarProposalPanel({
 
     startTransition(async () => {
       try {
+        // proposedEventsから繰り返し情報を取得（最初のイベントから）
+        const recurrence = proposedEvents[0]?.recurrence;
         const confirmation = await confirmProposedEventsAction({
           routineId,
-          proposalIds: selectedIds
+          proposalIds: selectedIds,
+          recurrence
         });
         setResult(confirmation);
         setStatus(`Inserted ${confirmation.successCount} event(s).`);

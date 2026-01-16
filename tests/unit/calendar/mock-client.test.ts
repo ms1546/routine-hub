@@ -13,6 +13,12 @@ const proposal: ProposedCalendarEvent = {
   status: 'pending'
 };
 
+const proposalWithRecurrence: ProposedCalendarEvent = {
+  ...proposal,
+  proposalId: 'proposal-2',
+  recurrence: { type: 'weekly', interval: 1 }
+};
+
 describe('MockCalendarClient', () => {
   it('inserts events idempotently based on proposal id', async () => {
     const client = new MockCalendarClient();
@@ -51,5 +57,16 @@ describe('MockCalendarClient', () => {
     const retry = await client.insertEvents([{ ...proposal, proposalId: 'proposal-2' }]);
     expect(retry.success).toHaveLength(0);
     expect(retry.failures).toEqual([{ proposalId: 'proposal-2', reason: 'Mock failure' }]);
+  });
+
+  it('handles events with recurrence pattern', async () => {
+    const client = new MockCalendarClient();
+    client.reset([]);
+
+    const result = await client.insertEvents([proposalWithRecurrence]);
+
+    expect(result.success).toHaveLength(1);
+    expect(result.failures).toHaveLength(0);
+    expect(result.success[0]?.source?.proposalId).toBe('proposal-2');
   });
 });

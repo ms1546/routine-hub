@@ -54,4 +54,23 @@ describe('confirmProposedEventsAction', () => {
     expect(result.failureCount).toBe(1);
     expect(result.failedEvents[0]?.proposalId).toBe(proposalId);
   });
+
+  it('handles recurrence pattern in proposals', async () => {
+    const routine = await routinesRepository.get('11111111-1111-4111-8111-111111111111');
+    if (!routine) throw new Error('Seed routine missing');
+    const proposals = buildProposedEvents(routine, createDefaultCalendarWindow(), {
+      type: 'weekly',
+      interval: 1
+    });
+    const proposalIdWithRecurrence = proposals[0]?.proposalId ?? '';
+
+    const result = await confirmProposedEventsAction({
+      routineId: '11111111-1111-4111-8111-111111111111',
+      proposalIds: [proposalIdWithRecurrence],
+      recurrence: { type: 'weekly', interval: 1 }
+    });
+
+    expect(result.successCount).toBe(1);
+    expect(result.failureCount).toBe(0);
+  });
 });

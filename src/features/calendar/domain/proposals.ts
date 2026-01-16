@@ -1,5 +1,5 @@
 import type { Routine } from '@/features/routines';
-import type { ProposedCalendarEvent, CalendarTimeRange } from './types';
+import type { ProposedCalendarEvent, CalendarTimeRange, RecurrencePattern } from './types';
 
 const weekdayOrder: Record<string, number> = {
   sunday: 0,
@@ -13,7 +13,8 @@ const weekdayOrder: Record<string, number> = {
 
 export function buildProposedEvents(
   routine: Routine,
-  window: CalendarTimeRange
+  window: CalendarTimeRange,
+  recurrence?: RecurrencePattern
 ): ProposedCalendarEvent[] {
   const baseDate = new Date(window.start);
 
@@ -34,7 +35,8 @@ export function buildProposedEvents(
       description: block.objective,
       start: blockStart.toISOString(),
       end: blockEnd.toISOString(),
-      status: 'pending'
+      status: 'pending',
+      recurrence
     };
   });
 }

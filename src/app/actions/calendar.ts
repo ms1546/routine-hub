@@ -4,7 +4,7 @@ import { routinesRepository } from '@/features/routines';
 import { buildProposedEvents } from '@/features/calendar/domain/proposals';
 import { getCalendarClient } from '@/features/calendar/domain/client';
 import { createDefaultCalendarWindow } from '@/features/calendar/domain/window';
-import type { CalendarEvent, CalendarInsertFailure } from '@/features/calendar/domain/types';
+import type { CalendarEvent, CalendarInsertFailure, RecurrencePattern } from '@/features/calendar/domain/types';
 
 export type CalendarConfirmationResult = {
   successCount: number;
@@ -15,10 +15,12 @@ export type CalendarConfirmationResult = {
 
 export async function confirmProposedEventsAction({
   routineId,
-  proposalIds
+  proposalIds,
+  recurrence
 }: {
   routineId: string;
   proposalIds: string[];
+  recurrence?: RecurrencePattern;
 }): Promise<CalendarConfirmationResult> {
   const routine = await routinesRepository.get(routineId);
   if (!routine) {
@@ -26,7 +28,7 @@ export async function confirmProposedEventsAction({
   }
 
   const calendarWindow = createDefaultCalendarWindow();
-  const proposals = buildProposedEvents(routine, calendarWindow).filter((proposal) =>
+  const proposals = buildProposedEvents(routine, calendarWindow, recurrence).filter((proposal) =>
     proposalIds.includes(proposal.proposalId)
   );
 

@@ -37,8 +37,9 @@ describe('Routine server actions', () => {
     const before = await routinesRepository.get(targetId);
     const preview = await applyRoutineAction({
       routineId: targetId,
-      startDate: '2024-01-01T00:00:00.000Z',
-      endDate: '2024-01-07T00:00:00.000Z'
+      startDate: '2024-01-01',
+      endDate: '2024-01-07',
+      recurrence: { type: 'none' }
     });
 
     expect(preview.ok).toBe(true);
@@ -46,5 +47,18 @@ describe('Routine server actions', () => {
 
     const after = await routinesRepository.get(targetId);
     expect(after?.stats.applications).toBe((before?.stats.applications ?? 0) + 1);
+  });
+
+  it('applies a routine with recurrence pattern', async () => {
+    const targetId = '11111111-1111-4111-8111-111111111111';
+    const preview = await applyRoutineAction({
+      routineId: targetId,
+      startDate: '2024-01-01',
+      endDate: '2024-01-07',
+      recurrence: { type: 'weekly', interval: 1 }
+    });
+
+    expect(preview.ok).toBe(true);
+    expect(preview.data?.totalBlocks).toBeGreaterThan(0);
   });
 });

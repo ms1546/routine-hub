@@ -4,12 +4,42 @@ import type {
   CalendarEvent,
   CalendarInsertResult,
   CalendarTimeRange,
-  ProposedCalendarEvent
+  ProposedCalendarEvent,
+  RecurrencePattern
 } from './types';
 import { getAccessTokenForUser } from '@/infrastructure/auth/oauth-boundary';
 
 const CALENDAR_ID = 'primary';
 const PRIVATE_PROP_KEY = 'routinehubProposalId';
+
+/**
+ * RecurrencePatternからGoogle CalendarのRRULE文字列を生成
+ */
+function buildRRULE(
+  pattern: { type: 'none' } | { type: 'weekly'; interval?: number } | { type: 'monthly'; interval?: number },
+  endDate: string
+): string | undefined {
+  if (pattern.type === 'none') {
+    return undefined;
+  }
+
+  const endDateObj = new Date(endDate);
+  endDateObj.setHours(23, 59, 59, 999); // 終了日の最後まで
+
+  if (pattern.type === 'weekly') {
+    const interval = pattern.interval ?? 1;
+    const until = endDateObj.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
+    return `FREQ=WEEKLY;INTERVAL=${interval};UNTIL=${until}`;
+  }
+
+  if (pattern.type === 'monthly') {
+    const interval = pattern.interval ?? 1;
+    const until = endDateObj.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
+    return `FREQ=MONTHLY;INTERVAL=${interval};UNTIL=${until}`;
+  }
+
+  return undefined;
+}
 
 export function mapGoogleEvent(event: calendar_v3.Schema$Event): CalendarEvent {
   return {
@@ -71,21 +101,32 @@ export class GoogleCalendarClient implements CalendarClient {
           continue;
         }
 
-        const response = await calendar.events.insert({
-          calendarId: CALENDAR_ID,
-          requestBody: {
-            summary: event.title,
-            description: event.description,
-            start: { dateTime: event.start },
-            end: { dateTime: event.end },
-            extendedProperties: {
-              private: {
-                [PRIVATE_PROP_KEY]: event.proposalId,
-                routineId: event.routineId,
-                blockId: event.blockId
-              }
+        const startDateStr = new Date(event.start).toISOString().split('T')[0];
+        const recurrence = event.recurrence && startDateStr
+          ? buildRRULE(event.recurrence, startDateStr)
+          : undefined;
+
+        const requestBody: calendar_v3.Schema$Event = {
+          summary: event.title,
+          description: event.description,
+          start: { dateTime: event.start },
+          end: { dateTime: event.end },
+          extendedProperties: {
+            private: {
+              [PRIVATE_PROP_KEY]: event.proposalId,
+              routineId: event.routineId,
+              blockId: event.blockId
             }
           }
+        };
+
+        if (recurrence) {
+          requestBody.recurrence = [recurrence];
+        }
+
+        const response = await calendar.events.insert({
+          calendarId: CALENDAR_ID,
+          requestBody
         });
 
         if (response.data.id) {
