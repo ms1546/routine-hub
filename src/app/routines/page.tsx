@@ -1,7 +1,7 @@
 import { AppShell } from '@/shared/components/app-shell';
-import { RoutineComposer } from '@/features/routines/components/routines/routine-composer';
-import { RoutineFilters } from '@/features/routines/components/routines/routine-filters';
-import { RoutineList } from '@/features/routines/components/routines/routine-list';
+import { RoutineComposer } from '@/features/routines/components/routine-composer';
+import { RoutineFilters } from '@/features/routines/components/routine-filters';
+import { RoutineList } from '@/features/routines/components/routine-list';
 import {
   createRoutineAction,
   updateRoutineVisibilityAction

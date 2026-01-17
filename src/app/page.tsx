@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { AppShell } from '@/shared/components/app-shell';
-import { RoutineList } from '@/features/routines/components/routines/routine-list';
+import { RoutineList } from '@/features/routines/components/routine-list';
 import { buttonVariants } from '@/shared/ui/button-variants';
 import { updateRoutineVisibilityAction } from '@/features/routines/actions/routines';
 import { routinesRepository, toRoutineListItem } from '@/features/routines';

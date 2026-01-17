@@ -1,7 +1,7 @@
 import { Suspense } from 'react';
 import { notFound } from 'next/navigation';
 import { AppShell } from '@/shared/components/app-shell';
-import { RoutineDetail } from '@/features/routines/components/routines/routine-detail';
+import { RoutineDetail } from '@/features/routines/components/routine-detail';
 import { routinesRepository, toRoutineDetail } from '@/features/routines';
 import type { Routine, RoutineDetailView } from '@/features/routines';
 import {

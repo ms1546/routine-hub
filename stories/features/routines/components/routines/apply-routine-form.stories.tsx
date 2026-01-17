@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react';
-import { ApplyRoutineForm } from '@/features/routines/components/routines/apply-routine-form';
+import { ApplyRoutineForm } from '@/features/routines/components/apply-routine-form';
 import { stubApplyRoutine } from '../../../../routine-action-stubs';
 
 const meta: Meta<typeof ApplyRoutineForm> = {

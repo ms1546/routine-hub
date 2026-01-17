@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react';
-import { RoutineFilters } from '@/features/routines/components/routines/routine-filters';
+import { RoutineFilters } from '@/features/routines/components/routine-filters';
 
 const meta: Meta<typeof RoutineFilters> = {
   title: 'Routines/RoutineFilters',

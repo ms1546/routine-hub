@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react';
-import { RoutineDetail } from '@/features/routines/components/routines/routine-detail';
+import { RoutineDetail } from '@/features/routines/components/routine-detail';
 import { mockRoutineDetail, mockProposedEvents, mockExistingEvents } from '../../../../routine-fixtures';
 import { stubApplyRoutine, stubForkRoutine, stubToggleVisibility } from '../../../../routine-action-stubs';
 import type { RoutineAiWorkflowResult } from '@/features/ai/types';

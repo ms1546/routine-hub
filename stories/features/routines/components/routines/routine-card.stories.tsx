@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react';
-import { RoutineCard } from '@/features/routines/components/routines/routine-card';
+import { RoutineCard } from '@/features/routines/components/routine-card';
 import { mockRoutineListItem } from '../../../../routine-fixtures';
 import { stubToggleVisibility } from '../../../../routine-action-stubs';
 

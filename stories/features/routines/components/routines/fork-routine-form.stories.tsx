@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react';
-import { ForkRoutineForm } from '@/features/routines/components/routines/fork-routine-form';
+import { ForkRoutineForm } from '@/features/routines/components/fork-routine-form';
 import { stubForkRoutine } from '../../../../routine-action-stubs';
 
 const meta: Meta<typeof ForkRoutineForm> = {

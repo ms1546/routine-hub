@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent, act } from '@testing-library/react';
-import { CalendarProposalPanel } from '@/features/routines/components/routines/calendar-proposal-panel';
+import { CalendarProposalPanel } from '@/features/routines/components/calendar-proposal-panel';
 
 vi.mock('@/app/actions/calendar', () => ({
   confirmProposedEventsAction: vi.fn(() =>
