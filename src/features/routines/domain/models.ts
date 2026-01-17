@@ -13,25 +13,47 @@ export const weekdaySchema = z.enum([
 export const routineDurationSchema = z.enum(['half-day', 'full-day', 'weekly']);
 export const routineVisibilitySchema = z.enum(['public', 'private']);
 
+// durationTypeに応じたバリデーションを行う関数
+const validateBlockDuration = (block: { startHour: number; endHour: number; day: string }, durationType: 'half-day' | 'full-day' | 'weekly', ctx: z.RefinementCtx) => {
+  const durationHours = block.endHour - block.startHour;
+  const minDurationHours = 0.25; // 15分（最短）
+
+  // 最短期間チェック
+  if (durationHours < minDurationHours) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: `各時間ブロックは最低15分必要です。`
+    });
+    return;
+  }
+
+  // durationTypeに応じた最長期間チェック
+  if (durationType === 'half-day') {
+    if (durationHours > 12) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: `half-dayタイプのRoutineでは、各ブロックは最長12時間までです。`
+      });
+    }
+  } else if (durationType === 'full-day') {
+    if (durationHours > 24) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: `full-dayタイプのRoutineでは、各ブロックは最長24時間までです。`
+      });
+    }
+  }
+  // weeklyは期間制限なし（24時間超も許可）
+};
+
 const routineBlockCoreSchema = z
   .object({
     day: weekdaySchema,
-    startHour: z.number().int().min(0).max(21),
-    endHour: z.number().int().min(3).max(24),
+    startHour: z.number().min(0), // 整数制限を解除（小数を許可）
+    endHour: z.number().min(0.25), // 最低15分（0.25時間）
     label: z.string().min(3).max(80),
     objective: z.string().min(3).max(240),
     energyLevel: z.enum(['low', 'medium', 'high'])
-  })
-  .superRefine((block, ctx) => {
-    // 各ブロックは最低156分（2.6時間）必要
-    // 整数時間単位なので、実質的には3時間以上（endHour - startHour >= 3）
-    const durationHours = block.endHour - block.startHour;
-    if (durationHours < 3) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        message: '各時間ブロックは最低3時間（156分）必要です。'
-      });
-    }
   });
 
 export const routineBlockSchema = routineBlockCoreSchema.extend({
@@ -63,6 +85,11 @@ export const routineSchema = z
     })
   })
   .superRefine((routine, ctx) => {
+    // 各ブロックの期間バリデーション（durationTypeに応じた）
+    routine.timeBlocks.forEach((block, index) => {
+      validateBlockDuration(block, routine.durationType, ctx);
+    });
+
     // Routine全体の合計時間は最低3時間（180分）必要
     const totalHours = routine.timeBlocks.reduce((acc, block) => acc + (block.endHour - block.startHour), 0);
     if (totalHours < 3) {
@@ -72,26 +99,80 @@ export const routineSchema = z
         path: ['timeBlocks']
       });
     }
+
+    // 時間ブロックの重複チェック
+    const { hasOverlap, conflictingBlocks } = checkTimeBlockOverlaps(routine.timeBlocks);
+    if (hasOverlap) {
+      conflictingBlocks.forEach(({ index1, index2 }) => {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: `時間ブロックが重複しています。同じ曜日の同じ時間帯に複数のブロックを配置することはできません。`,
+          path: ['timeBlocks', index1]
+        });
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: `時間ブロックが重複しています。同じ曜日の同じ時間帯に複数のブロックを配置することはできません。`,
+          path: ['timeBlocks', index2]
+        });
+      });
+    }
   });
 
 // routineSchemaにsuperRefineがあるため、.omit()が使えない
 // そのため、createRoutineSchemaを直接定義する
 const routineBaseSchema = z.object({
-  name: z.string().min(3).max(80),
+  name: z.string().min(3, 'Nameは必須です（3文字以上）').max(80),
   description: z.string().min(12).max(600),
-  purpose: z.string().min(8).max(500),
+  purpose: z.string().min(8, '目的は必須です（8文字以上）').max(500),
   durationType: routineDurationSchema,
   visibility: routineVisibilitySchema,
   tags: z.array(z.string().min(2).max(30)).min(1).max(8),
   owner: z.string().min(1),
-  timeBlocks: z.array(routineBlockInputSchema).min(1)
+  timeBlocks: z.array(routineBlockInputSchema).min(1, '時間ブロックは少なくとも1つ必要です')
 });
+
+// 時間ブロックの重複をチェックする関数
+const checkTimeBlockOverlaps = (blocks: z.infer<typeof routineBlockInputSchema>[]): { hasOverlap: boolean; conflictingBlocks: Array<{ index1: number; index2: number }> } => {
+  const conflicts: Array<{ index1: number; index2: number }> = [];
+
+  for (let i = 0; i < blocks.length; i++) {
+    for (let j = i + 1; j < blocks.length; j++) {
+      const block1 = blocks[i];
+      const block2 = blocks[j];
+
+      // 同じ曜日で時間が重複しているかチェック
+      if (block1.day === block2.day) {
+        // 時間帯の重複判定: (start1 < end2 && end1 > start2)
+        if (block1.startHour < block2.endHour && block1.endHour > block2.startHour) {
+          conflicts.push({ index1: i, index2: j });
+        }
+      }
+    }
+  }
+
+  return { hasOverlap: conflicts.length > 0, conflictingBlocks: conflicts };
+};
 
 export const createRoutineSchema = routineBaseSchema
   .extend({
     visibility: routineVisibilitySchema.default('private')
   })
   .superRefine((routine, ctx) => {
+    // 時間ブロックが空の場合はエラー（既にmin(1)でチェックされているが、より明確なメッセージを提供）
+    if (routine.timeBlocks.length === 0) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: '時間ブロックは少なくとも1つ必要です。',
+        path: ['timeBlocks']
+      });
+      return; // 時間ブロックがない場合は他のチェックをスキップ
+    }
+
+    // 各ブロックの期間バリデーション（durationTypeに応じた）
+    routine.timeBlocks.forEach((block, index) => {
+      validateBlockDuration(block, routine.durationType, ctx);
+    });
+
     // Routine全体の合計時間は最低3時間（180分）必要
     const totalHours = routine.timeBlocks.reduce((acc, block) => acc + (block.endHour - block.startHour), 0);
     if (totalHours < 3) {
@@ -99,6 +180,23 @@ export const createRoutineSchema = routineBaseSchema
         code: z.ZodIssueCode.custom,
         message: 'Routine全体の合計時間は最低3時間必要です。',
         path: ['timeBlocks']
+      });
+    }
+
+    // 時間ブロックの重複チェック
+    const { hasOverlap, conflictingBlocks } = checkTimeBlockOverlaps(routine.timeBlocks);
+    if (hasOverlap) {
+      conflictingBlocks.forEach(({ index1, index2 }) => {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: `時間ブロックが重複しています。同じ曜日の同じ時間帯に複数のブロックを配置することはできません。`,
+          path: ['timeBlocks', index1]
+        });
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: `時間ブロックが重複しています。同じ曜日の同じ時間帯に複数のブロックを配置することはできません。`,
+          path: ['timeBlocks', index2]
+        });
       });
     }
   });

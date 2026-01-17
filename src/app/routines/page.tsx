@@ -33,12 +33,13 @@ const parseFilters = (searchParams?: Record<string, string | string[] | undefine
 export default async function RoutinesPage({
   searchParams
 }: {
-  searchParams?: Record<string, string | string[] | undefined>;
+  searchParams?: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const currentUser = await getCurrentUser();
+  const resolvedSearchParams = await searchParams;
   const [allRoutines, filteredRoutines] = await Promise.all([
     routinesRepository.list(undefined, currentUser.id),
-    routinesRepository.list(parseFilters(searchParams), currentUser.id)
+    routinesRepository.list(parseFilters(resolvedSearchParams), currentUser.id)
   ]);
   const uniqueTags = Array.from(new Set(allRoutines.flatMap((routine) => routine.tags))).sort();
   const listItems = filteredRoutines.map(toRoutineListItem);
@@ -48,7 +49,6 @@ export default async function RoutinesPage({
       title="Routine Library"
       description="Browse reusable, human-reviewed routines. Duplicate, adapt, and apply them with deliberate control."
     >
-      <RoutineComposer action={createRoutineAction} />
       <RoutineFilters availableTags={uniqueTags} />
       <RoutineList routines={listItems} onToggleVisibility={updateRoutineVisibilityAction} userEmail={currentUser.email} />
     </AppShell>

@@ -4,7 +4,6 @@ import { useState, useTransition } from 'react';
 import Link from 'next/link';
 import { Badge } from '@/shared/ui/badge';
 import { Button } from '@/shared/ui/button';
-import { Input } from '@/shared/ui/input';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/shared/ui/card';
 import { Modal } from '@/shared/ui/modal';
 import type { RoutineListItem } from '@/features/routines';
@@ -25,30 +24,15 @@ type MyRoutinesListProps = {
 };
 
 export function MyRoutinesList({ routines, userId, userEmail }: MyRoutinesListProps) {
-  const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState<SortOption>('updatedAt');
-  const [tagFilter, setTagFilter] = useState<string>('');
-  const [durationFilter, setDurationFilter] = useState<string>('');
-  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [showCreateModal, setShowCreateModal] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [status, setStatus] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
 
-  // フィルタリングとソート
-  const filtered = routines.filter((routine) => {
-    if (searchQuery && !routine.name.toLowerCase().includes(searchQuery.toLowerCase()) &&
-        !routine.description.toLowerCase().includes(searchQuery.toLowerCase())) {
-      return false;
-    }
-    if (tagFilter && !routine.tags.includes(tagFilter.toLowerCase())) {
-      return false;
-    }
-    if (durationFilter && routine.durationType !== durationFilter) {
-      return false;
-    }
-    return true;
-  });
+  // ソート（フィルタリングは不要）
+  const filtered = routines;
 
   const sorted = [...filtered].sort((a, b) => {
     if (sortBy === 'createdAt') {
@@ -66,26 +50,6 @@ export function MyRoutinesList({ routines, userId, userEmail }: MyRoutinesListPr
     }
     return 0;
   });
-
-  const uniqueTags = Array.from(new Set(routines.flatMap((r) => r.tags))).sort();
-
-  const handleToggleSelection = (id: string) => {
-    const newSelected = new Set(selectedIds);
-    if (newSelected.has(id)) {
-      newSelected.delete(id);
-    } else {
-      newSelected.add(id);
-    }
-    setSelectedIds(newSelected);
-  };
-
-  const handleToggleSelectAll = () => {
-    if (selectedIds.size === sorted.length) {
-      setSelectedIds(new Set());
-    } else {
-      setSelectedIds(new Set(sorted.map((r) => r.id)));
-    }
-  };
 
   const handleDelete = (routineId: string) => {
     setDeletingId(routineId);
@@ -109,107 +73,42 @@ export function MyRoutinesList({ routines, userId, userEmail }: MyRoutinesListPr
     });
   };
 
-  const handleBulkDelete = () => {
-    if (selectedIds.size === 0) return;
-    setShowDeleteConfirm(true);
-  };
-
-  const confirmBulkDelete = () => {
-    if (selectedIds.size === 0) return;
-
-    startTransition(async () => {
-      const deletePromises = Array.from(selectedIds).map((id) => deleteRoutineAction({ routineId: id }));
-      const results = await Promise.all(deletePromises);
-      const failed = results.filter((r) => !r.ok);
-
-      if (failed.length === 0) {
-        setStatus(`${selectedIds.size}件のRoutineを削除しました`);
-        setSelectedIds(new Set());
-        setShowDeleteConfirm(false);
-        window.location.reload();
-      } else {
-        setStatus(`エラー: ${failed.length}件の削除に失敗しました`);
-      }
-    });
-  };
-
   const handleToggleVisibility = async (payload: VisibilityTogglePayload) => {
     return await updateRoutineVisibilityAction(payload);
   };
 
   return (
     <div className="space-y-6">
-      {/* Routine作成 */}
-      <RoutineComposer action={createRoutineAction} />
+      {/* Routine作成ボタン */}
+      <div className="flex justify-end">
+        <Button onClick={() => setShowCreateModal(true)}>
+          新しいRoutineを作成
+        </Button>
+      </div>
 
-      {/* フィルター・ソート・検索 */}
+      {/* Routine作成モーダル */}
+      <RoutineComposer
+        action={createRoutineAction}
+        asModal={true}
+        open={showCreateModal}
+        onClose={() => setShowCreateModal(false)}
+        userEmail={userEmail}
+      />
+
+      {/* 並び順 */}
       <Card>
-        <CardContent className="p-4 space-y-4">
-          <div className="grid gap-4 md:grid-cols-3">
-            <div className="space-y-2">
-              <label className="text-sm font-medium">検索</label>
-              <Input
-                type="text"
-                placeholder="名前や説明で検索..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-              />
-            </div>
-            <div className="space-y-2">
-              <label className="text-sm font-medium">タグ</label>
-              <select
-                className="relative h-11 w-full rounded-lg border-2 border-input bg-background px-4 py-2.5 text-sm text-foreground transition-all duration-300 hover:border-primary/50 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:border-primary/60"
-                value={tagFilter}
-                onChange={(e) => setTagFilter(e.target.value)}
-              >
-                <option value="">すべて</option>
-                {uniqueTags.map((tag) => (
-                  <option key={tag} value={tag}>
-                    {tag}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div className="space-y-2">
-              <label className="text-sm font-medium">期間タイプ</label>
-              <select
-                className="relative h-11 w-full rounded-lg border-2 border-input bg-background px-4 py-2.5 text-sm text-foreground transition-all duration-300 hover:border-primary/50 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:border-primary/60"
-                value={durationFilter}
-                onChange={(e) => setDurationFilter(e.target.value)}
-              >
-                <option value="">すべて</option>
-                <option value="half-day">半日</option>
-                <option value="full-day">1日</option>
-                <option value="weekly">週次</option>
-              </select>
-            </div>
-          </div>
-          <div className="flex items-center justify-between pt-2 border-t">
-            <div className="flex items-center gap-4">
-              <label className="text-sm font-medium">並び順</label>
-              <select
-                className="relative h-10 rounded-lg border-2 border-input bg-background px-3 py-1.5 text-sm text-foreground transition-all duration-300 hover:border-primary/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                value={sortBy}
-                onChange={(e) => setSortBy(e.target.value as SortOption)}
-              >
-                <option value="updatedAt">更新日順</option>
-                <option value="createdAt">作成日順</option>
-                <option value="popularity">人気順</option>
-              </select>
-            </div>
-            {selectedIds.size > 0 && (
-              <div className="flex items-center gap-2">
-                <span className="text-sm text-muted-foreground">
-                  {selectedIds.size}件選択中
-                </span>
-                <Button variant="destructive" size="sm" onClick={handleBulkDelete}>
-                  一括削除
-                </Button>
-                <Button variant="outline" size="sm" onClick={() => setSelectedIds(new Set())}>
-                  選択解除
-                </Button>
-              </div>
-            )}
+        <CardContent className="pt-6">
+          <div className="flex items-center gap-4">
+            <label className="text-sm font-medium">並び順</label>
+            <select
+              className="h-10 rounded-lg border-2 border-input bg-background px-3 py-1.5 text-sm text-foreground transition-all duration-300 hover:border-primary/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value as SortOption)}
+            >
+              <option value="updatedAt">更新日順</option>
+              <option value="createdAt">作成日順</option>
+              <option value="popularity">人気順</option>
+            </select>
           </div>
         </CardContent>
       </Card>
@@ -230,11 +129,6 @@ export function MyRoutinesList({ routines, userId, userEmail }: MyRoutinesListPr
             <p className="text-sm text-muted-foreground">
               {sorted.length}件のRoutine
             </p>
-            <div className="flex items-center gap-2">
-              <Button variant="outline" size="sm" onClick={handleToggleSelectAll}>
-                {selectedIds.size === sorted.length ? 'すべて解除' : 'すべて選択'}
-              </Button>
-            </div>
           </div>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {sorted.map((routine) => (
@@ -249,19 +143,11 @@ export function MyRoutinesList({ routines, userId, userEmail }: MyRoutinesListPr
                         {routine.visibility}
                       </Badge>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <input
-                        type="checkbox"
-                        checked={selectedIds.has(routine.id)}
-                        onChange={() => handleToggleSelection(routine.id)}
-                        className="w-4 h-4 rounded border-input"
-                      />
-                      <VisibilityToggleButton
-                        routineId={routine.id}
-                        visibility={routine.visibility}
-                        action={handleToggleVisibility}
-                      />
-                    </div>
+                    <VisibilityToggleButton
+                      routineId={routine.id}
+                      visibility={routine.visibility}
+                      action={handleToggleVisibility}
+                    />
                   </div>
                   <div className="mt-2">
                     <CardTitle>{routine.name}</CardTitle>
@@ -359,7 +245,7 @@ export function MyRoutinesList({ routines, userId, userEmail }: MyRoutinesListPr
           setShowDeleteConfirm(false);
           setDeletingId(null);
         }}
-        title={selectedIds.size > 0 ? '一括削除の確認' : 'Routine削除の確認'}
+        title="Routine削除の確認"
         size="md"
         footer={
           <div className="flex justify-end gap-2">
@@ -375,7 +261,7 @@ export function MyRoutinesList({ routines, userId, userEmail }: MyRoutinesListPr
             </Button>
             <Button
               variant="destructive"
-              onClick={selectedIds.size > 0 ? confirmBulkDelete : confirmDelete}
+              onClick={confirmDelete}
               disabled={pending}
             >
               {pending ? '削除中...' : '削除'}
@@ -384,9 +270,7 @@ export function MyRoutinesList({ routines, userId, userEmail }: MyRoutinesListPr
         }
       >
         <p className="text-sm text-muted-foreground">
-          {selectedIds.size > 0
-            ? `${selectedIds.size}件のRoutineを削除しますか？この操作は取り消せません。`
-            : 'このRoutineを削除しますか？この操作は取り消せません。'}
+          このRoutineを削除しますか？この操作は取り消せません。
         </p>
       </Modal>
     </div>

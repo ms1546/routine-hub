@@ -44,8 +44,8 @@ export function HamburgerMenu() {
 
   const menuItems = [
     { href: '/', label: 'ホーム' },
-    { href: '/routines', label: 'Routineライブラリ' },
-    ...(session ? [{ href: '/my-routines', label: '自分のRoutine' }] : []),
+    { href: '/routines', label: 'Routine Library' },
+    ...(session ? [{ href: '/my-routines', label: 'My Routines' }] : []),
     ...(session ? [{ href: '/settings', label: '設定' }] : []),
     ...(isAdmin ? [{ href: '/admin', label: '管理者' }] : [])
   ];
