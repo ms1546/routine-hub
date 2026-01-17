@@ -21,11 +21,81 @@ const energyLevelColors: Record<string, string> = {
 
 type RoutineScheduleVisualizationProps = {
   timeBlocks: RoutineDetailView['timeBlocks'];
+  durationType?: 'half-day' | 'full-day' | 'weekly';
   className?: string;
+  compact?: boolean; // コンパクトモード（レジェンドと詳細情報を非表示）
 };
 
-export function RoutineScheduleVisualization({ timeBlocks, className }: RoutineScheduleVisualizationProps) {
-  // 曜日ごとにブロックをグループ化
+export function RoutineScheduleVisualization({
+  timeBlocks,
+  durationType,
+  className,
+  compact = false
+}: RoutineScheduleVisualizationProps) {
+  // full-dayやhalf-dayの場合は曜日表示なし（1日のタイムラインのみ）
+  const isDayBased = durationType === 'full-day' || durationType === 'half-day';
+
+  if (isDayBased) {
+    // full-dayやhalf-day: 曜日表示なし、1日のタイムラインのみ
+    return (
+      <div className={className}>
+        <div className="space-y-2.5">
+          <div className="space-y-1.5">
+            <div className="relative h-8 bg-muted/30 rounded-md overflow-hidden">
+              {timeBlocks.map((block) => {
+                const leftPercent = (block.startHour / 24) * 100;
+                const widthPercent = ((block.endHour - block.startHour) / 24) * 100;
+                return (
+                  <div
+                    key={block.id}
+                    className={`absolute h-full border ${energyLevelColors[block.energyLevel] || energyLevelColors.low} rounded-sm`}
+                    style={{
+                      left: `${leftPercent}%`,
+                      width: `${widthPercent}%`
+                    }}
+                    title={`${block.label}: ${block.startHour}:00-${block.endHour}:00`}
+                  />
+                );
+              })}
+            </div>
+            {!compact && (
+              <div className="flex flex-wrap gap-2 text-xs">
+                {timeBlocks.map((block) => (
+                  <div key={block.id} className="flex items-center gap-1.5">
+                    <div
+                      className={`h-2.5 w-2.5 rounded-sm border ${energyLevelColors[block.energyLevel] || energyLevelColors.low}`}
+                    />
+                    <span className="text-muted-foreground">
+                      {block.startHour}:00-{block.endHour}:00
+                    </span>
+                    <span className="font-medium text-foreground">{block.label}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+        {!compact && (
+          <div className="mt-3 pt-3 border-t border-border/50 flex items-center gap-4 text-xs text-muted-foreground">
+            <div className="flex items-center gap-1.5">
+              <div className="h-2.5 w-2.5 rounded-sm border bg-warning/30 border-warning/60" />
+              <span>高エネルギー</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <div className="h-2.5 w-2.5 rounded-sm border bg-primary/30 border-primary/60" />
+              <span>中エネルギー</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <div className="h-2.5 w-2.5 rounded-sm border bg-muted/50 border-border" />
+              <span>低エネルギー</span>
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  // weekly: 曜日ごとにグループ化して表示
   const blocksByDay = timeBlocks.reduce(
     (acc, block) => {
       if (!acc[block.day]) {
@@ -73,37 +143,41 @@ export function RoutineScheduleVisualization({ timeBlocks, className }: RoutineS
                   })}
                 </div>
               </div>
-              <div className="ml-[4.5rem] flex flex-wrap gap-2 text-xs">
-                {dayBlocks.map((block) => (
-                  <div key={block.id} className="flex items-center gap-1.5">
-                    <div
-                      className={`h-2.5 w-2.5 rounded-sm border ${energyLevelColors[block.energyLevel] || energyLevelColors.low}`}
-                    />
-                    <span className="text-muted-foreground">
-                      {block.startHour}:00-{block.endHour}:00
-                    </span>
-                    <span className="font-medium text-foreground">{block.label}</span>
-                  </div>
-                ))}
-              </div>
+              {!compact && (
+                <div className="ml-[4.5rem] flex flex-wrap gap-2 text-xs">
+                  {dayBlocks.map((block) => (
+                    <div key={block.id} className="flex items-center gap-1.5">
+                      <div
+                        className={`h-2.5 w-2.5 rounded-sm border ${energyLevelColors[block.energyLevel] || energyLevelColors.low}`}
+                      />
+                      <span className="text-muted-foreground">
+                        {block.startHour}:00-{block.endHour}:00
+                      </span>
+                      <span className="font-medium text-foreground">{block.label}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           );
         })}
       </div>
-      <div className="mt-3 pt-3 border-t border-border/50 flex items-center gap-4 text-xs text-muted-foreground">
-        <div className="flex items-center gap-1.5">
-          <div className="h-2.5 w-2.5 rounded-sm border bg-warning/30 border-warning/60" />
-          <span>高エネルギー</span>
+      {!compact && (
+        <div className="mt-3 pt-3 border-t border-border/50 flex items-center gap-4 text-xs text-muted-foreground">
+          <div className="flex items-center gap-1.5">
+            <div className="h-2.5 w-2.5 rounded-sm border bg-warning/30 border-warning/60" />
+            <span>高エネルギー</span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <div className="h-2.5 w-2.5 rounded-sm border bg-primary/30 border-primary/60" />
+            <span>中エネルギー</span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <div className="h-2.5 w-2.5 rounded-sm border bg-muted/50 border-border" />
+            <span>低エネルギー</span>
+          </div>
         </div>
-        <div className="flex items-center gap-1.5">
-          <div className="h-2.5 w-2.5 rounded-sm border bg-primary/30 border-primary/60" />
-          <span>中エネルギー</span>
-        </div>
-        <div className="flex items-center gap-1.5">
-          <div className="h-2.5 w-2.5 rounded-sm border bg-muted/50 border-border" />
-          <span>低エネルギー</span>
-        </div>
-      </div>
+      )}
     </div>
   );
 }

@@ -68,22 +68,35 @@ export const RoutineCard = ({
             ))}
           </div>
         )}
-        <dl className="grid grid-cols-2 gap-3">
-          <div className="p-2 bg-muted/50 rounded-md">
+
+        {/* スケジュール可視化 - 直感的にRoutineの構成を理解できる */}
+        {routine.timeBlocks && routine.timeBlocks.length > 0 && (
+          <div className="py-2 border-t border-border/50 pt-4">
+            <RoutineScheduleVisualization
+              timeBlocks={routine.timeBlocks}
+              durationType={routine.durationType}
+              compact={true}
+            />
+          </div>
+        )}
+
+        {/* 統計情報はコンパクトに表示 */}
+        <dl className="grid grid-cols-4 gap-2 pt-2 border-t border-border/50">
+          <div className="text-center">
             <dt className="text-xs text-muted-foreground">Hours</dt>
-            <dd className="text-lg font-semibold">{routine.totalHours}h</dd>
+            <dd className="text-sm font-semibold">{routine.totalHours}h</dd>
           </div>
-          <div className="p-2 bg-muted/50 rounded-md">
+          <div className="text-center">
             <dt className="text-xs text-muted-foreground">Blocks</dt>
-            <dd className="text-lg font-semibold">{routine.blockCount}</dd>
+            <dd className="text-sm font-semibold">{routine.blockCount}</dd>
           </div>
-          <div className="p-2 bg-muted/50 rounded-md">
+          <div className="text-center">
             <dt className="text-xs text-muted-foreground">Forks</dt>
-            <dd className="text-lg font-semibold">{routine.stats.forks}</dd>
+            <dd className="text-sm font-semibold">{routine.stats.forks}</dd>
           </div>
-          <div className="p-2 bg-muted/50 rounded-md">
+          <div className="text-center">
             <dt className="text-xs text-muted-foreground">Likes</dt>
-            <dd className="text-lg font-semibold">{routine.stats.likes}</dd>
+            <dd className="text-sm font-semibold">{routine.stats.likes}</dd>
           </div>
         </dl>
       </CardContent>
@@ -93,12 +106,6 @@ export const RoutineCard = ({
           href={`/routines/${routine.id}`}
         >
           View detail
-        </Link>
-        <Link
-          className={buttonVariants({ variant: 'outline', size: 'sm' })}
-          href={`/routines/${routine.id}#blocks`}
-        >
-          View blocks
         </Link>
       </CardFooter>
     </Card>

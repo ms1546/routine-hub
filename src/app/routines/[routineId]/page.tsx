@@ -24,7 +24,19 @@ export default async function RoutineDetailPage({
 }) {
   const { routineId } = await params;
   const currentUser = await getCurrentUser();
+
+  // デバッグログ（本番では削除可能）
+  if (typeof window === 'undefined') {
+    console.log(`[RoutineDetailPage] routineId=${routineId}, currentUserId=${currentUser.id}`);
+  }
+
   const routine = await routinesRepository.get(routineId, currentUser.id);
+
+  // デバッグログ（本番では削除可能）
+  if (typeof window === 'undefined') {
+    console.log(`[RoutineDetailPage] routine found=${!!routine}, id=${routine?.id}`);
+  }
+
   if (!routine) {
     notFound();
   }

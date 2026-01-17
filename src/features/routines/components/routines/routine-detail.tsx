@@ -139,7 +139,10 @@ export const RoutineDetail = ({
           <Badge variant="secondary">{routine.timeBlocks.length} blocks</Badge>
         </div>
         <Card className="p-6">
-          <RoutineScheduleVisualization timeBlocks={routine.timeBlocks} />
+          <RoutineScheduleVisualization
+            timeBlocks={routine.timeBlocks}
+            durationType={routine.durationType}
+          />
         </Card>
         {onUpdateBlock && onDeleteBlock && onReorderBlocks ? (
           <RoutineBlockEditor

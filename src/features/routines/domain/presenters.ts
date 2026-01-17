@@ -14,6 +14,7 @@ export type RoutineListItem = {
   highlightDay: string;
   intensity: 'light' | 'steady' | 'immersive';
   stats: Routine['stats'];
+  timeBlocks: RoutineBlockView[]; // スケジュール可視化に必要
 };
 
 export type RoutineBlockView = {
@@ -75,7 +76,18 @@ export const toRoutineListItem = (routine: Routine): RoutineListItem => {
     blockCount,
     highlightDay: dayLabels[highlightDay as Weekday],
     intensity: computeIntensity(totalHours),
-    stats: routine.stats
+    stats: routine.stats,
+    timeBlocks: routine.timeBlocks.map((block) => ({
+      id: block.id,
+      label: block.label,
+      objective: block.objective,
+      hours: block.endHour - block.startHour,
+      schedule: formatSchedule(block.day as Weekday, block.startHour, block.endHour),
+      energyLevel: block.energyLevel,
+      startHour: block.startHour,
+      endHour: block.endHour,
+      day: block.day as Weekday
+    }))
   };
 };
 

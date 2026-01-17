@@ -8,7 +8,7 @@ export default async function SettingsPage() {
   const user = await getCurrentUser();
   const settingsResult = await getUserSettingsAction();
 
-  if (!settingsResult.ok) {
+  if (!settingsResult.ok || !settingsResult.data) {
     notFound();
   }
 

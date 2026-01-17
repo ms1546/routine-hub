@@ -21,7 +21,7 @@ function handleActionError<T>(error: unknown): ActionResult<T> {
   if (error instanceof z.ZodError) {
     return {
       ok: false,
-      error: error.errors.map((e) => e.message).join(', ')
+      error: error.issues.map((e) => e.message).join(', ')
     };
   }
   if (error instanceof Error) {

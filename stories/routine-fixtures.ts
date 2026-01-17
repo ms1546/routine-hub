@@ -13,7 +13,31 @@ export const mockRoutineListItem: RoutineListItem = {
   blockCount: 3,
   highlightDay: 'Monday',
   intensity: 'steady',
-  stats: { forks: 41, applications: 180, likes: 25 }
+  stats: { forks: 41, applications: 180, likes: 25 },
+  timeBlocks: [
+    {
+      id: 'block-1',
+      label: '集中ビルド',
+      objective: '午前のスタンドアップ前に主要成果物をまとめる。',
+      hours: 4,
+      schedule: 'Monday · 8:00 – 12:00',
+      energyLevel: 'high',
+      startHour: 8,
+      endHour: 12,
+      day: 'monday'
+    },
+    {
+      id: 'block-2',
+      label: '制約ふりかえり',
+      objective: 'ボトルネックを可視化し翌日の準備を進める。',
+      hours: 4,
+      schedule: 'Tuesday · 14:00 – 18:00',
+      energyLevel: 'medium',
+      startHour: 14,
+      endHour: 18,
+      day: 'tuesday'
+    }
+  ]
 };
 
 export const mockRoutineDetail: RoutineDetailView = {
