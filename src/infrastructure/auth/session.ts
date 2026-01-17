@@ -11,14 +11,15 @@ export type AuthenticatedUser = {
 };
 
 // NextAuthのセッションからAuthenticatedUserに変換
-function sessionToAuthenticatedUser(session: { user?: { id?: string; name?: string | null; email?: string | null } } | null): AuthenticatedUser | null {
+function sessionToAuthenticatedUser(session: { user?: { id?: string; name?: string | null; email?: string | null; displayName?: string | null } } | null): AuthenticatedUser | null {
   if (!session?.user) {
     return null;
   }
 
   const userId = session.user.id ?? session.user.email ?? '';
   const email = session.user.email ?? '';
-  const displayName = session.user.name ?? email.split('@')[0] ?? 'User';
+  // セッションにdisplayNameが含まれている場合はそれを使用、なければname、最後にemailの@の前の部分
+  const displayName = session.user.displayName ?? session.user.name ?? email.split('@')[0] ?? 'User';
 
   // 管理者判定（開発環境では特定のメールアドレスを管理者として扱う）
   const adminEmails = ['routinehub.dev@gmail.com'];

@@ -33,7 +33,7 @@ export default async function HomePage() {
             <h2 className="text-2xl font-bold tracking-tight mb-2">人気のRoutine</h2>
             <p className="text-muted-foreground">コミュニティで最も評価されているRoutineです</p>
           </div>
-          <RoutineList routines={highlighted} onToggleVisibility={updateRoutineVisibilityAction} />
+          <RoutineList routines={highlighted} onToggleVisibility={updateRoutineVisibilityAction} userEmail={currentUser.email} />
         </section>
 
         <div className="text-center pt-8">

@@ -8,6 +8,29 @@ import {
 
 const userSettingsStore = new Map<string, UserSettings>();
 
+// Adminアカウントの初期設定
+const ADMIN_EMAIL = 'routinehub.dev@gmail.com';
+const initializeAdminSettings = () => {
+  if (!userSettingsStore.has(ADMIN_EMAIL)) {
+    const now = new Date();
+    const adminSettings: UserSettings = {
+      userId: ADMIN_EMAIL,
+      displayName: 'admin',
+      timezone: 'Asia/Tokyo',
+      requiredSleepHours: 7,
+      priorities: ['集中時間を守る', 'カレンダーの権威を尊重'],
+      constraints: ['手動確認を好む'],
+      energyLevel: 'medium',
+      createdAt: now,
+      updatedAt: now
+    };
+    userSettingsStore.set(ADMIN_EMAIL, adminSettings);
+  }
+};
+
+// ストア初期化時にadmin設定を追加
+initializeAdminSettings();
+
 const clone = <T>(value: T): T => structuredClone(value);
 
 const get = async (userId: string): Promise<UserSettings | null> => {
@@ -40,11 +63,18 @@ const update = async (userId: string, input: UpdateUserSettingsInput): Promise<U
     throw new Error(`User settings not found for user ${userId}`);
   }
 
+  // displayNameが必須なので、更新時にも空文字列や未定義にならないようにする
   const updated: UserSettings = {
     ...current,
     ...input,
+    displayName: input.displayName !== undefined ? input.displayName : current.displayName,
     updatedAt: new Date()
   };
+
+  // displayNameが空文字列の場合はエラー
+  if (!updated.displayName || updated.displayName.trim().length === 0) {
+    throw new Error('表示名は必須です');
+  }
 
   userSettingsSchema.parse(updated);
   userSettingsStore.set(userId, updated);
@@ -63,7 +93,11 @@ const getOrCreate = async (userId: string, defaults?: Partial<CreateUserSettings
   return await create({
     userId,
     displayName,
-    ...defaults
+    timezone: defaults?.timezone ?? 'Asia/Tokyo',
+    requiredSleepHours: defaults?.requiredSleepHours ?? 7,
+    priorities: defaults?.priorities ?? ['集中時間を守る', 'カレンダーの権威を尊重'],
+    constraints: defaults?.constraints ?? ['手動確認を好む'],
+    energyLevel: defaults?.energyLevel ?? 'medium'
   });
 };
 

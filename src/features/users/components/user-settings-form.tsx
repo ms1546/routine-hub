@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useTransition, FormEvent } from 'react';
+import { useSession } from 'next-auth/react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/shared/ui/card';
 import { Input } from '@/shared/ui/input';
 import { Label } from '@/shared/ui/label';
@@ -25,6 +26,7 @@ export function UserSettingsForm({ userId, initialSettings, action }: UserSettin
   const [energyLevel, setEnergyLevel] = useState(initialSettings.energyLevel);
   const [status, setStatus] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
+  const { update: updateSession } = useSession();
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -45,6 +47,10 @@ export function UserSettingsForm({ userId, initialSettings, action }: UserSettin
           energyLevel
         });
         if (result.ok) {
+          // displayNameが変更された場合はセッションを更新
+          if (displayName && displayName !== initialSettings.displayName) {
+            await updateSession();
+          }
           setStatus('設定を保存しました');
         } else {
           setStatus(`エラー: ${result.error}`);
@@ -72,6 +78,7 @@ export function UserSettingsForm({ userId, initialSettings, action }: UserSettin
               onChange={(e) => setDisplayName(e.target.value)}
               placeholder="あなたの表示名"
               maxLength={80}
+              required
             />
             <p className="text-xs text-muted-foreground">他のユーザーに表示される名前です</p>
           </div>

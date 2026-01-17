@@ -23,11 +23,10 @@ export function ForkRoutineForm({ routineId, defaultName, action }: ForkRoutineF
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const formData = new FormData(event.currentTarget);
-    const owner = String(formData.get('owner'));
     const name = String(formData.get('name'));
 
     startTransition(async () => {
-      const result = await action({ routineId, owner, overrides: { name } });
+      const result = await action({ routineId, overrides: { name } });
       if (result.ok) {
         setStatus(`Forked as ${result.data?.name ?? 'routine'} (private)`);
       } else {
@@ -49,10 +48,6 @@ export function ForkRoutineForm({ routineId, defaultName, action }: ForkRoutineF
             defaultValue={`${defaultName} Clone`}
             required
           />
-        </div>
-        <div className="space-y-1.5 flex-1">
-          <Label htmlFor="fork-owner">Owner Email</Label>
-          <Input type="email" name="owner" id="fork-owner" placeholder="you@example.com" required />
         </div>
         <Button type="submit" disabled={pending} className="w-full sm:w-auto">
           {pending ? 'Forking…' : 'Fork'}

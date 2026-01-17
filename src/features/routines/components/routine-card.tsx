@@ -13,10 +13,11 @@ import { getCurrentUser } from '@/infrastructure/auth/session';
 
 export type RoutineCardProps = {
   routine: RoutineListItem;
-  onToggleVisibility: (payload: VisibilityTogglePayload) => Promise<ActionResult<Routine>>;
+  onToggleVisibility?: (payload: VisibilityTogglePayload) => Promise<ActionResult<Routine>>;
   onToggleLike?: (payload: ToggleLikePayload) => Promise<ActionResult<{ liked: boolean; likes: number }>>;
   userId?: string;
   isLiked?: boolean;
+  canEdit?: boolean; // 自分のRoutineかどうか（visibilityを変更可能かどうか）
 };
 
 export const RoutineCard = ({
@@ -24,7 +25,8 @@ export const RoutineCard = ({
   onToggleVisibility,
   onToggleLike,
   userId,
-  isLiked = false
+  isLiked = false,
+  canEdit = false
 }: RoutineCardProps) => {
   return (
     <Card className="flex h-full flex-col hover-lift">
@@ -46,11 +48,13 @@ export const RoutineCard = ({
                 action={onToggleLike}
               />
             )}
-            <VisibilityToggleButton
-              routineId={routine.id}
-              visibility={routine.visibility}
-              action={onToggleVisibility}
-            />
+            {canEdit && onToggleVisibility && (
+              <VisibilityToggleButton
+                routineId={routine.id}
+                visibility={routine.visibility}
+                action={onToggleVisibility}
+              />
+            )}
           </div>
         </div>
         <div className="mt-2">

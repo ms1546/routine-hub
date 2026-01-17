@@ -15,6 +15,8 @@ export type RoutineListItem = {
   intensity: 'light' | 'steady' | 'immersive';
   stats: Routine['stats'];
   timeBlocks: RoutineBlockView[]; // スケジュール可視化に必要
+  createdAt?: string; // My Routinesページで使用
+  updatedAt?: string; // My Routinesページで使用
 };
 
 export type RoutineBlockView = {
@@ -87,7 +89,9 @@ export const toRoutineListItem = (routine: Routine): RoutineListItem => {
       startHour: block.startHour,
       endHour: block.endHour,
       day: block.day as Weekday
-    }))
+    })),
+    createdAt: routine.createdAt.toISOString(),
+    updatedAt: routine.updatedAt.toISOString()
   };
 };
 

@@ -23,7 +23,9 @@
   },
   "dependencies": {
     "@aws-sdk/client-bedrock-runtime": "^3.645.0",
+    "@aws-sdk/client-dynamodb": "^3.971.0",
     "@aws-sdk/client-secrets-manager": "^3.583.0",
+    "@aws-sdk/lib-dynamodb": "^3.971.0",
     "@mastra/core": "^0.24.9",
     "autoprefixer": "^10.4.20",
     "clsx": "^2.1.1",

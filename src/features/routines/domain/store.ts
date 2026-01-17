@@ -794,11 +794,19 @@ const applyFilter = (routine: Routine, filter?: RoutineFilter, currentUserId?: s
   return true;
 };
 
-const list = async (filter?: RoutineFilter, currentUserId?: string): Promise<Routine[]> => {
+const list = async (filter?: RoutineFilter, currentUserId?: string, owner?: string): Promise<Routine[]> => {
   const allRoutines = Array.from(routineStore.values());
-  const filtered = allRoutines.filter((routine) => applyFilter(routine, filter, currentUserId));
+  let filtered = allRoutines;
+
+  // ownerでフィルタリング（指定されている場合）
+  if (owner) {
+    filtered = filtered.filter((routine) => routine.owner === owner);
+  }
+
+  // その他のフィルタを適用
+  filtered = filtered.filter((routine) => applyFilter(routine, filter, currentUserId));
   if (typeof window === 'undefined') {
-    console.log(`[Routine Store] list() called: total=${allRoutines.length}, filtered=${filtered.length}, filter=`, filter, `currentUserId=${currentUserId}`);
+    console.log(`[Routine Store] list() called: total=${allRoutines.length}, filtered=${filtered.length}, filter=`, filter, `currentUserId=${currentUserId}`, `owner=${owner}`);
   }
   return filtered.map((routine) => clone(routine));
 };
@@ -999,6 +1007,16 @@ const isLikedByUser = (routineId: string, userId: string): boolean => {
   return likes?.has(userId) ?? false;
 };
 
+const deleteRoutine = async (id: string): Promise<void> => {
+  const routine = routineStore.get(id);
+  if (!routine) {
+    throw new Error(`Routine ${id} not found`);
+  }
+  routineStore.delete(id);
+  // 関連するlikeデータも削除
+  routineLikesStore.delete(id);
+};
+
 export const routinesRepository = {
   list,
   get,
@@ -1008,5 +1026,6 @@ export const routinesRepository = {
   fork,
   recordApplication,
   toggleLike,
-  isLikedByUser
+  isLikedByUser,
+  delete: deleteRoutine
 };

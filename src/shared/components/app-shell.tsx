@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 import Link from 'next/link';
 import { cn } from '@/shared/utils';
-import { AuthButton } from './auth-button';
+import { HamburgerMenu } from './hamburger-menu';
 
 type AppShellProps = {
   title: string;
@@ -17,6 +17,7 @@ type AppShellProps = {
 export function AppShell({ title, description, children, actions, breadcrumb }: AppShellProps) {
   return (
     <div className="min-h-screen gradient-bg">
+      <HamburgerMenu />
       <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:px-8 lg:py-12">
         <header className="mb-8 fade-in-up">
           <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
@@ -37,10 +38,11 @@ export function AppShell({ title, description, children, actions, breadcrumb }: 
                 <p className="max-w-2xl text-muted-foreground">{description}</p>
               )}
             </div>
-            <div className={cn('flex flex-wrap items-start gap-2', breadcrumb && 'pt-6 md:pt-0')}>
-              {actions}
-              <AuthButton />
-            </div>
+            {actions && (
+              <div className={cn('flex flex-wrap items-start gap-2', breadcrumb && 'pt-6 md:pt-0')}>
+                {actions}
+              </div>
+            )}
           </div>
         </header>
         <main className="space-y-6">{children}</main>

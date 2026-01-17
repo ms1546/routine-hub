@@ -1,9 +1,9 @@
 'use client';
 
 import { signOut } from 'next-auth/react';
+import { useSession } from 'next-auth/react';
 import { Button } from '@/shared/ui/button';
 import Link from 'next/link';
-import { useSession } from 'next-auth/react';
 
 export function AuthButton() {
   const { data: session, status } = useSession();
@@ -26,7 +26,7 @@ export function AuthButton() {
     <div className="flex items-center gap-3">
       <Link href="/settings">
         <Button variant="ghost" size="sm">
-          {session.user?.name ?? session.user?.email ?? '設定'}
+          {session.user?.displayName ?? session.user?.name ?? '設定'}
         </Button>
       </Link>
       <form

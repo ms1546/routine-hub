@@ -9,10 +9,12 @@ import { toggleRoutineLikeAction } from '@/app/actions/routines';
 type RoutineListProps = {
   routines: RoutineListItem[];
   onToggleVisibility: (payload: VisibilityTogglePayload) => Promise<ActionResult<Routine>>;
+  userEmail?: string; // 自分のRoutineかどうかの判定に使用
 };
 
-export const RoutineList = async ({ routines, onToggleVisibility }: RoutineListProps) => {
+export const RoutineList = async ({ routines, onToggleVisibility, userEmail }: RoutineListProps) => {
   const currentUser = await getCurrentUser();
+  const currentUserEmail = userEmail ?? currentUser.email;
 
   if (routines.length === 0) {
     return (
@@ -31,14 +33,16 @@ export const RoutineList = async ({ routines, onToggleVisibility }: RoutineListP
     <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
       {routines.map((routine) => {
         const isLiked = routinesRepository.isLikedByUser(routine.id, currentUser.id);
+        const canEdit = routine.owner === currentUserEmail || currentUser.role === 'admin';
         return (
           <RoutineCard
             key={routine.id}
             routine={routine}
-            onToggleVisibility={onToggleVisibility}
+            onToggleVisibility={canEdit ? onToggleVisibility : undefined}
             onToggleLike={toggleRoutineLikeAction}
             userId={currentUser.id}
             isLiked={isLiked}
+            canEdit={canEdit}
           />
         );
       })}

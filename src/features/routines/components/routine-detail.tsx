@@ -90,7 +90,7 @@ export const RoutineDetail = ({
           <dl className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             <div className="p-3 bg-muted/50 rounded-lg">
               <dt className="text-xs text-muted-foreground mb-1">Owner</dt>
-              <dd className="font-medium truncate">{ownerDisplayName ?? routine.owner}</dd>
+              <dd className="font-medium truncate">{ownerDisplayName ?? 'Unknown'}</dd>
             </div>
             <div className="p-3 bg-muted/50 rounded-lg">
               <dt className="text-xs text-muted-foreground mb-1">Created</dt>

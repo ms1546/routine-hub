@@ -75,8 +75,8 @@ export function RoutineComposer({ action }: RoutineComposerProps) {
               <Input name="tags" id="routine-tags" placeholder="focus, leadership" required />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="routine-owner">Owner Email</Label>
-              <Input type="email" name="owner" id="routine-owner" placeholder="you@example.com" required />
+              <Label htmlFor="routine-owner">Owner</Label>
+              <Input type="text" name="owner" id="routine-owner" placeholder="admin" required />
             </div>
           </div>
 

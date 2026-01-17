@@ -50,7 +50,7 @@ export default async function RoutinesPage({
     >
       <RoutineComposer action={createRoutineAction} />
       <RoutineFilters availableTags={uniqueTags} />
-      <RoutineList routines={listItems} onToggleVisibility={updateRoutineVisibilityAction} />
+      <RoutineList routines={listItems} onToggleVisibility={updateRoutineVisibilityAction} userEmail={currentUser.email} />
     </AppShell>
   );
 }

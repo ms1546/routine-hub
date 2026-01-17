@@ -268,13 +268,12 @@ AWS 上のアプリケーションが外部 API として Google サービスを
 
 ## 2.8 インフラ・運用設計
 
-### Fargate Spot 運用
+### Fargate 運用
 - 常時稼働しない
 - 夜間は ECS / ALB を停止
 - EventBridge による自動起動・停止
 
 ### 障害時
-- Spot 割り込みは前提
 - AI 処理は短時間・再実行可能
 - Google カレンダー反映は冪等設計
 

@@ -98,6 +98,7 @@ const handleActionError = <T>(error: unknown): ActionResult<T> => {
 const revalidateRoutinePaths = (routineId?: string) => {
   revalidatePath('/');
   revalidatePath('/routines');
+  revalidatePath('/my-routines');
   if (routineId) {
     revalidatePath(`/routines/${routineId}`);
   }
@@ -297,7 +298,6 @@ export async function reorderRoutineBlocksAction(
 // そのため、overridesを直接定義する
 const forkRoutineSchema = z.object({
   routineId: z.string().uuid(),
-  owner: z.string().min(3),
   overrides: z
     .object({
       name: z.string().min(3).max(80).optional(),
@@ -313,13 +313,94 @@ const forkRoutineSchema = z.object({
 
 export type ForkRoutinePayload = z.infer<typeof forkRoutineSchema>;
 
+const deleteRoutineSchema = z.object({
+  routineId: z.string().uuid()
+});
+
+export type DeleteRoutinePayload = z.infer<typeof deleteRoutineSchema>;
+
+export async function deleteRoutineAction(
+  payload: DeleteRoutinePayload
+): Promise<ActionResult<void>> {
+  try {
+    const parsed = deleteRoutineSchema.parse(payload);
+    const currentUser = await getCurrentUser();
+    const routine = await routinesRepository.get(parsed.routineId, currentUser.id);
+
+    if (!routine) {
+      throw new Error('Routineが見つかりません');
+    }
+
+    // 所有者のみ削除可能
+    if (routine.owner !== currentUser.email && currentUser.role !== 'admin') {
+      throw new Error('このRoutineを削除する権限がありません');
+    }
+
+    await routinesRepository.delete(parsed.routineId);
+    revalidateRoutinePaths();
+    return { ok: true, data: undefined };
+  } catch (error) {
+    return handleActionError<void>(error);
+  }
+}
+
+const updateRoutineInfoSchema = z.object({
+  routineId: z.string().uuid(),
+  name: z.string().min(3).max(80).optional(),
+  description: z.string().min(12).max(600).optional(),
+  purpose: z.string().min(8).max(500).optional(),
+  tags: z.array(z.string().min(2).max(30)).min(1).max(8).optional()
+});
+
+export type UpdateRoutineInfoPayload = z.infer<typeof updateRoutineInfoSchema>;
+
+export async function updateRoutineInfoAction(
+  payload: UpdateRoutineInfoPayload
+): Promise<ActionResult<Routine>> {
+  try {
+    const parsed = updateRoutineInfoSchema.parse(payload);
+    const currentUser = await getCurrentUser();
+    const routine = await routinesRepository.get(parsed.routineId, currentUser.id);
+
+    if (!routine) {
+      throw new Error('Routineが見つかりません');
+    }
+
+    // 所有者のみ更新可能
+    if (routine.owner !== currentUser.email && currentUser.role !== 'admin') {
+      throw new Error('このRoutineを更新する権限がありません');
+    }
+
+    const patch: Partial<Routine> = {};
+    if (parsed.name !== undefined) patch.name = parsed.name;
+    if (parsed.description !== undefined) patch.description = parsed.description;
+    if (parsed.purpose !== undefined) patch.purpose = parsed.purpose;
+    if (parsed.tags !== undefined) patch.tags = parsed.tags;
+
+    if (Object.keys(patch).length === 0) {
+      throw new Error('更新する内容がありません');
+    }
+
+    const updated = await routinesRepository.update({
+      id: routine.id,
+      patch
+    });
+
+    revalidateRoutinePaths(routine.id);
+    return { ok: true, data: updated };
+  } catch (error) {
+    return handleActionError<Routine>(error);
+  }
+}
+
 export async function forkRoutineAction(
   payload: z.infer<typeof forkRoutineSchema>
 ): Promise<ActionResult<Routine>> {
   try {
     const parsed = forkRoutineSchema.parse(payload);
+    const currentUser = await getCurrentUser();
     const forked = await routinesRepository.fork(parsed.routineId, {
-      owner: parsed.owner,
+      owner: currentUser.email,
       ...parsed.overrides
     });
     revalidateRoutinePaths(forked.id);

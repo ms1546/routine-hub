@@ -13,6 +13,15 @@ const updateUserSettingsSchema = z.object({
   priorities: z.array(z.string().min(1).max(100)).optional(),
   constraints: z.array(z.string().min(1).max(100)).optional(),
   energyLevel: z.enum(['low', 'medium', 'high']).optional()
+}).refine((data) => {
+  // displayNameが提供されている場合は空文字列でないことを確認
+  if (data.displayName !== undefined) {
+    return data.displayName.trim().length > 0;
+  }
+  return true;
+}, {
+  message: '表示名は必須です',
+  path: ['displayName']
 });
 
 export type UpdateUserSettingsPayload = z.infer<typeof updateUserSettingsSchema>;

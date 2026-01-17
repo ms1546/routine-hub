@@ -109,9 +109,9 @@ async function RoutineDetailFallback({
   const fullRoutine = await routinesRepository.get(routine.id, currentUser.id);
   const isLiked = fullRoutine ? routinesRepository.isLikedByUser(routine.id, currentUser.id) : false;
 
-  // OwnerのdisplayNameを取得
+  // OwnerのdisplayNameを取得（emailは表示しない）
   const ownerSettings = await userSettingsRepository.get(routine.owner);
-  const ownerDisplayName = ownerSettings?.displayName ?? routine.owner;
+  const ownerDisplayName = ownerSettings?.displayName ?? 'Unknown';
 
   return (
     <RoutineDetail

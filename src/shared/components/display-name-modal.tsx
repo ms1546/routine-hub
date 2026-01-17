@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useTransition } from 'react';
+import { useSession } from 'next-auth/react';
 import { Modal } from '@/shared/ui/modal';
 import { Button } from '@/shared/ui/button';
 import { Input } from '@/shared/ui/input';
@@ -18,6 +19,7 @@ export function DisplayNameModal({ open, userId, initialDisplayName, onComplete 
   const [displayName, setDisplayName] = useState(initialDisplayName ?? '');
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
+  const { update: updateSession } = useSession();
 
   useEffect(() => {
     if (open) {
@@ -39,6 +41,8 @@ export function DisplayNameModal({ open, userId, initialDisplayName, onComplete 
           displayName: displayName.trim()
         });
         if (result.ok) {
+          // セッションを更新して表示名を反映
+          await updateSession();
           onComplete();
         } else {
           setError(result.error ?? '設定の保存に失敗しました');

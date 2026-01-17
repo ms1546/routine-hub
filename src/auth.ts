@@ -1,5 +1,6 @@
 import NextAuth from 'next-auth';
 import Google from 'next-auth/providers/google';
+import { userSettingsRepository } from '@/features/users';
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
   trustHost: true, // NextAuth.js v5でリダイレクトURIを自動検出
@@ -20,8 +21,12 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     async session({ session, token }) {
       if (session.user) {
         session.user.id = token.sub ?? '';
-        // アカウント名（displayName）はGoogleアカウントの名前を使用
-        // 後でユーザー設定からカスタム名を取得できるように拡張可能
+        // userSettingsからdisplayNameを取得してセッションに含める
+        const userId = session.user.email ?? session.user.id ?? '';
+        if (userId) {
+          const settings = await userSettingsRepository.get(userId);
+          session.user.displayName = settings?.displayName ?? session.user.name ?? null;
+        }
       }
       return session;
     },
