@@ -16,6 +16,7 @@ import {
 } from '@/features/routines/actions/routines';
 import { planRoutineWithCalendar } from '@/features/calendar/domain/planner';
 import { getCurrentUser, type AuthenticatedUser } from '@/infrastructure/auth/session';
+import { userSettingsRepository } from '@/features/users';
 
 export default async function RoutineDetailPage({
   params
@@ -74,10 +75,15 @@ async function RoutineDetailContent({ routine, detail, insights, currentUser }: 
   const canEdit = currentUser.email === routine.owner || currentUser.role === 'admin';
   const isLiked = routinesRepository.isLikedByUser(routine.id, currentUser.id);
 
+  // OwnerのdisplayNameを取得（routine.ownerはemail）
+  const ownerSettings = await userSettingsRepository.get(routine.owner);
+  const ownerDisplayName = ownerSettings?.displayName ?? routine.owner;
+
   return (
     <RoutineDetail
       routine={detail}
       insights={insights}
+      ownerDisplayName={ownerDisplayName}
       onToggleVisibility={updateRoutineVisibilityAction}
       onApplyRoutine={applyRoutineAction}
       onForkRoutine={forkRoutineAction}
@@ -110,10 +116,15 @@ async function RoutineDetailFallback({
   const fullRoutine = await routinesRepository.get(routine.id, currentUser.id);
   const isLiked = fullRoutine ? routinesRepository.isLikedByUser(routine.id, currentUser.id) : false;
 
+  // OwnerのdisplayNameを取得
+  const ownerSettings = await userSettingsRepository.get(routine.owner);
+  const ownerDisplayName = ownerSettings?.displayName ?? routine.owner;
+
   return (
     <RoutineDetail
       routine={routine}
       insights={insights}
+      ownerDisplayName={ownerDisplayName}
       onToggleVisibility={updateRoutineVisibilityAction}
       onApplyRoutine={applyRoutineAction}
       onForkRoutine={forkRoutineAction}

@@ -7,7 +7,7 @@ import type { VisibilityTogglePayload, ToggleLikePayload } from '@/features/rout
 import type { ActionResult } from '@/shared/types/actionResult';
 import { VisibilityToggleButton } from './visibility-toggle-button';
 import { LikeButton } from './like-button';
-import { RoutineScheduleVisualization } from './routine-schedule-visualization';
+import { RoutineScheduleVisualizationCompact } from './routine-schedule-visualization-compact';
 import { routinesRepository } from '@/features/routines';
 import { getCurrentUser } from '@/infrastructure/auth/session';
 
@@ -72,10 +72,9 @@ export const RoutineCard = ({
         {/* スケジュール可視化 - 直感的にRoutineの構成を理解できる */}
         {routine.timeBlocks && routine.timeBlocks.length > 0 && (
           <div className="py-2 border-t border-border/50 pt-4">
-            <RoutineScheduleVisualization
+            <RoutineScheduleVisualizationCompact
               timeBlocks={routine.timeBlocks}
               durationType={routine.durationType}
-              compact={true}
             />
           </div>
         )}

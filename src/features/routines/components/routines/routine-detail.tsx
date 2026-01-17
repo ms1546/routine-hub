@@ -7,7 +7,6 @@ import {
   CardTitle
 } from '@/shared/ui/card';
 import { CalendarProposalPanel } from './calendar-proposal-panel';
-import { RoutineBlockEditor } from './routine-block-editor';
 import { RoutineScheduleVisualization } from './routine-schedule-visualization';
 import { LikeButton } from './like-button';
 import type { ProposedCalendarEvent, CalendarEvent } from '@/features/calendar/domain/types';
@@ -47,6 +46,7 @@ type CalendarPlanView = {
 type RoutineDetailProps = {
   routine: RoutineDetailView;
   insights: RoutineInsight[];
+  ownerDisplayName?: string; // Ownerの表示名（未指定の場合はroutine.ownerを使用）
   onToggleVisibility: (payload: VisibilityTogglePayload) => Promise<ActionResult<Routine>>;
   onApplyRoutine: (payload: ApplyRoutinePayload) => Promise<ActionResult<RoutineApplicationPreview>>;
   onForkRoutine: (payload: ForkRoutinePayload) => Promise<ActionResult<Routine>>;
@@ -64,6 +64,7 @@ type RoutineDetailProps = {
 export const RoutineDetail = ({
   routine,
   insights,
+  ownerDisplayName,
   onToggleVisibility,
   onApplyRoutine,
   onForkRoutine,
@@ -93,7 +94,7 @@ export const RoutineDetail = ({
           <dl className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             <div className="p-3 bg-muted/50 rounded-lg">
               <dt className="text-xs text-muted-foreground mb-1">Owner</dt>
-              <dd className="font-medium truncate">{routine.owner}</dd>
+              <dd className="font-medium truncate">{ownerDisplayName ?? routine.owner}</dd>
             </div>
             <div className="p-3 bg-muted/50 rounded-lg">
               <dt className="text-xs text-muted-foreground mb-1">Created</dt>
@@ -144,42 +145,16 @@ export const RoutineDetail = ({
             durationType={routine.durationType}
           />
         </Card>
-        {onUpdateBlock && onDeleteBlock && onReorderBlocks ? (
-          <RoutineBlockEditor
-            routine={routine}
-            onUpdateBlock={onUpdateBlock}
-            onDeleteBlock={onDeleteBlock}
-            onReorderBlocks={onReorderBlocks}
-            canEdit={canEdit}
-          />
-        ) : (
-          <div className="grid gap-3 sm:grid-cols-2">
-            {routine.timeBlocks.map((block) => (
-              <Card key={block.id} className="hover-lift">
-                <CardContent className="p-4">
-                  <div className="flex flex-col gap-2">
-                    <div>
-                      <p className="font-medium">{block.label}</p>
-                      <p className="text-sm text-muted-foreground line-clamp-2">{block.objective}</p>
-                    </div>
-                    <div className="flex gap-1.5 pt-1">
-                      <Badge variant="outline" className="text-xs">{block.schedule}</Badge>
-                      <Badge variant={block.energyLevel === 'high' ? 'warning' : 'secondary'} className="text-xs">
-                        {block.energyLevel}
-                      </Badge>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        )}
       </section>
 
       {workflow === undefined ? null : workflow ? (
         <WorkflowPanels workflow={workflow} />
       ) : (
-        <StreamingWorkflowPanels routineId={routine.id} initialWorkflow={null} />
+        <StreamingWorkflowPanels
+          routineId={routine.id}
+          initialWorkflow={null}
+          aiAccess={calendarPlan?.aiAccess}
+        />
       )}
 
       {workflow ? null : <InsightsPanel insights={insights} />}

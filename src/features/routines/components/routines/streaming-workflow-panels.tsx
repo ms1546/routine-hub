@@ -9,23 +9,33 @@ import {
   CardTitle
 } from '@/shared/ui/card';
 import { Badge } from '@/shared/ui/badge';
+import { Button } from '@/shared/ui/button';
 import { useStreamWorkflow } from '@/features/ai/hooks/use-stream-workflow';
 import type { RoutineAiWorkflowResult } from '@/features/ai/types';
 
 type StreamingWorkflowPanelsProps = {
   routineId: string;
   initialWorkflow: RoutineAiWorkflowResult | null;
+  aiAccess?: {
+    allowed: boolean;
+    remaining: number | null;
+    limit: number | null;
+    message?: string;
+  };
 };
 
-export function StreamingWorkflowPanels({ routineId, initialWorkflow }: StreamingWorkflowPanelsProps) {
+export function StreamingWorkflowPanels({ routineId, initialWorkflow, aiAccess }: StreamingWorkflowPanelsProps) {
   const { workflow, partialWorkflow, currentStep, progressMessage, streamingText, isLoading, error, startStream } = useStreamWorkflow(routineId);
   const [displayWorkflow, setDisplayWorkflow] = useState<RoutineAiWorkflowResult | null>(initialWorkflow);
+  const [hasStarted, setHasStarted] = useState(!!initialWorkflow);
 
-  useEffect(() => {
-    if (!initialWorkflow && !workflow && !isLoading) {
+  // 自動実行を停止（ボタン押下時にstartStream()を呼び出す）
+  const handleStartAnalysis = () => {
+    if (!hasStarted && !isLoading) {
+      setHasStarted(true);
       startStream();
     }
-  }, [initialWorkflow, workflow, isLoading, startStream]);
+  };
 
   useEffect(() => {
     if (workflow) {
@@ -47,6 +57,45 @@ export function StreamingWorkflowPanels({ routineId, initialWorkflow }: Streamin
 
   if (displayWorkflow) {
     return <WorkflowPanels workflow={displayWorkflow} />;
+  }
+
+  // AI Analysisボタン（まだ開始していない場合）
+  if (!hasStarted && !isLoading && !error) {
+    return (
+      <section className="space-y-4" id="ai-workflow">
+        <div className="flex items-center justify-between">
+          <div>
+            <h3 className="text-lg font-semibold">AI Analysis</h3>
+            <p className="text-sm text-muted-foreground">Comprehensive routine compatibility analysis</p>
+          </div>
+        </div>
+        <Card>
+          <CardContent className="p-6 text-center space-y-4">
+            <div className="flex items-center justify-center w-12 h-12 rounded-lg bg-primary/10 mx-auto mb-4">
+              <svg className="w-6 h-6 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+              </svg>
+            </div>
+            <div className="space-y-2">
+              <p className="text-sm text-muted-foreground">AI Analysisを実行して、Routineの適合性を分析します</p>
+              {aiAccess && !aiAccess.allowed && (
+                <p className="text-sm text-warning">{aiAccess.message}</p>
+              )}
+              {aiAccess && aiAccess.allowed && aiAccess.remaining !== null && (
+                <p className="text-xs text-muted-foreground">残り実行可能回数: {aiAccess.remaining}回</p>
+              )}
+            </div>
+            <Button
+              onClick={handleStartAnalysis}
+              disabled={!aiAccess?.allowed || isLoading}
+              className="mt-4"
+            >
+              AI Analysisを実行
+            </Button>
+          </CardContent>
+        </Card>
+      </section>
+    );
   }
 
   return (

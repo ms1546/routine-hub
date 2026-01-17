@@ -31,12 +31,13 @@ function handleActionError<T>(error: unknown): ActionResult<T> {
 }
 
 export async function updateUserSettingsAction(
-  payload: UpdateUserSettingsPayload
+  payload: UpdateUserSettingsPayload & { userId?: string }
 ): Promise<ActionResult<UserSettings>> {
   try {
     const user = await getCurrentUser();
+    const targetUserId = payload.userId ?? user.id;
     const parsed = updateUserSettingsSchema.parse(payload);
-    const updated = await userSettingsRepository.update(user.id, parsed);
+    const updated = await userSettingsRepository.update(targetUserId, parsed);
     return { ok: true, data: updated };
   } catch (error) {
     return handleActionError<UserSettings>(error);

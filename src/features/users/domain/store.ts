@@ -57,8 +57,12 @@ const getOrCreate = async (userId: string, defaults?: Partial<CreateUserSettings
     return existing;
   }
 
+  // displayNameが必須なので、defaultsに含まれていない場合はuserIdを表示名として使用
+  const displayName = defaults?.displayName ?? userId.split('@')[0] ?? 'User';
+
   return await create({
     userId,
+    displayName,
     ...defaults
   });
 };

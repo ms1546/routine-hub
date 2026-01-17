@@ -32,45 +32,11 @@ export type RoutinePlan = {
 
 export async function planRoutineWithCalendar(routine: Routine, viewer: AuthenticatedUser): Promise<RoutinePlan> {
   const calendarWindow = createDefaultCalendarWindow();
-  let workflow: RoutineAiWorkflowResult | null = null;
-  let executionId: string | null = null;
+  // AI Analysisはボタン押下時に実行するため、ここでは実行しない
+  const workflow: RoutineAiWorkflowResult | null = null;
+  const executionId: string | null = null;
   const limitSnapshot = getExecutionLimit(viewer);
   const allowedToExecute = canExecuteWorkflow(viewer);
-
-  if (allowedToExecute) {
-    try {
-      workflow = await runRoutineAiWorkflow({
-        routine,
-        user: {
-          timezone: 'Asia/Tokyo',
-          priorities: ['集中を守る', '丁寧な合意形成'],
-          constraints: ['出張が多い'],
-          energyLevel: 'medium'
-        },
-        calendarWindow: {
-          startDate: calendarWindow.start,
-          endDate: calendarWindow.end
-        }
-      });
-      registerExecutionUsage(viewer);
-      const record = recordWorkflowSuccess({
-        result: workflow,
-        workflowName: 'routine-ai-workflow',
-        routine,
-        user: viewer
-      });
-      executionId = record.id;
-    } catch (error) {
-      registerExecutionUsage(viewer);
-      recordWorkflowFailure({
-        workflowName: 'routine-ai-workflow',
-        routine,
-        user: viewer,
-        error: error instanceof Error ? error : new Error('Unknown workflow failure')
-      });
-      throw error;
-    }
-  }
 
   const proposedEvents = buildProposedEvents(routine, calendarWindow);
   const isCalendarConnected = await hasStoredRefreshToken(routine.owner);

@@ -2,7 +2,7 @@ import { z } from 'zod';
 
 export const userSettingsSchema = z.object({
   userId: z.string().min(1),
-  displayName: z.string().min(1).max(80).optional(),
+  displayName: z.string().min(1).max(80), // 必須
   timezone: z.string().default('Asia/Tokyo'),
   requiredSleepHours: z.number().int().min(4).max(12).default(7),
   priorities: z.array(z.string().min(1).max(100)).default(['集中時間を守る', 'カレンダーの権威を尊重']),
