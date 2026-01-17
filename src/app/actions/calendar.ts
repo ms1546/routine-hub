@@ -22,7 +22,9 @@ export async function confirmProposedEventsAction({
   proposalIds: string[];
   recurrence?: RecurrencePattern;
 }): Promise<CalendarConfirmationResult> {
-  const routine = await routinesRepository.get(routineId);
+  const { getCurrentUser } = await import('@/infrastructure/auth/session');
+  const currentUser = await getCurrentUser();
+  const routine = await routinesRepository.get(routineId, currentUser.id);
   if (!routine) {
     throw new Error('Routine not found');
   }

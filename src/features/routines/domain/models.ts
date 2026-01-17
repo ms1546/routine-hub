@@ -107,7 +107,17 @@ export const createRoutineSchema = routineBaseSchema
 // そのため、updateRoutineSchemaを直接定義する
 export const updateRoutineSchema = z.object({
   id: z.string().uuid(),
-  patch: routineBaseSchema.partial()
+  patch: routineBaseSchema
+    .partial()
+    .extend({
+      stats: z
+        .object({
+          forks: z.number().int().min(0).optional(),
+          applications: z.number().int().min(0).optional(),
+          likes: z.number().int().min(0).optional()
+        })
+        .optional()
+    })
 });
 
 export type Weekday = z.infer<typeof weekdaySchema>;

@@ -770,26 +770,49 @@ if (typeof window === 'undefined') {
   console.log(`[Routine Store] Seed data: total=${seedRoutines.length}, loaded=${loadedCount}, errors=${errorCount}, store size=${routineStore.size}`);
 }
 
-const applyFilter = (routine: Routine, filter?: RoutineFilter): boolean => {
-  if (!filter) return true;
+const applyFilter = (routine: Routine, filter?: RoutineFilter, currentUserId?: string): boolean => {
+  if (!filter) {
+    // フィルターがない場合、privateのRoutineは所有者のみ見える
+    if (routine.visibility === 'private' && routine.owner !== currentUserId) {
+      return false;
+    }
+    return true;
+  }
   if (filter.visibility && routine.visibility !== filter.visibility) return false;
   if (filter.duration && routine.durationType !== filter.duration) return false;
   if (filter.tag && !routine.tags.includes(filter.tag.toLowerCase())) return false;
+
+  // visibilityフィルターが'public'の場合、privateは除外
+  // visibilityフィルターがない場合、privateは所有者のみ見える
+  if (filter.visibility === 'public' && routine.visibility === 'private') {
+    return false;
+  }
+  if (!filter.visibility && routine.visibility === 'private' && routine.owner !== currentUserId) {
+    return false;
+  }
+
   return true;
 };
 
-const list = async (filter?: RoutineFilter): Promise<Routine[]> => {
+const list = async (filter?: RoutineFilter, currentUserId?: string): Promise<Routine[]> => {
   const allRoutines = Array.from(routineStore.values());
-  const filtered = allRoutines.filter((routine) => applyFilter(routine, filter));
+  const filtered = allRoutines.filter((routine) => applyFilter(routine, filter, currentUserId));
   if (typeof window === 'undefined') {
-    console.log(`[Routine Store] list() called: total=${allRoutines.length}, filtered=${filtered.length}, filter=`, filter);
+    console.log(`[Routine Store] list() called: total=${allRoutines.length}, filtered=${filtered.length}, filter=`, filter, `currentUserId=${currentUserId}`);
   }
   return filtered.map((routine) => clone(routine));
 };
 
-const get = async (id: string): Promise<Routine | null> => {
+const get = async (id: string, currentUserId?: string): Promise<Routine | null> => {
   const routine = routineStore.get(id);
-  return routine ? clone(routine) : null;
+  if (!routine) return null;
+
+  // privateのRoutineは所有者のみアクセス可能
+  if (routine.visibility === 'private' && routine.owner !== currentUserId) {
+    return null;
+  }
+
+  return clone(routine);
 };
 
 const create = async (input: CreateRoutineInput): Promise<Routine> => {
@@ -823,9 +846,11 @@ const update = async (input: z.infer<typeof updateRoutineSchema>): Promise<Routi
   }
 
   const patch = { ...parsed.patch } as Partial<Routine>;
+  // statsを先に処理してから、patchの他のプロパティを適用
+  const { stats: patchStats, ...restPatch } = patch;
   const next: Routine = {
     ...current,
-    ...patch,
+    ...restPatch,
     tags: patch.tags ? normalizeTags(patch.tags) : current.tags,
     timeBlocks: patch.timeBlocks
       ? patch.timeBlocks.map((block) => ({
@@ -833,6 +858,7 @@ const update = async (input: z.infer<typeof updateRoutineSchema>): Promise<Routi
           id: block.id ?? randomUUID()
         }))
       : current.timeBlocks,
+    stats: patchStats ? { ...current.stats, ...patchStats } : current.stats,
     updatedAt: new Date(),
     version: current.version + 1
   };

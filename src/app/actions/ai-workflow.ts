@@ -17,11 +17,11 @@ const defaultWindow = {
 };
 
 export async function previewRoutineAiAction(routineId: string) {
-  const routine = await routinesRepository.get(routineId);
+  const user = await getCurrentUser();
+  const routine = await routinesRepository.get(routineId, user.id);
   if (!routine) {
     throw new Error('Routine not found');
   }
-  const user = await getCurrentUser();
   if (!canExecuteWorkflow(user)) {
     throw new Error('AI preview limit reached for this account.');
   }

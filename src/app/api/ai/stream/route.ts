@@ -210,15 +210,14 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    const routine = await routinesRepository.get(routineId);
+    const user = await getCurrentUser();
+    const routine = await routinesRepository.get(routineId, user.id);
     if (!routine) {
       return new Response(JSON.stringify({ error: 'Routine not found' }), {
         status: 404,
         headers: { 'Content-Type': 'application/json' },
       });
     }
-
-    const user = await getCurrentUser();
     if (!canExecuteWorkflow(user)) {
       return new Response(JSON.stringify({ error: 'AI preview limit reached' }), {
         status: 403,

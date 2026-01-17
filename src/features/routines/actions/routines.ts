@@ -15,6 +15,7 @@ import {
   routineVisibilitySchema,
   routinesRepository
 } from '@/features/routines';
+import { getCurrentUser } from '@/infrastructure/auth/session';
 import {
   buildRoutinePreview,
   routineApplicationSchema,
@@ -127,7 +128,8 @@ export async function updateRoutineVisibilityAction(
 ): Promise<ActionResult<Routine>> {
   try {
     const parsed = visibilityToggleSchema.parse(payload);
-    const routine = await routinesRepository.get(parsed.routineId);
+    const currentUser = await getCurrentUser();
+    const routine = await routinesRepository.get(parsed.routineId, currentUser.id);
     if (!routine) {
       throw new Error('Routineが見つかりません');
     }
@@ -180,7 +182,8 @@ export async function updateRoutineBlockAction(
 ): Promise<ActionResult<Routine>> {
   try {
     const parsed = updateBlockSchema.parse(payload);
-    const routine = await routinesRepository.get(parsed.routineId);
+    const currentUser = await getCurrentUser();
+    const routine = await routinesRepository.get(parsed.routineId, currentUser.id);
     if (!routine) {
       throw new Error('Routineが見つかりません');
     }
@@ -257,7 +260,8 @@ export async function reorderRoutineBlocksAction(
 ): Promise<ActionResult<Routine>> {
   try {
     const parsed = reorderBlocksSchema.parse(payload);
-    const routine = await routinesRepository.get(parsed.routineId);
+    const currentUser = await getCurrentUser();
+    const routine = await routinesRepository.get(parsed.routineId, currentUser.id);
     if (!routine) {
       throw new Error('Routineが見つかりません');
     }
@@ -352,7 +356,8 @@ export async function applyRoutineAction(
 ): Promise<ActionResult<RoutineApplicationPreview>> {
   try {
     const parsed = routineApplicationSchema.parse(payload);
-    const routine = await routinesRepository.get(parsed.routineId);
+    const currentUser = await getCurrentUser();
+    const routine = await routinesRepository.get(parsed.routineId, currentUser.id);
     if (!routine) {
       throw new Error('Routineが見つかりません');
     }

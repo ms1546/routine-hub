@@ -15,6 +15,7 @@ import {
   routineVisibilitySchema,
   routinesRepository
 } from '@/features/routines';
+import { getCurrentUser } from '@/infrastructure/auth/session';
 import {
   buildRoutinePreview,
   routineApplicationSchema,
@@ -126,8 +127,9 @@ export async function updateRoutineVisibilityAction(
   payload: z.infer<typeof visibilityToggleSchema>
 ): Promise<ActionResult<Routine>> {
   try {
+    const currentUser = await getCurrentUser();
     const parsed = visibilityToggleSchema.parse(payload);
-    const routine = await routinesRepository.get(parsed.routineId);
+    const routine = await routinesRepository.get(parsed.routineId, currentUser.id);
     if (!routine) {
       throw new Error('Routine not found');
     }
@@ -180,7 +182,8 @@ export async function updateRoutineBlockAction(
 ): Promise<ActionResult<Routine>> {
   try {
     const parsed = updateBlockSchema.parse(payload);
-    const routine = await routinesRepository.get(parsed.routineId);
+    const currentUser = await getCurrentUser();
+    const routine = await routinesRepository.get(parsed.routineId, currentUser.id);
     if (!routine) {
       throw new Error('Routine not found');
     }
@@ -220,7 +223,8 @@ export async function deleteRoutineBlockAction(
 ): Promise<ActionResult<Routine>> {
   try {
     const parsed = deleteBlockSchema.parse(payload);
-    const routine = await routinesRepository.get(parsed.routineId);
+    const currentUser = await getCurrentUser();
+    const routine = await routinesRepository.get(parsed.routineId, currentUser.id);
     if (!routine) {
       throw new Error('Routine not found');
     }
@@ -257,7 +261,8 @@ export async function reorderRoutineBlocksAction(
 ): Promise<ActionResult<Routine>> {
   try {
     const parsed = reorderBlocksSchema.parse(payload);
-    const routine = await routinesRepository.get(parsed.routineId);
+    const currentUser = await getCurrentUser();
+    const routine = await routinesRepository.get(parsed.routineId, currentUser.id);
     if (!routine) {
       throw new Error('Routine not found');
     }
@@ -352,7 +357,8 @@ export async function applyRoutineAction(
 ): Promise<ActionResult<RoutineApplicationPreview>> {
   try {
     const parsed = routineApplicationSchema.parse(payload);
-    const routine = await routinesRepository.get(parsed.routineId);
+    const currentUser = await getCurrentUser();
+    const routine = await routinesRepository.get(parsed.routineId, currentUser.id);
     if (!routine) {
       throw new Error('Routine not found');
     }

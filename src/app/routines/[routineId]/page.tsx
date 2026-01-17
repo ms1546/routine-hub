@@ -23,14 +23,14 @@ export default async function RoutineDetailPage({
   params: Promise<{ routineId: string }>;
 }) {
   const { routineId } = await params;
-  const routine = await routinesRepository.get(routineId);
+  const currentUser = await getCurrentUser();
+  const routine = await routinesRepository.get(routineId, currentUser.id);
   if (!routine) {
     notFound();
   }
 
   const detail = toRoutineDetail(routine);
   const insights = await generateRoutineInsights(routine);
-  const currentUser = await getCurrentUser();
 
   return (
     <AppShell
@@ -95,7 +95,7 @@ async function RoutineDetailFallback({
   insights: RoutineInsight[];
 }) {
   const currentUser = await getCurrentUser();
-  const fullRoutine = await routinesRepository.get(routine.id);
+  const fullRoutine = await routinesRepository.get(routine.id, currentUser.id);
   const isLiked = fullRoutine ? routinesRepository.isLikedByUser(routine.id, currentUser.id) : false;
 
   return (

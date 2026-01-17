@@ -8,6 +8,7 @@ import {
 } from '@/features/routines/actions/routines';
 import type { RoutineFilter } from '@/features/routines';
 import { routinesRepository, toRoutineListItem } from '@/features/routines';
+import { getCurrentUser } from '@/infrastructure/auth/session';
 
 const isValidDuration = (value: string | null | undefined): value is 'half-day' | 'full-day' | 'weekly' =>
   value === 'half-day' || value === 'full-day' || value === 'weekly';
@@ -34,9 +35,10 @@ export default async function RoutinesPage({
 }: {
   searchParams?: Record<string, string | string[] | undefined>;
 }) {
+  const currentUser = await getCurrentUser();
   const [allRoutines, filteredRoutines] = await Promise.all([
-    routinesRepository.list(),
-    routinesRepository.list(parseFilters(searchParams))
+    routinesRepository.list(undefined, currentUser.id),
+    routinesRepository.list(parseFilters(searchParams), currentUser.id)
   ]);
   const uniqueTags = Array.from(new Set(allRoutines.flatMap((routine) => routine.tags))).sort();
   const listItems = filteredRoutines.map(toRoutineListItem);

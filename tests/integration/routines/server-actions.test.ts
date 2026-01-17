@@ -24,17 +24,31 @@ const buildFormData = () => {
 };
 
 describe('Routine server actions', () => {
+  const originalEnv = process.env.MOCK_USER_EMAIL;
+
+  beforeEach(() => {
+    process.env.MOCK_USER_EMAIL = 'storybook@example.com';
+  });
+
+  afterEach(() => {
+    process.env.MOCK_USER_EMAIL = originalEnv;
+  });
+
   it('creates a routine via server action', async () => {
     const response = await createRoutineAction(buildFormData());
     expect(response.ok).toBe(true);
     expect(response.data).toBeDefined();
-    const created = await routinesRepository.get(response.data!.id);
+    const { getCurrentUser } = await import('@/infrastructure/auth/session');
+    const currentUser = await getCurrentUser();
+    const created = await routinesRepository.get(response.data!.id, currentUser.id);
     expect(created?.name).toBe('Story Routine');
   });
 
   it('builds a preview when applying a routine', async () => {
+    const { getCurrentUser } = await import('@/infrastructure/auth/session');
+    const currentUser = await getCurrentUser();
     const targetId = '11111111-1111-4111-8111-111111111111';
-    const before = await routinesRepository.get(targetId);
+    const before = await routinesRepository.get(targetId, currentUser.id);
     const preview = await applyRoutineAction({
       routineId: targetId,
       startDate: '2024-01-01',
@@ -45,7 +59,7 @@ describe('Routine server actions', () => {
     expect(preview.ok).toBe(true);
     expect(preview.data?.totalBlocks).toBeGreaterThan(0);
 
-    const after = await routinesRepository.get(targetId);
+    const after = await routinesRepository.get(targetId, currentUser.id);
     expect(after?.stats.applications).toBe((before?.stats.applications ?? 0) + 1);
   });
 

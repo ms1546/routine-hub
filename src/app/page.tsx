@@ -4,20 +4,44 @@ import { RoutineList } from '@/features/routines/components/routines/routine-lis
 import { buttonVariants } from '@/shared/ui/button-variants';
 import { updateRoutineVisibilityAction } from '@/features/routines/actions/routines';
 import { routinesRepository, toRoutineListItem } from '@/features/routines';
+import { getCurrentUser } from '@/infrastructure/auth/session';
 
 export default async function HomePage() {
-  const highlighted = (await routinesRepository.list()).slice(0, 2).map(toRoutineListItem);
+  const currentUser = await getCurrentUser();
+
+  // 公開されているRoutineのみを取得し、人気順（likes数）でソート
+  const publicRoutines = await routinesRepository.list({ visibility: 'public' });
+  const sortedByPopularity = publicRoutines
+    .sort((a, b) => b.stats.likes - a.stats.likes)
+    .slice(0, 6); // トップ6を表示
+
+  const highlighted = sortedByPopularity.map(toRoutineListItem);
 
   return (
     <AppShell
       title="Routine Hub"
+      description="人気のRoutineを発見し、あなたの生活に取り入れましょう"
       actions={
         <Link href="/routines" className={buttonVariants()}>
-          Explore Library
+          ライブラリを探索
         </Link>
       }
     >
-      <RoutineList routines={highlighted} onToggleVisibility={updateRoutineVisibilityAction} />
+      <div className="space-y-8">
+        <section>
+          <div className="mb-6">
+            <h2 className="text-2xl font-bold tracking-tight mb-2">人気のRoutine</h2>
+            <p className="text-muted-foreground">コミュニティで最も評価されているRoutineです</p>
+          </div>
+          <RoutineList routines={highlighted} onToggleVisibility={updateRoutineVisibilityAction} />
+        </section>
+
+        <div className="text-center pt-8">
+          <Link href="/routines" className={buttonVariants({ variant: 'outline' })}>
+            すべてのRoutineを見る
+          </Link>
+        </div>
+      </div>
     </AppShell>
   );
 }
