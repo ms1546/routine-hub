@@ -46,11 +46,14 @@ export function RoutineScheduleVisualization({
   const isDayBased = durationType === 'full-day' || durationType === 'half-day';
 
   if (isDayBased) {
-    // full-dayやhalf-day: 曜日表示なし、1日のタイムラインのみ
+    // full-dayやhalf-day: 時間軸を表示し、Blockを1行に並べて表示
+    // 時間順にソート
+    const sortedBlocks = [...timeBlocks].sort((a, b) => a.startHour - b.startHour);
+
     return (
-      <div className={className}>
-        <div className="space-y-4">
-          <div className="space-y-1.5">
+      <div className={`${className} overflow-visible`}>
+        <div className="space-y-4 overflow-visible">
+          <div className="space-y-1.5 overflow-visible">
             {/* 時間軸 - 3時間ごとに表示 */}
             <div className="relative h-5">
               {Array.from({ length: 9 }, (_, i) => {
@@ -66,24 +69,18 @@ export function RoutineScheduleVisualization({
                 );
               })}
             </div>
-            {/* タイムライン */}
-            <div className={`relative bg-muted/30 rounded-md ${compact ? 'h-16 overflow-hidden' : 'h-24 overflow-visible'}`}>
-              {timeBlocks.map((block) => {
-                const leftPercent = (block.startHour / 24) * 100;
-                const widthPercent = ((block.endHour - block.startHour) / 24) * 100;
+            {/* Blockを1行に並べる */}
+            <div className="flex flex-wrap gap-3 overflow-visible">
+              {sortedBlocks.map((block) => {
                 const isHovered = hoveredBlockId === block.id;
                 return (
                   <div
                     key={block.id}
-                    className={`absolute top-0 h-full border-2 ${energyLevelColors[block.energyLevel] || energyLevelColors.low} rounded-sm transition-all hover:z-30 relative flex flex-col justify-center items-center ${compact ? 'p-1.5' : 'p-2.5'}`}
-                    style={{
-                      left: `${leftPercent}%`,
-                      width: `${widthPercent}%`
-                    }}
+                    className={`relative flex flex-col justify-center items-center border-2 ${energyLevelColors[block.energyLevel] || energyLevelColors.low} rounded-lg transition-all hover:z-30 ${compact ? 'px-3 py-2 text-xs' : 'px-4 py-3 text-sm'} min-w-[120px]`}
                     onMouseEnter={() => setHoveredBlockId(block.id)}
                     onMouseLeave={() => setHoveredBlockId(null)}
                   >
-                    {/* 常時表示：Block名と時間のみ（ブロック内中央） */}
+                    {/* 常時表示：Block名と時間のみ */}
                     <div className="flex flex-col items-center justify-center min-w-0 text-center pointer-events-none">
                       <div className={`${compact ? 'text-xs' : 'text-sm'} font-semibold text-foreground truncate w-full leading-tight mb-1`}>
                         {block.label}
@@ -186,7 +183,7 @@ export function RoutineScheduleVisualization({
                       })}
                     </div>
                     {/* タイムライン */}
-                    <div className={`relative bg-muted/30 rounded-md ${compact ? 'h-16 overflow-hidden' : 'h-24 overflow-visible'}`}>
+                    <div className={`relative bg-muted/30 rounded-md ${compact ? 'h-16 overflow-hidden' : 'h-24'} overflow-visible`}>
                       {dayBlocks.map((block) => {
                         const leftPercent = (block.startHour / 24) * 100;
                         const widthPercent = ((block.endHour - block.startHour) / 24) * 100;

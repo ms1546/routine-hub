@@ -139,7 +139,7 @@ export const RoutineDetail = ({
           </div>
           <Badge variant="secondary">{routine.timeBlocks.length} blocks</Badge>
         </div>
-        <Card className="p-6">
+        <Card className="p-6 overflow-visible">
           <RoutineScheduleVisualization
             timeBlocks={routine.timeBlocks}
             durationType={routine.durationType}
