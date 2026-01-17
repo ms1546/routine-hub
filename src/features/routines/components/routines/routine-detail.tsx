@@ -6,13 +6,11 @@ import {
   CardHeader,
   CardTitle
 } from '@/shared/ui/card';
-import { CalendarProposalPanel } from './calendar-proposal-panel';
 import { RoutineScheduleVisualization } from './routine-schedule-visualization';
 import { LikeButton } from './like-button';
 import type { ProposedCalendarEvent, CalendarEvent } from '@/features/calendar/domain/types';
 import type { RoutineAiWorkflowResult } from '@/features/ai/types';
 import type { RoutineDetailView, Routine } from '@/features/routines';
-import type { RoutineInsight } from '@/features/ai/insights';
 import type {
   ApplyRoutinePayload,
   ForkRoutinePayload,
@@ -45,7 +43,6 @@ type CalendarPlanView = {
 
 type RoutineDetailProps = {
   routine: RoutineDetailView;
-  insights: RoutineInsight[];
   ownerDisplayName?: string; // Ownerの表示名（未指定の場合はroutine.ownerを使用）
   onToggleVisibility: (payload: VisibilityTogglePayload) => Promise<ActionResult<Routine>>;
   onApplyRoutine: (payload: ApplyRoutinePayload) => Promise<ActionResult<RoutineApplicationPreview>>;
@@ -63,7 +60,6 @@ type RoutineDetailProps = {
 
 export const RoutineDetail = ({
   routine,
-  insights,
   ownerDisplayName,
   onToggleVisibility,
   onApplyRoutine,
@@ -125,7 +121,6 @@ export const RoutineDetail = ({
               visibility={routine.visibility}
               action={onToggleVisibility}
             />
-            <ApplyRoutineForm routineId={routine.id} action={onApplyRoutine} />
             <ForkRoutineForm routineId={routine.id} defaultName={routine.name} action={onForkRoutine} />
           </div>
         </CardContent>
@@ -145,6 +140,7 @@ export const RoutineDetail = ({
             durationType={routine.durationType}
           />
         </Card>
+        <ApplyRoutineForm routineId={routine.id} action={onApplyRoutine} />
       </section>
 
       {workflow === undefined ? null : workflow ? (
@@ -157,23 +153,6 @@ export const RoutineDetail = ({
         />
       )}
 
-      {workflow ? null : <InsightsPanel insights={insights} />}
-
-      {calendarPlan ? (
-        <section className="space-y-4" id="calendar">
-          <div>
-            <h2 className="text-xl font-semibold">Calendar Planning</h2>
-            <p className="text-sm text-muted-foreground">Proposed schedule and conflict detection</p>
-          </div>
-          <CalendarProposalPanel
-            routineId={routine.id}
-            proposedEvents={calendarPlan.proposedEvents}
-            existingEvents={calendarPlan.existingEvents}
-            isCalendarConnected={calendarPlan.isCalendarConnected}
-            aiAccess={calendarPlan.aiAccess}
-          />
-        </section>
-      ) : null}
     </div>
   );
 };
@@ -410,36 +389,6 @@ const WorkflowPanels = ({ workflow }: { workflow: RoutineAiWorkflowResult }) => 
           </div>
         </CardContent>
       </Card>
-    </section>
-  );
-};
-
-const InsightsPanel = ({ insights }: { insights: RoutineInsight[] }) => {
-  if (insights.length === 0) return null;
-  return (
-    <section className="space-y-4">
-      <div>
-        <h2 className="text-xl font-semibold">Insights</h2>
-        <p className="text-sm text-muted-foreground">Key observations and recommendations</p>
-      </div>
-      <div className="grid gap-3 sm:grid-cols-2">
-        {insights.map((insight) => (
-          <Card key={insight.title} className="hover-lift">
-            <CardContent className="p-4">
-              <div className="space-y-2">
-                <Badge
-                  variant={insight.severity === 'warning' ? 'warning' : insight.severity === 'success' ? 'success' : 'secondary'}
-                  className="text-xs"
-                >
-                  {insight.severity}
-                </Badge>
-                <h4 className="font-medium">{insight.title}</h4>
-                <p className="text-sm text-muted-foreground">{insight.body}</p>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
     </section>
   );
 };

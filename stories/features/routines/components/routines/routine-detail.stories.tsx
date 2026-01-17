@@ -4,11 +4,6 @@ import { mockRoutineDetail, mockProposedEvents, mockExistingEvents } from '../..
 import { stubApplyRoutine, stubForkRoutine, stubToggleVisibility } from '../../../../routine-action-stubs';
 import type { RoutineAiWorkflowResult } from '@/features/ai/types';
 
-const insights = [
-  { title: 'Load & Recovery Balance', body: 'Preview text for guardrail messaging.', severity: 'info' as const },
-  { title: 'Conflict Watchlist', body: 'Conflicts require user confirmation.', severity: 'warning' as const }
-];
-
 const mockWorkflow: RoutineAiWorkflowResult = {
   profile: {
     agent: 'bedrock/profile-agent',
@@ -90,7 +85,6 @@ const meta: Meta<typeof RoutineDetail> = {
   component: RoutineDetail,
   args: {
     routine: mockRoutineDetail,
-    insights,
     onToggleVisibility: stubToggleVisibility,
     onApplyRoutine: stubApplyRoutine,
     onForkRoutine: stubForkRoutine,

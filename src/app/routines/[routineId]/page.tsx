@@ -4,7 +4,6 @@ import { AppShell } from '@/shared/components/app-shell';
 import { RoutineDetail } from '@/features/routines/components/routines/routine-detail';
 import { routinesRepository, toRoutineDetail } from '@/features/routines';
 import type { Routine, RoutineDetailView } from '@/features/routines';
-import { generateRoutineInsights, type RoutineInsight } from '@/features/ai/insights';
 import {
   applyRoutineAction,
   forkRoutineAction,
@@ -43,7 +42,6 @@ export default async function RoutineDetailPage({
   }
 
   const detail = toRoutineDetail(routine);
-  const insights = await generateRoutineInsights(routine);
 
   return (
     <AppShell
@@ -51,11 +49,10 @@ export default async function RoutineDetailPage({
       description="Inspect the cadence, guardrails, and AI commentary before applying anything to your calendar."
       breadcrumb={{ label: 'Back to library', href: '/routines' }}
     >
-      <Suspense fallback={<RoutineDetailFallback routine={detail} insights={insights} />}>
+      <Suspense fallback={<RoutineDetailFallback routine={detail} />}>
         <RoutineDetailContent
           routine={routine}
           detail={detail}
-          insights={insights}
           currentUser={currentUser}
         />
       </Suspense>
@@ -66,11 +63,10 @@ export default async function RoutineDetailPage({
 type RoutineDetailContentProps = {
   routine: Routine;
   detail: RoutineDetailView;
-  insights: RoutineInsight[];
   currentUser: AuthenticatedUser;
 };
 
-async function RoutineDetailContent({ routine, detail, insights, currentUser }: RoutineDetailContentProps) {
+async function RoutineDetailContent({ routine, detail, currentUser }: RoutineDetailContentProps) {
   const calendarPlan = await planRoutineWithCalendar(routine, currentUser);
   const canEdit = currentUser.email === routine.owner || currentUser.role === 'admin';
   const isLiked = routinesRepository.isLikedByUser(routine.id, currentUser.id);
@@ -82,7 +78,6 @@ async function RoutineDetailContent({ routine, detail, insights, currentUser }: 
   return (
     <RoutineDetail
       routine={detail}
-      insights={insights}
       ownerDisplayName={ownerDisplayName}
       onToggleVisibility={updateRoutineVisibilityAction}
       onApplyRoutine={applyRoutineAction}
@@ -106,11 +101,9 @@ async function RoutineDetailContent({ routine, detail, insights, currentUser }: 
 }
 
 async function RoutineDetailFallback({
-  routine,
-  insights
+  routine
 }: {
   routine: RoutineDetailView;
-  insights: RoutineInsight[];
 }) {
   const currentUser = await getCurrentUser();
   const fullRoutine = await routinesRepository.get(routine.id, currentUser.id);
@@ -123,7 +116,6 @@ async function RoutineDetailFallback({
   return (
     <RoutineDetail
       routine={routine}
-      insights={insights}
       ownerDisplayName={ownerDisplayName}
       onToggleVisibility={updateRoutineVisibilityAction}
       onApplyRoutine={applyRoutineAction}

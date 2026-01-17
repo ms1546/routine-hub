@@ -28,20 +28,30 @@ export function CalendarPreviewVisualization({
 
   // 提案イベントを日付ごとにグループ化
   proposedEvents.forEach((event) => {
-    const dateKey = new Date(event.start).toISOString().split('T')[0];
+    const start: string | undefined = event.start;
+    if (!start || typeof start !== 'string') return;
+    const dateKey: string = new Date(start).toISOString().split('T')[0]!;
     if (!eventsByDate.has(dateKey)) {
       eventsByDate.set(dateKey, { proposed: [], existing: [] });
     }
-    eventsByDate.get(dateKey)!.proposed.push(event);
+    const dateGroup = eventsByDate.get(dateKey);
+    if (dateGroup) {
+      dateGroup.proposed.push(event);
+    }
   });
 
   // 既存イベントを日付ごとにグループ化
   existingEvents.forEach((event) => {
-    const dateKey = new Date(event.start).toISOString().split('T')[0];
+    const start: string | undefined = event.start;
+    if (!start || typeof start !== 'string') return;
+    const dateKey: string = new Date(start).toISOString().split('T')[0]!;
     if (!eventsByDate.has(dateKey)) {
       eventsByDate.set(dateKey, { proposed: [], existing: [] });
     }
-    eventsByDate.get(dateKey)!.existing.push(event);
+    const dateGroup = eventsByDate.get(dateKey);
+    if (dateGroup) {
+      dateGroup.existing.push(event);
+    }
   });
 
   // 日付順にソート
