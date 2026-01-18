@@ -48,9 +48,8 @@ export function RoutineFilters({ availableTags }: RoutineFiltersProps) {
         <div className="space-y-1.5">
           <Label htmlFor="duration-filter">Duration</Label>
           <select id="duration-filter" value={searchParams.get('duration') ?? ''} onChange={(event) => updateParam('duration', event.target.value)} className={selectClassName}>
-            <option value="">Any duration</option>
-            <option value="normal">Half-day</option>
-            <option value="normal">Full-day</option>
+            <option value="">すべて</option>
+            <option value="normal">Day</option>
             <option value="weekly">Weekly</option>
           </select>
         </div>

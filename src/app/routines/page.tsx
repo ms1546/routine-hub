@@ -45,8 +45,8 @@ export default async function RoutinesPage({
 
   return (
     <AppShell
-      title="Routine Library"
-      description="Browse reusable, human-reviewed routines. Duplicate, adapt, and apply them with deliberate control."
+      title="Routineライブラリ"
+      description="再利用可能な、人間がレビューしたRoutineを閲覧できます。複製、適応、適用を意図的に制御できます。"
     >
       <RoutineFilters availableTags={uniqueTags} />
       <RoutineList routines={listItems} userEmail={currentUser.email} />

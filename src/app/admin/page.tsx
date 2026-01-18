@@ -19,7 +19,7 @@ export default async function AdminPage() {
 
   return (
     <AppShell
-      title="Admin Console"
+      title="管理コンソール"
     >
       <ExecutionHistoryCard records={records} />
       <HumanEvaluationForm

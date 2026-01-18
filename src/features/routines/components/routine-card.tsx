@@ -33,9 +33,9 @@ export const RoutineCard = ({
       <CardHeader className="pb-3">
         <div className="flex items-start justify-between gap-2">
           <div className="flex flex-wrap gap-1">
-            <Badge variant="secondary" className="text-xs">{routine.durationType}</Badge>
+            <Badge variant="secondary" className="text-xs">{routine.durationType === 'normal' ? 'Day' : routine.durationType === 'weekly' ? 'Weekly' : routine.durationType}</Badge>
             <Badge variant={routine.visibility === 'public' ? 'primary' : 'outline'} className="text-xs">
-              {routine.visibility}
+              {routine.visibility === 'public' ? '公開' : '非公開'}
             </Badge>
           </div>
           <div className="flex items-center gap-2">

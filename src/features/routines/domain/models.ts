@@ -14,7 +14,7 @@ export const routineDurationSchema = z.enum(['normal', 'weekly']);
 export const routineVisibilitySchema = z.enum(['public', 'private']);
 
 // durationTypeに応じたバリデーションを行う関数
-const validateBlockDuration = (block: { startHour: number; endHour: number; day: string }, durationType: 'normal' | 'normal' | 'weekly', ctx: z.RefinementCtx) => {
+const validateBlockDuration = (block: { startHour: number; endHour: number; day: string }, durationType: 'normal' | 'weekly', ctx: z.RefinementCtx) => {
   const durationHours = block.endHour - block.startHour;
   const minDurationHours = 0.25; // 15分（最短）
 

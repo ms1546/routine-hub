@@ -161,9 +161,9 @@ export function RoutineDetailEditor({
       <Card className="fade-in-up">
         <CardHeader>
           <div className="flex flex-wrap items-center gap-1.5 mb-3">
-            <Badge variant="secondary">{routine.durationType}</Badge>
+            <Badge variant="secondary">{routine.durationType === 'normal' ? 'Day' : routine.durationType === 'weekly' ? 'Weekly' : routine.durationType}</Badge>
             <Badge variant="secondary">{routine.intensity}</Badge>
-            <Badge variant={routine.visibility === 'public' ? 'primary' : 'outline'}>{routine.visibility}</Badge>
+            <Badge variant={routine.visibility === 'public' ? 'primary' : 'outline'}>{routine.visibility === 'public' ? '公開' : '非公開'}</Badge>
           </div>
         </CardHeader>
         <CardContent className="space-y-6">
