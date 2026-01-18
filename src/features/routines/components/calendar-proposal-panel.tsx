@@ -81,11 +81,14 @@ export function CalendarProposalPanel({
             </p>
           ) : (
             <div className="space-y-3">
-              <p className="text-sm text-muted-foreground">You need to connect Google Calendar before inserting events.</p>
+              <p className="text-sm text-muted-foreground">
+                Calendar export is currently limited to admin users in portfolio mode.
+                This is an intentional design decision to avoid requiring sensitive calendar permissions from reviewers.
+              </p>
               {connectUrl ? (
-                <Button type="button" variant="secondary" asChild>
-                  <a href={connectUrl}>Connect Calendar</a>
-                </Button>
+                <a href={connectUrl}>
+                  <Button type="button" variant="secondary">Connect Calendar</Button>
+                </a>
               ) : null}
             </div>
           )}

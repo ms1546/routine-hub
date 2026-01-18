@@ -296,7 +296,7 @@ export async function reorderRoutineBlocksAction(
 
 // createRoutineSchemaにsuperRefineがあるため、.partial()が使えない
 // そのため、overridesを直接定義する
-const forkRoutineSchema = z.object({
+const cloneRoutineSchema = z.object({
   routineId: z.string().uuid(),
   overrides: z
     .object({
@@ -311,7 +311,13 @@ const forkRoutineSchema = z.object({
     .optional()
 });
 
-export type ForkRoutinePayload = z.infer<typeof forkRoutineSchema>;
+/**
+ * Clone Routine Payload
+ *
+ * Used to create a personal copy (clone) of a public Routine.
+ * Clones are isolated copies - the original Routine is never modified.
+ */
+export type CloneRoutinePayload = z.infer<typeof cloneRoutineSchema>;
 
 const deleteRoutineSchema = z.object({
   routineId: z.string().uuid()
@@ -393,18 +399,29 @@ export async function updateRoutineInfoAction(
   }
 }
 
-export async function forkRoutineAction(
-  payload: z.infer<typeof forkRoutineSchema>
+/**
+ * Clone Routine Action
+ *
+ * Creates a personal copy (clone) of a public Routine.
+ * The cloned Routine is private by default and owned by the current user.
+ *
+ * Design decision: We use "clone" instead of "fork" because:
+ * - Clones are personal, isolated copies (not linked to the original)
+ * - The original Routine is never modified
+ * - Unlike GitHub forks, there's no upstream relationship
+ */
+export async function cloneRoutineAction(
+  payload: z.infer<typeof cloneRoutineSchema>
 ): Promise<ActionResult<Routine>> {
   try {
-    const parsed = forkRoutineSchema.parse(payload);
+    const parsed = cloneRoutineSchema.parse(payload);
     const currentUser = await getCurrentUser();
-    const forked = await routinesRepository.fork(parsed.routineId, {
+    const cloned = await routinesRepository.clone(parsed.routineId, {
       owner: currentUser.email,
       ...parsed.overrides
     });
-    revalidateRoutinePaths(forked.id);
-    return { ok: true, data: forked };
+    revalidateRoutinePaths(cloned.id);
+    return { ok: true, data: cloned };
   } catch (error) {
     return handleActionError<Routine>(error);
   }

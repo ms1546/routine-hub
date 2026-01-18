@@ -35,7 +35,7 @@ const seedRoutines: SeedRoutine[] = [
     visibility: 'public',
     tags: ['集中', '休息', 'リズム'],
     owner: 'routinehub.dev@gmail.com',
-    stats: { forks: 32, applications: 141, likes: 15 },
+    stats: { clones: 32, applications: 141, likes: 15 },
     timeBlocks: [
       {
         id: '11111111-aaaa-4111-8111-aaaaaaaaaaaa',
@@ -77,7 +77,7 @@ const seedRoutines: SeedRoutine[] = [
     visibility: 'public',
     tags: ['プロダクト', 'リーダーシップ'],
     owner: 'routinehub.dev@gmail.com',
-    stats: { forks: 54, applications: 212, likes: 28 },
+    stats: { clones: 54, applications: 212, likes: 28 },
     timeBlocks: [
       {
         id: '22222222-aaaa-4222-8222-bbbbbbbbbbbb',
@@ -106,11 +106,11 @@ const seedRoutines: SeedRoutine[] = [
       '長期休暇前の引き継ぎと心身の減速を 1 日でやり切るための 2 ブロック構成。',
     purpose:
       '休暇前後のギャップを軽減し、関係者の権限や期待を明文化しておく。',
-    durationType: 'half-day',
+    durationType: 'normal',
     visibility: 'private',
     tags: ['休暇準備', '引き継ぎ'],
     owner: 'routinehub.dev@gmail.com',
-    stats: { forks: 5, applications: 18, likes: 3 },
+    stats: { clones: 5, applications: 18, likes: 3 },
     timeBlocks: [
       {
         id: '33333333-aaaa-4333-8333-cccccccccccc',
@@ -137,11 +137,11 @@ const seedRoutines: SeedRoutine[] = [
     name: '週末リセット',
     description: '週末に心身をリセットし、翌週に向けた準備を行う2ブロック構成。',
     purpose: '週末を有効活用し、月曜からのスタートをスムーズにする。',
-    durationType: 'half-day',
+    durationType: 'normal',
     visibility: 'public',
     tags: ['週末', 'リセット', '準備'],
     owner: 'routinehub.dev@gmail.com',
-    stats: { forks: 12, applications: 45, likes: 8 },
+    stats: { clones: 12, applications: 45, likes: 8 },
     timeBlocks: [
       {
         id: '44444444-aaaa-4444-8444-dddddddddddd',
@@ -168,11 +168,11 @@ const seedRoutines: SeedRoutine[] = [
     name: 'リモートワーク集中',
     description: 'リモートワーク環境で集中力を最大化するための1日構成。',
     purpose: '在宅勤務でも高い生産性を維持し、ワークライフバランスを保つ。',
-    durationType: 'full-day',
+    durationType: 'normal',
     visibility: 'public',
     tags: ['リモートワーク', '集中', '生産性'],
     owner: 'routinehub.dev@gmail.com',
-    stats: { forks: 28, applications: 98, likes: 22 },
+    stats: { clones: 28, applications: 98, likes: 22 },
     timeBlocks: [
       {
         id: '55555555-aaaa-5555-8555-eeeeeeeeeeee',
@@ -208,11 +208,11 @@ const seedRoutines: SeedRoutine[] = [
     name: '朝の生産性ルーティン',
     description: '朝の時間を最大限活用するための半日構成。午前中の集中力を高める。',
     purpose: '朝の時間を有効活用し、1日の生産性を最大化する。',
-    durationType: 'half-day',
+    durationType: 'normal',
     visibility: 'public',
     tags: ['朝活', '生産性', '集中'],
     owner: 'routinehub.dev@gmail.com',
-    stats: { forks: 18, applications: 67, likes: 12 },
+    stats: { clones: 18, applications: 67, likes: 12 },
     timeBlocks: [
       {
         id: '66666666-aaaa-4666-8666-999999999999',
@@ -239,11 +239,11 @@ const seedRoutines: SeedRoutine[] = [
     name: '午後の協働時間',
     description: '午後の時間をチーム連携と調整に充てる半日構成。',
     purpose: '午後の時間を効果的に使い、チームとの連携を強化する。',
-    durationType: 'half-day',
+    durationType: 'normal',
     visibility: 'public',
     tags: ['午後', '協働', '連携'],
     owner: 'routinehub.dev@gmail.com',
-    stats: { forks: 14, applications: 52, likes: 9 },
+    stats: { clones: 14, applications: 52, likes: 9 },
     timeBlocks: [
       {
         id: '77777777-aaaa-4777-8777-cccccccccccc',
@@ -270,11 +270,11 @@ const seedRoutines: SeedRoutine[] = [
     name: '学習と成長の1日',
     description: '学習と実践を組み合わせた1日構成。新しいスキルを身につけながら成果も出す。',
     purpose: '継続的な学習と実践を両立し、スキルアップを加速する。',
-    durationType: 'full-day',
+    durationType: 'normal',
     visibility: 'public',
     tags: ['学習', '成長', 'スキルアップ'],
     owner: 'routinehub.dev@gmail.com',
-    stats: { forks: 22, applications: 89, likes: 17 },
+    stats: { clones: 22, applications: 89, likes: 17 },
     timeBlocks: [
       {
         id: '88888888-aaaa-4888-8888-eeeeeeeeeeee',
@@ -314,7 +314,7 @@ const seedRoutines: SeedRoutine[] = [
     visibility: 'public',
     tags: ['週次', 'レビュー', '計画'],
     owner: 'routinehub.dev@gmail.com',
-    stats: { forks: 31, applications: 124, likes: 20 },
+    stats: { clones: 31, applications: 124, likes: 20 },
     timeBlocks: [
       {
         id: '99999999-aaaa-4999-8999-111111111111',
@@ -341,11 +341,11 @@ const seedRoutines: SeedRoutine[] = [
     name: '早朝スタート',
     description: '早朝から始める半日ルーティン。朝の静けさを活用して集中作業を行う。',
     purpose: '早朝の時間を活用し、1日の生産性を高める。',
-    durationType: 'half-day',
+    durationType: 'normal',
     visibility: 'public',
     tags: ['早朝', '集中', '生産性'],
     owner: 'routinehub.dev@gmail.com',
-    stats: { forks: 9, applications: 34, likes: 6 },
+    stats: { clones: 9, applications: 34, likes: 6 },
     timeBlocks: [
       {
         id: 'aaaaaaaa-aaaa-4aaa-8aaa-333333333333',
@@ -372,11 +372,11 @@ const seedRoutines: SeedRoutine[] = [
     name: '朝型エナジー',
     description: '早朝から午前中にかけて最大の集中力を発揮する半日ルーチン。',
     purpose: '朝の高い集中力を活用し、重要なタスクを午前中に完了させる。',
-    durationType: 'half-day',
+    durationType: 'normal',
     visibility: 'public',
     tags: ['朝型', '集中', '生産性'],
     owner: 'routinehub.dev@gmail.com',
-    stats: { forks: 18, applications: 67, likes: 12 },
+    stats: { clones: 18, applications: 67, likes: 12 },
     timeBlocks: [
       {
         id: '66666666-aaaa-4666-8666-bbbbbbbbbbbb',
@@ -403,11 +403,11 @@ const seedRoutines: SeedRoutine[] = [
     name: '午後集中モード',
     description: '午後から夕方にかけて集中力を高める半日ルーチン。',
     purpose: '午後の時間を有効活用し、創造的な作業や深い思考に充てる。',
-    durationType: 'half-day',
+    durationType: 'normal',
     visibility: 'public',
     tags: ['午後', '集中', '創造性'],
     owner: 'routinehub.dev@gmail.com',
-    stats: { forks: 14, applications: 52, likes: 9 },
+    stats: { clones: 14, applications: 52, likes: 9 },
     timeBlocks: [
       {
         id: '77777777-aaaa-4777-8777-999999999999',
@@ -434,11 +434,11 @@ const seedRoutines: SeedRoutine[] = [
     name: '1日完結ルーチン',
     description: '朝から夜まで1日を通してバランス良く活動するフルデイルーチン。',
     purpose: '1日の時間を効率的に使い、ワークライフバランスを保つ。',
-    durationType: 'full-day',
+    durationType: 'normal',
     visibility: 'public',
     tags: ['1日', 'バランス', '効率'],
     owner: 'routinehub.dev@gmail.com',
-    stats: { forks: 35, applications: 128, likes: 31 },
+    stats: { clones: 35, applications: 128, likes: 31 },
     timeBlocks: [
       {
         id: '88888888-aaaa-4888-8888-999999999999',
@@ -487,7 +487,7 @@ const seedRoutines: SeedRoutine[] = [
     visibility: 'public',
     tags: ['学習', 'スキルアップ', '継続'],
     owner: 'routinehub.dev@gmail.com',
-    stats: { forks: 42, applications: 156, likes: 38 },
+    stats: { clones: 42, applications: 156, likes: 38 },
     timeBlocks: [
       {
         id: '99999999-aaaa-4999-8999-iiiiiiiiiiii',
@@ -523,11 +523,11 @@ const seedRoutines: SeedRoutine[] = [
     name: '週末充電',
     description: '週末の朝と午後を活用して心身をリフレッシュする半日ルーチン。',
     purpose: '週末を有効活用し、来週に向けてエネルギーをチャージする。',
-    durationType: 'half-day',
+    durationType: 'normal',
     visibility: 'public',
     tags: ['週末', 'リフレッシュ', '充電'],
     owner: 'routinehub.dev@gmail.com',
-    stats: { forks: 25, applications: 89, likes: 19 },
+    stats: { clones: 25, applications: 89, likes: 19 },
     timeBlocks: [
       {
         id: 'aaaaaaaa-aaaa-4aaa-8aaa-jjjjjjjjjjjj',
@@ -554,11 +554,11 @@ const seedRoutines: SeedRoutine[] = [
     name: '夜型集中モード',
     description: '夕方から夜にかけて集中力を発揮する半日ルーチン。',
     purpose: '夜の静けさを活用し、深い思考や創造的な作業に集中する。',
-    durationType: 'half-day',
+    durationType: 'normal',
     visibility: 'public',
     tags: ['夜型', '集中', '創造性'],
     owner: 'routinehub.dev@gmail.com',
-    stats: { forks: 16, applications: 58, likes: 11 },
+    stats: { clones: 16, applications: 58, likes: 11 },
     timeBlocks: [
       {
         id: 'bbbbbbbb-aaaa-4bbb-8bbb-kkkkkkkkkkkk',
@@ -589,7 +589,7 @@ const seedRoutines: SeedRoutine[] = [
     visibility: 'public',
     tags: ['週次', 'バランス', '効率'],
     owner: 'routinehub.dev@gmail.com',
-    stats: { forks: 28, applications: 102, likes: 24 },
+    stats: { clones: 28, applications: 102, likes: 24 },
     timeBlocks: [
       {
         id: 'cccccccc-aaaa-4ccc-8ccc-mmmmmmmmmmmm',
@@ -625,11 +625,11 @@ const seedRoutines: SeedRoutine[] = [
     name: '朝活ルーティン',
     description: '早朝から午前中にかけて活動する半日ルーチン。',
     purpose: '朝の時間を最大限活用し、1日の生産性を高める。',
-    durationType: 'half-day',
+    durationType: 'normal',
     visibility: 'public',
     tags: ['朝活', '生産性', '習慣'],
     owner: 'routinehub.dev@gmail.com',
-    stats: { forks: 33, applications: 125, likes: 29 },
+    stats: { clones: 33, applications: 125, likes: 29 },
     timeBlocks: [
       {
         id: 'dddddddd-aaaa-4ddd-8ddd-pppppppppppp',
@@ -656,11 +656,11 @@ const seedRoutines: SeedRoutine[] = [
     name: '午後イノベーション',
     description: '午後から夕方にかけて創造的な作業に集中する半日ルーチン。',
     purpose: '午後の時間を活用し、創造性を高める作業に集中する。',
-    durationType: 'half-day',
+    durationType: 'normal',
     visibility: 'public',
     tags: ['午後', '創造性', 'イノベーション'],
     owner: 'routinehub.dev@gmail.com',
-    stats: { forks: 19, applications: 71, likes: 15 },
+    stats: { clones: 19, applications: 71, likes: 15 },
     timeBlocks: [
       {
         id: 'eeeeeeee-aaaa-4eee-8eee-rrrrrrrrrrrr',
@@ -687,11 +687,11 @@ const seedRoutines: SeedRoutine[] = [
     name: '週末充実',
     description: '週末の朝と午後を活用して充実した時間を過ごす半日ルーチン。',
     purpose: '週末を有効活用し、心身をリフレッシュしながら成長する。',
-    durationType: 'half-day',
+    durationType: 'normal',
     visibility: 'public',
     tags: ['週末', '充実', 'リフレッシュ'],
     owner: 'routinehub.dev@gmail.com',
-    stats: { forks: 27, applications: 95, likes: 22 },
+    stats: { clones: 27, applications: 95, likes: 22 },
     timeBlocks: [
       {
         id: 'ffffffff-aaaa-4fff-8fff-999999999999',
@@ -724,6 +724,44 @@ const hydrateRoutine = (input: SeedRoutine): Routine => {
     };
     const parsed = createRoutineSchema.parse(inputWithoutIds);
     const now = new Date();
+
+    // normalタイプの場合、normalStartHourとnormalEndHourを計算
+    // シードデータに設定されていない場合は、timeBlocksから計算する
+    let normalStartHour: number | undefined;
+    let normalEndHour: number | undefined;
+    if (parsed.durationType === 'normal') {
+      if (parsed.normalStartHour !== undefined && parsed.normalEndHour !== undefined) {
+        normalStartHour = parsed.normalStartHour;
+        normalEndHour = parsed.normalEndHour;
+      } else if (parsed.timeBlocks.length > 0) {
+        // timeBlocksから最小開始時刻と最大終了時刻を計算
+        const startHours = parsed.timeBlocks.map((b) => b.startHour);
+        const endHours = parsed.timeBlocks.map((b) => b.endHour);
+        normalStartHour = Math.min(...startHours);
+        normalEndHour = Math.max(...endHours);
+
+        // 最小3時間、最大24時間の制約を満たすように調整
+        const timeRangeHours = normalEndHour - normalStartHour;
+        if (timeRangeHours < 3) {
+          // 3時間未満の場合は、開始時刻を前にずらして3時間にする
+          normalStartHour = Math.max(0, normalEndHour - 3);
+        }
+        if (timeRangeHours > 24) {
+          // 24時間超の場合は、終了時刻を調整して24時間にする
+          normalEndHour = normalStartHour + 24;
+        }
+        // 24時間を超えないように調整
+        if (normalEndHour > 24) {
+          normalStartHour = Math.max(0, 24 - (normalEndHour - normalStartHour));
+          normalEndHour = 24;
+        }
+      } else {
+        // timeBlocksが空の場合はデフォルト値（0-24時間）
+        normalStartHour = 0;
+        normalEndHour = 24;
+      }
+    }
+
     const routine: Routine = {
       id: input.id ?? randomUUID(),
       name: parsed.name,
@@ -740,7 +778,9 @@ const hydrateRoutine = (input: SeedRoutine): Routine => {
         ...block,
         id: randomUUID()
       })),
-      stats: input.stats ?? { forks: 0, applications: 0, likes: 0 }
+      normalStartHour,
+      normalEndHour,
+      stats: input.stats ?? { clones: 0, applications: 0, likes: 0 }
     };
 
     routineSchema.parse(routine);
@@ -831,7 +871,7 @@ const create = async (input: CreateRoutineInput): Promise<Routine> => {
     version: 1,
     createdAt: now,
     updatedAt: now,
-    stats: { forks: 0, applications: 0, likes: 0 },
+    stats: { clones: 0, applications: 0, likes: 0 },
     ...payload,
     tags: normalizeTags(payload.tags),
     timeBlocks: payload.timeBlocks.map((block) => ({
@@ -900,7 +940,20 @@ const addBlock = async (routineId: string, blockInput: RoutineBlockInput): Promi
   return clone(block);
 };
 
-const fork = async (
+/**
+ * Clone Routine
+ *
+ * Creates a personal copy (clone) of a public Routine.
+ *
+ * Design decision: We use "clone" instead of "fork" because:
+ * - Clones are personal, isolated copies (not linked to the original)
+ * - The original Routine is never modified
+ * - Unlike GitHub forks, there's no upstream relationship
+ * - Upstream Routines are immutable reference templates
+ *
+ * The cloned Routine is private by default and owned by the specified user.
+ */
+const cloneRoutine = async (
   routineId: string,
   overrides: Partial<CreateRoutineInput> & { owner: string }
 ): Promise<Routine> => {
@@ -909,8 +962,8 @@ const fork = async (
     throw new Error(`Routine ${routineId} not found`);
   }
 
-  const forkInput: CreateRoutineInput = {
-    name: overrides.name ?? `${source.name} (Fork)`,
+  const cloneInput: CreateRoutineInput = {
+    name: overrides.name ?? `${source.name} (Clone)`,
     description: overrides.description ?? source.description,
     purpose: overrides.purpose ?? source.purpose,
     durationType: overrides.durationType ?? source.durationType,
@@ -923,18 +976,18 @@ const fork = async (
     }))
   };
 
-  const forked = await create(forkInput);
+  const cloned = await create(cloneInput);
   const sourceRoutine = routineStore.get(routineId);
   if (sourceRoutine) {
     routineStore.set(routineId, {
       ...sourceRoutine,
       stats: {
         ...sourceRoutine.stats,
-        forks: sourceRoutine.stats.forks + 1
+        clones: sourceRoutine.stats.clones + 1
       }
     });
   }
-  return forked;
+  return cloned;
 };
 
 const recordApplication = async (routineId: string): Promise<Routine | null> => {
@@ -1023,7 +1076,7 @@ export const routinesRepository = {
   create,
   update,
   addBlock,
-  fork,
+  clone: cloneRoutine, // Alias for cloneRoutine to match external API
   recordApplication,
   toggleLike,
   isLikedByUser,

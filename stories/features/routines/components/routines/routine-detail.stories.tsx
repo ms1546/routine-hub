@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react';
 import { RoutineDetail } from '@/features/routines/components/routine-detail';
 import { mockRoutineDetail, mockProposedEvents, mockExistingEvents } from '../../../../routine-fixtures';
-import { stubApplyRoutine, stubForkRoutine, stubToggleVisibility } from '../../../../routine-action-stubs';
+import { stubApplyRoutine, stubCloneRoutine, stubToggleVisibility } from '../../../../routine-action-stubs';
 import type { RoutineAiWorkflowResult } from '@/features/ai/types';
 
 const mockWorkflow: RoutineAiWorkflowResult = {
@@ -87,7 +87,7 @@ const meta: Meta<typeof RoutineDetail> = {
     routine: mockRoutineDetail,
     onToggleVisibility: stubToggleVisibility,
     onApplyRoutine: stubApplyRoutine,
-    onForkRoutine: stubForkRoutine,
+    onCloneRoutine: stubCloneRoutine,
     calendarPlan: {
       proposedEvents: mockProposedEvents,
       existingEvents: mockExistingEvents,

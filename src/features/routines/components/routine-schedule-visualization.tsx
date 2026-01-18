@@ -29,7 +29,7 @@ const energyLevelLabels: Record<string, string> = {
 
 type RoutineScheduleVisualizationProps = {
   timeBlocks: RoutineDetailView['timeBlocks'];
-  durationType?: 'half-day' | 'full-day' | 'weekly';
+  durationType?: 'normal' | 'weekly';
   className?: string;
   compact?: boolean; // コンパクトモード（レジェンドと詳細情報を非表示）
 };
@@ -42,11 +42,11 @@ export function RoutineScheduleVisualization({
 }: RoutineScheduleVisualizationProps) {
   const [hoveredBlockId, setHoveredBlockId] = useState<string | null>(null);
 
-  // full-dayやhalf-dayの場合は曜日表示なし（1日のタイムラインのみ）
-  const isDayBased = durationType === 'full-day' || durationType === 'half-day';
+  // normalの場合は曜日表示なし（1日のタイムラインのみ）
+  const isDayBased = durationType === 'normal';
 
   if (isDayBased) {
-    // full-dayやhalf-day: 時間軸を表示し、Blockを1行に並べて表示
+    // normal: 時間軸を表示し、Blockを1行に並べて表示
     // 時間順にソート
     const sortedBlocks = [...timeBlocks].sort((a, b) => a.startHour - b.startHour);
 

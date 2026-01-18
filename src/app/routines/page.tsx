@@ -3,15 +3,14 @@ import { RoutineComposer } from '@/features/routines/components/routine-composer
 import { RoutineFilters } from '@/features/routines/components/routine-filters';
 import { RoutineList } from '@/features/routines/components/routine-list';
 import {
-  createRoutineAction,
-  updateRoutineVisibilityAction
+  createRoutineAction
 } from '@/features/routines/actions/routines';
 import type { RoutineFilter } from '@/features/routines';
 import { routinesRepository, toRoutineListItem } from '@/features/routines';
 import { getCurrentUser } from '@/infrastructure/auth/session';
 
-const isValidDuration = (value: string | null | undefined): value is 'half-day' | 'full-day' | 'weekly' =>
-  value === 'half-day' || value === 'full-day' || value === 'weekly';
+const isValidDuration = (value: string | null | undefined): value is 'normal' | 'weekly' =>
+  value === 'normal' || value === 'weekly';
 
 const isValidVisibility = (value: string | null | undefined): value is 'public' | 'private' =>
   value === 'public' || value === 'private';
@@ -50,7 +49,7 @@ export default async function RoutinesPage({
       description="Browse reusable, human-reviewed routines. Duplicate, adapt, and apply them with deliberate control."
     >
       <RoutineFilters availableTags={uniqueTags} />
-      <RoutineList routines={listItems} onToggleVisibility={updateRoutineVisibilityAction} userEmail={currentUser.email} />
+      <RoutineList routines={listItems} userEmail={currentUser.email} />
     </AppShell>
   );
 }

@@ -13,19 +13,21 @@ import type { RoutineAiWorkflowResult } from '@/features/ai/types';
 import type { RoutineDetailView, Routine } from '@/features/routines';
 import type {
   ApplyRoutinePayload,
-  ForkRoutinePayload,
+  CloneRoutinePayload,
   VisibilityTogglePayload,
   UpdateBlockPayload,
   DeleteBlockPayload,
   ReorderBlocksPayload,
-  ToggleLikePayload
+  ToggleLikePayload,
+  UpdateRoutineInfoPayload
 } from '@/features/routines/actions/routines';
 import type { ActionResult } from '@/shared/types/actionResult';
 import type { RoutineApplicationPreview } from '@/features/calendar/domain/mock';
 import { VisibilityToggleButton } from './visibility-toggle-button';
 import { ApplyRoutineForm } from './apply-routine-form';
-import { ForkRoutineForm } from './fork-routine-form';
+import { CloneRoutineForm } from './clone-routine-form';
 import { StreamingWorkflowPanels } from './streaming-workflow-panels';
+import { RoutineDetailEditor } from './routine-detail-editor';
 
 type AiAccessStatus = {
   allowed: boolean;
@@ -46,7 +48,8 @@ type RoutineDetailProps = {
   ownerDisplayName?: string; // Ownerの表示名（未指定の場合はroutine.ownerを使用）
   onToggleVisibility: (payload: VisibilityTogglePayload) => Promise<ActionResult<Routine>>;
   onApplyRoutine: (payload: ApplyRoutinePayload) => Promise<ActionResult<RoutineApplicationPreview>>;
-  onForkRoutine: (payload: ForkRoutinePayload) => Promise<ActionResult<Routine>>;
+  onCloneRoutine: (payload: CloneRoutinePayload) => Promise<ActionResult<Routine>>;
+  onUpdateRoutineInfo?: (payload: UpdateRoutineInfoPayload) => Promise<ActionResult<Routine>>;
   onUpdateBlock?: (payload: UpdateBlockPayload) => Promise<ActionResult<Routine>>;
   onDeleteBlock?: (payload: DeleteBlockPayload) => Promise<ActionResult<Routine>>;
   onReorderBlocks?: (payload: ReorderBlocksPayload) => Promise<ActionResult<Routine>>;
@@ -63,7 +66,7 @@ export const RoutineDetail = ({
   ownerDisplayName,
   onToggleVisibility,
   onApplyRoutine,
-  onForkRoutine,
+  onCloneRoutine,
   onUpdateBlock,
   onDeleteBlock,
   onReorderBlocks,
@@ -121,7 +124,7 @@ export const RoutineDetail = ({
               visibility={routine.visibility}
               action={onToggleVisibility}
             />
-            <ForkRoutineForm routineId={routine.id} defaultName={routine.name} action={onForkRoutine} />
+            <CloneRoutineForm routineId={routine.id} defaultName={routine.name} action={onCloneRoutine} />
           </div>
         </CardContent>
       </Card>
@@ -140,7 +143,7 @@ export const RoutineDetail = ({
             durationType={routine.durationType}
           />
         </Card>
-        <ApplyRoutineForm routineId={routine.id} action={onApplyRoutine} />
+        <ApplyRoutineForm routineId={routine.id} durationType={routine.durationType} action={onApplyRoutine} />
       </section>
 
       {workflow === undefined ? null : workflow ? (

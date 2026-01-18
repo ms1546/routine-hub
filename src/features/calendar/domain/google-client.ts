@@ -58,9 +58,43 @@ export function mapGoogleEvent(event: calendar_v3.Schema$Event): CalendarEvent {
   };
 }
 
+/**
+ * Google Calendar Client
+ *
+ * Implements CalendarClient interface for Google Calendar integration.
+ *
+ * OAuth Design (Portfolio Mode):
+ * - Calendar writes are ADMIN-ONLY (enforced server-side)
+ * - Access tokens are obtained per request via getAccessTokenForUser()
+ * - Refresh tokens are NOT stored (portfolio security tradeoff)
+ * - Each calendar write requires explicit OAuth consent
+ * - prompt=consent is used to ensure explicit user intent per write
+ * - Short-lived access tokens are obtained and discarded immediately
+ *
+ * This is an intentional design for portfolio context:
+ * - Avoids requiring reviewers to grant sensitive calendar scopes
+ * - Reduces operational complexity
+ * - Keeps demo focused on design, not automation
+ *
+ * Production considerations:
+ * - Refresh token storage would be required for offline access
+ * - AWS Secrets Manager or similar could be used for credential storage
+ * - Background jobs could sync calendar events automatically
+ * - These are explicitly NOT implemented for portfolio simplicity
+ */
 export class GoogleCalendarClient implements CalendarClient {
   constructor(private readonly userId: string) {}
 
+  /**
+   * Get Google Calendar API client instance
+   *
+   * Retrieves a short-lived access token for the user and initializes
+   * the Google Calendar API client. The access token is obtained via
+   * getAccessTokenForUser(), which may trigger OAuth consent if needed.
+   *
+   * Note: In portfolio mode, refresh tokens are NOT stored.
+   * Each request may require explicit user consent.
+   */
   private async getCalendar(): Promise<calendar_v3.Calendar> {
     const { accessToken } = await getAccessTokenForUser(this.userId);
     const oauth2Client = new google.auth.OAuth2(
@@ -155,7 +189,7 @@ export class GoogleCalendarClient implements CalendarClient {
   private async findEventByProposal(proposalId: string, calendar: calendar_v3.Calendar) {
     const response = await calendar.events.list({
       calendarId: CALENDAR_ID,
-      privateExtendedProperty: `${PRIVATE_PROP_KEY}=${proposalId}`,
+      privateExtendedProperty: [`${PRIVATE_PROP_KEY}=${proposalId}`], // API expects string[]
       maxResults: 1
     });
 

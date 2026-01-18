@@ -10,11 +10,11 @@ export const weekdaySchema = z.enum([
   'sunday'
 ]);
 
-export const routineDurationSchema = z.enum(['half-day', 'full-day', 'weekly']);
+export const routineDurationSchema = z.enum(['normal', 'weekly']);
 export const routineVisibilitySchema = z.enum(['public', 'private']);
 
 // durationTypeに応じたバリデーションを行う関数
-const validateBlockDuration = (block: { startHour: number; endHour: number; day: string }, durationType: 'half-day' | 'full-day' | 'weekly', ctx: z.RefinementCtx) => {
+const validateBlockDuration = (block: { startHour: number; endHour: number; day: string }, durationType: 'normal' | 'normal' | 'weekly', ctx: z.RefinementCtx) => {
   const durationHours = block.endHour - block.startHour;
   const minDurationHours = 0.25; // 15分（最短）
 
@@ -28,18 +28,14 @@ const validateBlockDuration = (block: { startHour: number; endHour: number; day:
   }
 
   // durationTypeに応じた最長期間チェック
-  if (durationType === 'half-day') {
-    if (durationHours > 12) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        message: `half-dayタイプのRoutineでは、各ブロックは最長12時間までです。`
-      });
-    }
-  } else if (durationType === 'full-day') {
+  if (durationType === 'normal') {
+    // normalタイプ: 各Blockの期間制限はなし（最低0.25h、Routine全体が最低3時間）
+    // ただし、Routine全体の時間範囲（例：8:00-12:00）内に収まる必要がある
+    // このチェックはroutineSchema.superRefineで行う
     if (durationHours > 24) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
-        message: `full-dayタイプのRoutineでは、各ブロックは最長24時間までです。`
+        message: `各ブロックは1日未満（24時間未満）である必要があります。`
       });
     }
   }
@@ -72,22 +68,76 @@ export const routineSchema = z
     purpose: z.string().min(8).max(500),
     durationType: routineDurationSchema,
     visibility: routineVisibilitySchema,
-    tags: z.array(z.string().min(2).max(30)).min(1).max(8),
+    tags: z.array(z.string().min(2).max(30)).max(8).optional().default([]),
     owner: z.string().min(1),
     createdAt: z.date(),
     updatedAt: z.date(),
     version: z.number().int().min(1),
     timeBlocks: z.array(routineBlockSchema).min(1),
+    // normalタイプの場合のみ必須: Routine全体の時間範囲（例：8:00-12:00）
+    normalStartHour: z.number().min(0).max(24).optional(),
+    normalEndHour: z.number().min(0).max(24).optional(),
     stats: z.object({
-      forks: z.number().int().min(0),
+      clones: z.number().int().min(0), // Renamed from "forks" - clones are isolated copies, not linked to originals
       applications: z.number().int().min(0),
       likes: z.number().int().min(0)
     })
   })
   .superRefine((routine, ctx) => {
+    // normalタイプの場合、時間範囲が必須
+    if (routine.durationType === 'normal') {
+      if (routine.normalStartHour === undefined || routine.normalEndHour === undefined) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'normalタイプでは、Routine全体の時間範囲（開始時刻と終了時刻）を設定してください。',
+          path: ['normalStartHour']
+        });
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'normalタイプでは、Routine全体の時間範囲（開始時刻と終了時刻）を設定してください。',
+          path: ['normalEndHour']
+        });
+      } else {
+        // 時間範囲の妥当性チェック
+        if (routine.normalEndHour <= routine.normalStartHour) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: '終了時刻は開始時刻より後である必要があります。',
+            path: ['normalEndHour']
+          });
+        }
+        const timeRangeHours = routine.normalEndHour - routine.normalStartHour;
+        if (timeRangeHours < 3) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: 'Routine全体の時間範囲は最低3時間必要です。',
+            path: ['normalEndHour']
+          });
+        }
+        if (timeRangeHours > 24) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: 'Routine全体の時間範囲は24時間未満である必要があります。',
+            path: ['normalEndHour']
+          });
+        }
+      }
+    }
+
     // 各ブロックの期間バリデーション（durationTypeに応じた）
     routine.timeBlocks.forEach((block, index) => {
       validateBlockDuration(block, routine.durationType, ctx);
+
+      // normalタイプの場合、すべてのBlockが時間範囲内に収まることを確認
+      if (routine.durationType === 'normal' && routine.normalStartHour !== undefined && routine.normalEndHour !== undefined) {
+        if (block.startHour < routine.normalStartHour || block.endHour > routine.normalEndHour) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: `時間ブロックはRoutine全体の時間範囲（${routine.normalStartHour}:00-${routine.normalEndHour}:00）内に収まる必要があります。`,
+            path: ['timeBlocks', index]
+          });
+        }
+      }
     });
 
     // Routine全体の合計時間は最低3時間（180分）必要
@@ -126,9 +176,12 @@ const routineBaseSchema = z.object({
   purpose: z.string().min(8, '目的は必須です（8文字以上）').max(500),
   durationType: routineDurationSchema,
   visibility: routineVisibilitySchema,
-  tags: z.array(z.string().min(2).max(30)).min(1).max(8),
+  tags: z.array(z.string().min(2).max(30)).max(8).optional().default([]),
   owner: z.string().min(1),
-  timeBlocks: z.array(routineBlockInputSchema).min(1, '時間ブロックは少なくとも1つ必要です')
+  timeBlocks: z.array(routineBlockInputSchema).min(1, '時間ブロックは少なくとも1つ必要です'),
+  // normalタイプの場合のみ必須
+  normalStartHour: z.number().min(0).max(24).optional(),
+  normalEndHour: z.number().min(0).max(24).optional()
 });
 
 // 時間ブロックの重複をチェックする関数
@@ -140,10 +193,19 @@ const checkTimeBlockOverlaps = (blocks: z.infer<typeof routineBlockInputSchema>[
       const block1 = blocks[i];
       const block2 = blocks[j];
 
+      // block1とblock2が存在することを確認
+      if (!block1 || !block2) {
+        continue;
+      }
+
       // 同じ曜日で時間が重複しているかチェック
       if (block1.day === block2.day) {
-        // 時間帯の重複判定: (start1 < end2 && end1 > start2)
-        if (block1.startHour < block2.endHour && block1.endHour > block2.startHour) {
+        // 時間帯の重複判定: 同じ時間範囲、または時間が重複する場合
+        // 1. 完全に同じ時間範囲: (start1 === start2 && end1 === end2)
+        // 2. 部分的に重複: (start1 < end2 && end1 > start2)
+        const isSameTimeRange = block1.startHour === block2.startHour && block1.endHour === block2.endHour;
+        const hasTimeOverlap = block1.startHour < block2.endHour && block1.endHour > block2.startHour;
+        if (isSameTimeRange || hasTimeOverlap) {
           conflicts.push({ index1: i, index2: j });
         }
       }
@@ -210,7 +272,7 @@ export const updateRoutineSchema = z.object({
     .extend({
       stats: z
         .object({
-          forks: z.number().int().min(0).optional(),
+          clones: z.number().int().min(0).optional(), // Renamed from "forks"
           applications: z.number().int().min(0).optional(),
           likes: z.number().int().min(0).optional()
         })

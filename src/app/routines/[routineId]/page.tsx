@@ -1,17 +1,19 @@
 import { Suspense } from 'react';
 import { notFound } from 'next/navigation';
 import { AppShell } from '@/shared/components/app-shell';
+import { RoutineDetailWrapper } from '@/features/routines/components/routine-detail-wrapper';
 import { RoutineDetail } from '@/features/routines/components/routine-detail';
 import { routinesRepository, toRoutineDetail } from '@/features/routines';
 import type { Routine, RoutineDetailView } from '@/features/routines';
 import {
   applyRoutineAction,
-  forkRoutineAction,
+  cloneRoutineAction,
   updateRoutineVisibilityAction,
   updateRoutineBlockAction,
   deleteRoutineBlockAction,
   reorderRoutineBlocksAction,
-  toggleRoutineLikeAction
+  toggleRoutineLikeAction,
+  updateRoutineInfoAction
 } from '@/features/routines/actions/routines';
 import { planRoutineWithCalendar } from '@/features/calendar/domain/planner';
 import { getCurrentUser, type AuthenticatedUser } from '@/infrastructure/auth/session';
@@ -76,12 +78,13 @@ async function RoutineDetailContent({ routine, detail, currentUser }: RoutineDet
   const ownerDisplayName = ownerSettings?.displayName ?? routine.owner;
 
   return (
-    <RoutineDetail
+    <RoutineDetailWrapper
       routine={detail}
       ownerDisplayName={ownerDisplayName}
       onToggleVisibility={updateRoutineVisibilityAction}
       onApplyRoutine={applyRoutineAction}
-      onForkRoutine={forkRoutineAction}
+      onCloneRoutine={cloneRoutineAction}
+      onUpdateRoutineInfo={canEdit ? updateRoutineInfoAction : undefined}
       onUpdateBlock={canEdit ? updateRoutineBlockAction : undefined}
       onDeleteBlock={canEdit ? deleteRoutineBlockAction : undefined}
       onReorderBlocks={canEdit ? reorderRoutineBlocksAction : undefined}
@@ -119,7 +122,7 @@ async function RoutineDetailFallback({
       ownerDisplayName={ownerDisplayName}
       onToggleVisibility={updateRoutineVisibilityAction}
       onApplyRoutine={applyRoutineAction}
-      onForkRoutine={forkRoutineAction}
+      onCloneRoutine={cloneRoutineAction}
       onToggleLike={toggleRoutineLikeAction}
       userId={currentUser.id}
       isLiked={isLiked}

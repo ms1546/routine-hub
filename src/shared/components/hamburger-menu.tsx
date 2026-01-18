@@ -40,14 +40,16 @@ export function HamburgerMenu() {
     setIsOpen(false);
   };
 
-  const isAdmin = session?.user?.email === 'routinehub.dev@gmail.com' || session?.user?.role === 'admin';
+  // Admin check: In portfolio mode, admin is determined by email address
+  // This matches the logic in sessionToAuthenticatedUser() in infrastructure/auth/session.ts
+  const isAdmin = session?.user?.email === 'routinehub.dev@gmail.com';
 
   const menuItems = [
-    { href: '/', label: 'ホーム' },
+    { href: '/', label: 'Home' },
     { href: '/routines', label: 'Routine Library' },
     ...(session ? [{ href: '/my-routines', label: 'My Routines' }] : []),
-    ...(session ? [{ href: '/settings', label: '設定' }] : []),
-    ...(isAdmin ? [{ href: '/admin', label: '管理者' }] : [])
+    ...(session ? [{ href: '/settings', label: 'Settings' }] : []),
+    ...(isAdmin ? [{ href: '/admin', label: 'Admin' }] : [])
   ];
 
   return (

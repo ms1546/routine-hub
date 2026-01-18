@@ -8,7 +8,7 @@ import { toggleRoutineLikeAction } from '@/app/actions/routines';
 
 type RoutineListProps = {
   routines: RoutineListItem[];
-  onToggleVisibility: (payload: VisibilityTogglePayload) => Promise<ActionResult<Routine>>;
+  onToggleVisibility?: (payload: VisibilityTogglePayload) => Promise<ActionResult<Routine>>; // オプショナル: /my-routinesでは提供、/routinesでは提供しない
   userEmail?: string; // 自分のRoutineかどうかの判定に使用
 };
 
@@ -38,7 +38,7 @@ export const RoutineList = async ({ routines, onToggleVisibility, userEmail }: R
           <RoutineCard
             key={routine.id}
             routine={routine}
-            onToggleVisibility={canEdit ? onToggleVisibility : undefined}
+            onToggleVisibility={canEdit && onToggleVisibility ? onToggleVisibility : undefined}
             onToggleLike={toggleRoutineLikeAction}
             userId={currentUser.id}
             isLiked={isLiked}

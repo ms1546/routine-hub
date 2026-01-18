@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useTransition, useEffect, useRef } from 'react';
+import { useState, useTransition, useEffect } from 'react';
 import type { FormEvent } from 'react';
 import { Button } from '@/shared/ui/button';
 import { Input } from '@/shared/ui/input';
@@ -8,11 +8,13 @@ import { Label } from '@/shared/ui/label';
 import { Card } from '@/shared/ui/card';
 import { Modal } from '@/shared/ui/modal';
 import { Badge } from '@/shared/ui/badge';
+import { Textarea } from '@/shared/ui/textarea';
 import type { ActionResult } from '@/shared/types/actionResult';
 import type { RoutineApplicationPreview } from '@/features/calendar/domain/mock';
 import type { ApplyRoutinePayload } from '@/features/routines/actions/routines';
 import type { RecurrencePattern, ProposedCalendarEvent, CalendarEvent } from '@/features/calendar/domain/types';
 import { getCalendarPreviewAction, confirmProposedEventsAction } from '@/app/actions/calendar';
+import { customizeCalendarEventsAction, type CalendarCustomizationResult } from '@/app/actions/calendar-customization';
 import { CalendarPreviewVisualization } from './calendar-preview-visualization';
 
 const today = () => new Date().toISOString().slice(0, 10);
@@ -22,18 +24,160 @@ const plusDays = (days: number) => {
   return date.toISOString().slice(0, 10);
 };
 
+// イベント編集モーダルコンポーネント
+type EventEditModalProps = {
+  event: ProposedCalendarEvent;
+  onSave: (edited: Partial<ProposedCalendarEvent>) => void;
+  onCancel: () => void;
+};
+
+function EventEditModal({ event, onSave, onCancel }: EventEditModalProps) {
+  const startDateObj = new Date(event.start);
+  const endDateObj = new Date(event.end);
+
+  const [title, setTitle] = useState(event.title);
+  const [description, setDescription] = useState(event.description);
+  const [date, setDate] = useState(startDateObj.toISOString().slice(0, 10));
+  const [startTime, setStartTime] = useState(
+    `${String(startDateObj.getHours()).padStart(2, '0')}:${String(startDateObj.getMinutes()).padStart(2, '0')}`
+  );
+  const [endTime, setEndTime] = useState(
+    `${String(endDateObj.getHours()).padStart(2, '0')}:${String(endDateObj.getMinutes()).padStart(2, '0')}`
+  );
+
+  // eventが変更されたときに初期値を更新
+  useEffect(() => {
+    const start = new Date(event.start);
+    const end = new Date(event.end);
+    setDate(start.toISOString().slice(0, 10));
+    setStartTime(`${String(start.getHours()).padStart(2, '0')}:${String(start.getMinutes()).padStart(2, '0')}`);
+    setEndTime(`${String(end.getHours()).padStart(2, '0')}:${String(end.getMinutes()).padStart(2, '0')}`);
+    setTitle(event.title);
+    setDescription(event.description);
+  }, [event]);
+
+  const handleSave = () => {
+    // 日付と時刻をISO文字列に変換
+    const startParts = startTime.split(':');
+    const endParts = endTime.split(':');
+    const startHour = startParts[0] ? Number(startParts[0]) : 0;
+    const startMinute = startParts[1] ? Number(startParts[1]) : 0;
+    const endHour = endParts[0] ? Number(endParts[0]) : 0;
+    const endMinute = endParts[1] ? Number(endParts[1]) : 0;
+
+    const startDateTime = new Date(date);
+    startDateTime.setHours(startHour, startMinute, 0, 0);
+
+    const endDateTime = new Date(date);
+    endDateTime.setHours(endHour, endMinute, 0, 0);
+
+    // 終了時刻が開始時刻より前の場合は翌日として扱う
+    if (endDateTime <= startDateTime) {
+      endDateTime.setDate(endDateTime.getDate() + 1);
+    }
+
+    const edited: Partial<ProposedCalendarEvent> = {
+      title: title.trim() || event.title,
+      description: description.trim() !== event.description ? description.trim() : undefined,
+      start: startDateTime.toISOString(),
+      end: endDateTime.toISOString()
+    };
+
+    onSave(edited);
+  };
+
+  return (
+    <Modal
+      open={true}
+      onClose={onCancel}
+      title="イベントを編集"
+      size="md"
+      footer={
+        <div className="flex justify-end gap-3">
+          <Button variant="outline" onClick={onCancel}>
+            キャンセル
+          </Button>
+          <Button onClick={handleSave}>
+            保存
+          </Button>
+        </div>
+      }
+    >
+      <div className="space-y-4 p-4">
+        <div className="space-y-2">
+          <Label htmlFor="edit-event-title">タイトル</Label>
+          <Input
+            id="edit-event-title"
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            placeholder="イベントのタイトル"
+            required
+          />
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="edit-event-description">説明</Label>
+          <Textarea
+            id="edit-event-description"
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            placeholder="イベントの説明"
+            rows={3}
+          />
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="edit-event-date">日付</Label>
+          <Input
+            id="edit-event-date"
+            type="date"
+            value={date}
+            onChange={(e) => setDate(e.target.value)}
+            required
+          />
+        </div>
+
+        <div className="grid grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <Label htmlFor="edit-event-start-time">開始時刻</Label>
+            <Input
+              id="edit-event-start-time"
+              type="time"
+              value={startTime}
+              onChange={(e) => setStartTime(e.target.value)}
+              required
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="edit-event-end-time">終了時刻</Label>
+            <Input
+              id="edit-event-end-time"
+              type="time"
+              value={endTime}
+              onChange={(e) => setEndTime(e.target.value)}
+              required
+            />
+          </div>
+        </div>
+      </div>
+    </Modal>
+  );
+}
+
 export function ApplyRoutineForm({
   routineId,
+  durationType,
   action
 }: {
   routineId: string;
+  durationType: 'normal' | 'weekly';
   action: (payload: ApplyRoutinePayload) => Promise<ActionResult<RoutineApplicationPreview>>;
 }) {
-  const [status, setStatus] = useState('日付範囲を選択してカレンダーに適用します。');
+  const [status, setStatus] = useState(
+    '⚠️ この機能はポートフォリオデモ用の管理者専用機能です。一般ユーザーには提供されていません。'
+  );
   const [pending, startTransition] = useTransition();
-  const [recurrenceType, setRecurrenceType] = useState<string>('none');
-  const intervalContainerRef = useRef<HTMLDivElement>(null);
-  const intervalDescriptionRef = useRef<HTMLSpanElement>(null);
   const [showPreviewModal, setShowPreviewModal] = useState(false);
   const [previewData, setPreviewData] = useState<{
     proposedEvents: ProposedCalendarEvent[];
@@ -44,24 +188,47 @@ export function ApplyRoutineForm({
   } | null>(null);
   const [previewLoading, setPreviewLoading] = useState(false);
   const [confirming, setConfirming] = useState(false);
-  const [selectedProposalIds, setSelectedProposalIds] = useState<string[]>([]);
+  const [customizing, setCustomizing] = useState(false);
+  const [useCustomized, setUseCustomized] = useState(false); // カスタマイズされたイベントを使用するか
+  const [customizationResult, setCustomizationResult] = useState<CalendarCustomizationResult | null>(null);
+  const [editedEvents, setEditedEvents] = useState<Map<string, Partial<ProposedCalendarEvent>>>(new Map()); // 手動編集されたイベント
+  const [editingEventId, setEditingEventId] = useState<string | null>(null); // 編集中のイベントID
+  const [startDate, setStartDate] = useState<string>(today());
+  const [weekCount, setWeekCount] = useState<number>(1); // weeklyタイプの場合の週数
+  const [endDate, setEndDate] = useState<string>(plusDays(7)); // normal/normal用
+  const [expandedWeeks, setExpandedWeeks] = useState<Set<number>>(new Set()); // すべての週を展開
+
+  // weeklyの場合、終了日を週数から計算
+  const calculatedEndDate = durationType === 'weekly'
+    ? (() => {
+        const start = new Date(startDate);
+        const end = new Date(start);
+        end.setDate(end.getDate() + (weekCount * 7));
+        return end.toISOString().slice(0, 10);
+      })()
+    : endDate;
+
+  useEffect(() => {
+    // weeklyの場合、週数が変更されたら終了日を更新
+    if (durationType === 'weekly') {
+      const start = new Date(startDate);
+      const end = new Date(start);
+      end.setDate(end.getDate() + (weekCount * 7));
+      setEndDate(end.toISOString().slice(0, 10));
+    }
+  }, [startDate, weekCount, durationType]);
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const formData = new FormData(event.currentTarget);
-    const startDate = String(formData.get('startDate'));
-    const endDate = String(formData.get('endDate'));
-    const recurrenceType = String(formData.get('recurrenceType'));
-    const recurrenceInterval = formData.get('recurrenceInterval')
-      ? Number(formData.get('recurrenceInterval'))
-      : undefined;
+    const startDateValue = String(formData.get('startDate'));
 
-    let recurrence: { type: 'none' } | { type: 'weekly'; interval: number } | { type: 'monthly'; interval: number } = { type: 'none' };
-    if (recurrenceType === 'weekly') {
-      recurrence = { type: 'weekly', interval: recurrenceInterval ?? 1 };
-    } else if (recurrenceType === 'monthly') {
-      recurrence = { type: 'monthly', interval: recurrenceInterval ?? 1 };
-    }
+    // 検証済みの日付を使用
+    const validatedStartDate = startDateValue;
+    const validatedEndDate = durationType === 'weekly' ? calculatedEndDate : endDate;
+
+    // 繰り返し設定は削除（シンプルに）
+    const recurrence: { type: 'none' } = { type: 'none' };
 
     startTransition(async () => {
       // まずプレビューを取得
@@ -69,19 +236,32 @@ export function ApplyRoutineForm({
       try {
         const preview = await getCalendarPreviewAction({
           routineId,
-          startDate,
-          endDate,
+          startDate: validatedStartDate,
+          endDate: validatedEndDate,
           recurrence
         });
         setPreviewData({
           ...preview,
-          startDate,
-          endDate,
+          startDate: validatedStartDate,
+          endDate: validatedEndDate,
           recurrence
         });
-        setSelectedProposalIds(preview.proposedEvents.map((e) => e.proposalId));
+        // 週ごとの展開状態を初期化（すべての週を展開）
+        // 週数を計算してすべて展開
+        if (durationType === 'weekly') {
+          const weeks = Math.ceil((new Date(validatedEndDate).getTime() - new Date(validatedStartDate).getTime()) / (1000 * 60 * 60 * 24 * 7));
+          const allWeeks = Array.from({ length: weeks }, (_, i) => i);
+          setExpandedWeeks(new Set(allWeeks));
+        } else {
+          setExpandedWeeks(new Set([0]));
+        }
         setShowPreviewModal(true);
-        setStatus(`プレビューを表示中...`);
+        setStatus(''); // プレビュー表示時はステータスをクリア
+        // カスタマイズ結果をリセット
+        setCustomizationResult(null);
+        setUseCustomized(false);
+        // 手動編集をリセット
+        setEditedEvents(new Map());
       } catch (error) {
         setStatus(error instanceof Error ? error.message : 'プレビューの取得に失敗しました');
       } finally {
@@ -90,39 +270,57 @@ export function ApplyRoutineForm({
     });
   };
 
+  const handleCustomize = async () => {
+    if (!previewData) return;
+
+    setCustomizing(true);
+    try {
+      const result = await customizeCalendarEventsAction({
+        proposedEvents: previewData.proposedEvents,
+        existingEvents: previewData.existingEvents,
+        routineId // Routine IDを渡す
+      });
+      setCustomizationResult(result);
+      setStatus('カスタマイズが完了しました');
+    } catch (error) {
+      setStatus(error instanceof Error ? error.message : 'カスタマイズに失敗しました');
+    } finally {
+      setCustomizing(false);
+    }
+  };
+
   const handleConfirmApply = async () => {
-    if (!previewData || selectedProposalIds.length === 0) return;
+    if (!previewData) return;
+
+    // すべての提案イベントを自動的に適用
+    const allProposalIds = previewData.proposedEvents.map((e) => e.proposalId);
 
     setConfirming(true);
     try {
       const result = await confirmProposedEventsAction({
         routineId,
-        proposalIds: selectedProposalIds,
+        proposalIds: allProposalIds,
         recurrence: previewData.recurrence
       });
       setStatus(`${result.successCount}件のイベントを適用しました`);
       setShowPreviewModal(false);
       setPreviewData(null);
     } catch (error) {
-      setStatus(error instanceof Error ? error.message : 'イベントの適用に失敗しました');
+      const errorMessage = error instanceof Error ? error.message : 'イベントの適用に失敗しました';
+      // 管理者制限のエラーメッセージを明確に表示
+      if (errorMessage.includes('admin') || errorMessage.includes('portfolio mode')) {
+        setStatus(
+          'カレンダーへのエクスポートは現在、管理者のみが利用可能です。' +
+          'これはポートフォリオモードでの意図的な設計制限です。'
+        );
+      } else {
+        setStatus(errorMessage);
+      }
     } finally {
       setConfirming(false);
     }
   };
 
-  useEffect(() => {
-    if (intervalContainerRef.current && intervalDescriptionRef.current) {
-      if (recurrenceType === 'weekly') {
-        intervalContainerRef.current.style.display = 'block';
-        intervalDescriptionRef.current.textContent = '毎週の場合、1=毎週、2=隔週、3=3週間ごと';
-      } else if (recurrenceType === 'monthly') {
-        intervalContainerRef.current.style.display = 'block';
-        intervalDescriptionRef.current.textContent = '毎月の場合、1=毎月、2=隔月、3=3ヶ月ごと';
-      } else {
-        intervalContainerRef.current.style.display = 'none';
-      }
-    }
-  }, [recurrenceType]);
 
   return (
     <Card className="w-full p-4">
@@ -130,45 +328,49 @@ export function ApplyRoutineForm({
         <div className="grid gap-3 sm:grid-cols-2">
           <div className="space-y-1.5">
             <Label htmlFor="startDate">開始日</Label>
-            <Input type="date" name="startDate" id="startDate" defaultValue={today()} required />
-          </div>
-          <div className="space-y-1.5">
-            <Label htmlFor="endDate">終了日</Label>
-            <Input type="date" name="endDate" id="endDate" defaultValue={plusDays(7)} required />
-          </div>
-        </div>
-
-        <div className="space-y-3">
-          <div className="space-y-1.5">
-            <Label htmlFor="recurrenceType">繰り返し設定</Label>
-            <select
-              name="recurrenceType"
-              id="recurrenceType"
-              className="h-11 w-full rounded-lg border border-input bg-background px-4 py-2.5 text-sm text-foreground transition-all duration-300 hover:border-primary/40 hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:border-ring/50"
-              value={recurrenceType}
-              onChange={(e) => setRecurrenceType(e.target.value)}
-            >
-              <option value="none">繰り返さない（単発）</option>
-              <option value="weekly">毎週</option>
-              <option value="monthly">毎月</option>
-            </select>
-          </div>
-
-          <div ref={intervalContainerRef} className="space-y-1.5" style={{ display: 'none' }}>
-            <Label htmlFor="recurrenceInterval">間隔</Label>
             <Input
-              type="number"
-              name="recurrenceInterval"
-              id="recurrenceInterval"
-              min="1"
-              max={recurrenceType === 'weekly' ? 52 : 12}
-              defaultValue="1"
-              className="w-full"
+              type="date"
+              name="startDate"
+              id="startDate"
+              value={startDate}
+              onChange={(e) => setStartDate(e.target.value)}
+              required
             />
-            <p className="text-xs text-muted-foreground">
-              <span ref={intervalDescriptionRef}>毎週の場合、1=毎週、2=隔週、3=3週間ごと</span>
-            </p>
           </div>
+          {durationType === 'weekly' ? (
+            <div className="space-y-1.5">
+              <Label htmlFor="weekCount">期間（週数）</Label>
+              <select
+                name="weekCount"
+                id="weekCount"
+                value={weekCount}
+                onChange={(e) => setWeekCount(Number(e.target.value))}
+                className="h-11 w-full rounded-lg border border-input bg-background px-4 py-2.5 text-sm text-foreground transition-all duration-300 hover:border-primary/40 hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:border-ring/50"
+                required
+              >
+                <option value={1}>1週間</option>
+                <option value={2}>2週間</option>
+                <option value={3}>3週間</option>
+                <option value={4}>4週間</option>
+              </select>
+              <p className="text-xs text-muted-foreground">
+                終了日: {calculatedEndDate}（自動計算）
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-1.5">
+              <Label htmlFor="endDate">終了日</Label>
+              <Input
+                type="date"
+                name="endDate"
+                id="endDate"
+                value={endDate}
+                min={startDate}
+                onChange={(e) => setEndDate(e.target.value)}
+                required
+              />
+            </div>
+          )}
         </div>
 
         <Button type="submit" disabled={pending || previewLoading} className="w-full">
@@ -180,7 +382,10 @@ export function ApplyRoutineForm({
       {/* 確認モーダル */}
       <Modal
         open={showPreviewModal}
-        onClose={() => setShowPreviewModal(false)}
+        onClose={() => {
+          setShowPreviewModal(false);
+          setStatus(''); // モーダルを閉じたときにステータスをリセット
+        }}
         title="カレンダー適用の確認"
         size="xl"
         footer={
@@ -188,103 +393,342 @@ export function ApplyRoutineForm({
             <Button variant="outline" onClick={() => setShowPreviewModal(false)} disabled={confirming}>
               キャンセル
             </Button>
-            <Button onClick={handleConfirmApply} disabled={confirming || selectedProposalIds.length === 0}>
+            <Button onClick={handleConfirmApply} disabled={confirming || !previewData || previewData.proposedEvents.length === 0}>
               {confirming ? '適用中…' : '確認して適用'}
             </Button>
           </div>
         }
       >
-        {previewData && (
-          <div className="space-y-6">
-            {/* カレンダープレビュー可視化 */}
-            <div className="space-y-3">
-              <div>
-                <h4 className="font-semibold mb-1">カレンダープレビュー</h4>
-                <p className="text-sm text-muted-foreground mb-4">
-                  {previewData.startDate} から {previewData.endDate} までの範囲で適用されます
-                </p>
-              </div>
-              <CalendarPreviewVisualization
-                proposedEvents={previewData.proposedEvents}
-                existingEvents={previewData.existingEvents}
-                selectedIds={selectedProposalIds}
-              />
-            </div>
+        {previewData && (() => {
+          // 表示用のイベントを決定（優先順位: 手動編集 > AIカスタマイズ > 元のイベント）
+          const displayEvents = (() => {
+            // まず、カスタマイズ結果または元のイベントを取得
+            let baseEvents = previewData.proposedEvents;
+            if (useCustomized && customizationResult) {
+              const normaldMap = new Map(
+                customizationResult.customizedEvents.map((c) => [c.proposalId, c])
+              );
+              baseEvents = previewData.proposedEvents.map((event) => {
+                const normald = normaldMap.get(event.proposalId);
+                if (!normald) return event;
 
-            {/* 提案イベント選択 */}
-            <div className="space-y-3">
-              <div>
-                <h4 className="font-semibold mb-2">適用するイベントを選択</h4>
-                <p className="text-sm text-muted-foreground">チェックを外したイベントは適用されません</p>
-              </div>
-              <div className="grid gap-2 sm:grid-cols-2">
-                {previewData.proposedEvents.map((event) => {
-                  const isSelected = selectedProposalIds.includes(event.proposalId);
-                  const hasConflict = previewData.existingEvents.some((existing) => {
-                    const eventStart = new Date(event.start);
-                    const eventEnd = new Date(event.end);
-                    const existingStart = new Date(existing.start);
-                    const existingEnd = new Date(existing.end);
-                    return (
-                      (eventStart >= existingStart && eventStart < existingEnd) ||
-                      (eventEnd > existingStart && eventEnd <= existingEnd) ||
-                      (eventStart <= existingStart && eventEnd >= existingEnd)
-                    );
-                  });
+                return {
+                  ...event,
+                  title: normald.title ?? event.title,
+                  description: normald.description ?? event.description,
+                  start: normald.start ?? event.start,
+                  end: normald.end ?? event.end
+                };
+              });
+            }
 
-                  return (
-                    <label
-                      key={event.proposalId}
-                      className={`flex items-start gap-3 rounded-lg border p-3 cursor-pointer transition-all ${
-                        isSelected
-                          ? 'border-primary bg-primary/5'
-                          : 'border-border/60 hover:border-primary/50 hover:bg-muted/30'
-                      } ${hasConflict ? 'border-destructive/50' : ''}`}
-                    >
-                      <input
-                        type="checkbox"
-                        checked={isSelected}
-                        onChange={(e) => {
-                          if (e.target.checked) {
-                            setSelectedProposalIds((ids) => [...ids, event.proposalId]);
-                          } else {
-                            setSelectedProposalIds((ids) => ids.filter((id) => id !== event.proposalId));
-                          }
-                        }}
-                        className="mt-1 h-4 w-4 rounded border-input text-primary focus:ring-2 focus:ring-ring"
-                      />
-                      <div className="flex-1 space-y-1 min-w-0">
-                        <div className="flex items-center justify-between gap-2">
-                          <p className="font-medium text-sm truncate">{event.title}</p>
-                          {hasConflict && <Badge variant="destructive" className="text-xs shrink-0">重複</Badge>}
-                        </div>
-                        <p className="text-xs text-muted-foreground">
-                          {new Date(event.start).toLocaleTimeString('ja-JP', {
-                            hour: '2-digit',
-                            minute: '2-digit'
-                          })}
-                          {' - '}
-                          {new Date(event.end).toLocaleTimeString('ja-JP', {
-                            hour: '2-digit',
-                            minute: '2-digit'
-                          })}
+            // 手動編集を適用（最優先）
+            return baseEvents.map((event) => {
+              const edited = editedEvents.get(event.proposalId);
+              if (!edited) return event;
+
+              return {
+                ...event,
+                ...edited
+              };
+            });
+          })();
+
+          return (
+            <div className="space-y-6">
+              {/* AIカスタマイズセクション */}
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h4 className="font-semibold mb-1">AIカスタマイズ</h4>
+                    <p className="text-sm text-muted-foreground">
+                      あなたの設定に基づいてイベントを最適化します
+                    </p>
+                  </div>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={handleCustomize}
+                    disabled={customizing || !previewData}
+                  >
+                    {customizing ? 'カスタマイズ中...' : 'AIでカスタマイズ'}
+                  </Button>
+                </div>
+
+                {customizationResult && (
+                  <div className="rounded-lg border border-primary/50 bg-primary/10 p-4 space-y-3">
+                    <div className="flex items-center justify-between">
+                      <p className="text-sm font-medium text-primary-foreground">
+                        カスタマイズが完了しました
+                      </p>
+                      <div className="flex items-center gap-2">
+                        <label className="flex items-center gap-2 text-sm cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={useCustomized}
+                            onChange={(e) => setUseCustomized(e.target.checked)}
+                            className="rounded border-input"
+                          />
+                          <span>カスタマイズ結果を使用</span>
+                        </label>
+                      </div>
+                    </div>
+
+                    {customizationResult.suggestions.length > 0 && (
+                      <div className="space-y-2">
+                        <p className="text-xs font-medium text-primary-foreground">提案:</p>
+                        <ul className="space-y-1">
+                          {customizationResult.suggestions.map((suggestion, idx) => (
+                            <li key={idx} className="text-xs text-primary-foreground/80">
+                              • {suggestion.description}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {/* カレンダープレビュー可視化 */}
+              <div className="space-y-3">
+                <div>
+                  <h4 className="font-semibold mb-1">カレンダープレビュー</h4>
+                  <p className="text-sm text-muted-foreground mb-4">
+                    {previewData.startDate} から {previewData.endDate} までの範囲で適用されます
+                  </p>
+                </div>
+                <CalendarPreviewVisualization
+                  proposedEvents={displayEvents}
+                  existingEvents={previewData.existingEvents}
+                  selectedIds={displayEvents.map((e) => e.proposalId)}
+                />
+              </div>
+
+            {/* 適用されるイベントの一覧（週ごとに展開/折りたたみ） */}
+            {displayEvents.length > 0 && (() => {
+              // イベントを週ごとにグループ化
+              const eventsByWeek = new Map<number, ProposedCalendarEvent[]>();
+              const startDateObj = new Date(previewData.startDate);
+
+              displayEvents.forEach((event) => {
+                const eventDate = new Date(event.start);
+                const diffTime = eventDate.getTime() - startDateObj.getTime();
+                const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+                const weekIndex = Math.floor(diffDays / 7);
+
+                if (!eventsByWeek.has(weekIndex)) {
+                  eventsByWeek.set(weekIndex, []);
+                }
+                eventsByWeek.get(weekIndex)!.push(event);
+              });
+
+              const weeks = Array.from(eventsByWeek.keys()).sort((a, b) => a - b);
+
+              return (
+                <div className="space-y-3">
+                  <div>
+                    <h4 className="font-semibold mb-2">適用されるイベント</h4>
+                    <p className="text-sm text-muted-foreground mb-2">
+                      {displayEvents.length}件のイベントが適用されます{useCustomized && customizationResult && '（AIカスタマイズ済み）'}
+                    </p>
+                    {displayEvents.some((event) =>
+                      previewData.existingEvents.some((existing) => {
+                        const eventStart = new Date(event.start);
+                        const eventEnd = new Date(event.end);
+                        const existingStart = new Date(existing.start);
+                        const existingEnd = new Date(existing.end);
+                        return (
+                          (eventStart >= existingStart && eventStart < existingEnd) ||
+                          (eventEnd > existingStart && eventEnd <= existingEnd) ||
+                          (eventStart <= existingStart && eventEnd >= existingEnd)
+                        );
+                      })
+                    ) && (
+                      <div className="rounded-lg border border-warning/50 bg-warning/10 p-3 mb-3">
+                        <p className="text-sm text-warning-foreground">
+                          ⚠️ 重複する予定があるイベントは適用されません。重複がある場合は事前にカレンダーを調整してください。
                         </p>
                       </div>
-                    </label>
-                  );
-                })}
-              </div>
-            </div>
+                    )}
+                  </div>
+                  <div className="space-y-2">
+                    {weeks.map((weekIndex) => {
+                      const weekEvents = eventsByWeek.get(weekIndex) ?? [];
+                      const weekStartDate = new Date(startDateObj);
+                      weekStartDate.setDate(weekStartDate.getDate() + (weekIndex * 7));
+                      const weekEndDate = new Date(weekStartDate);
+                      weekEndDate.setDate(weekEndDate.getDate() + 6);
 
-            {/* AIカスタマイズ提案のプレースホルダー */}
-            <div className="rounded-lg border border-border/60 bg-muted/20 p-4">
-              <p className="text-sm text-muted-foreground">
-                💡 既存のスケジュールを動かさずに、Routineの目的を達成するためのカスタマイズ提案は現在開発中です。
-              </p>
+                      const isExpanded = expandedWeeks.has(weekIndex);
+                      const weekLabel = `第${weekIndex + 1}週 (${weekStartDate.toLocaleDateString('ja-JP', { month: 'short', day: 'numeric' })} - ${weekEndDate.toLocaleDateString('ja-JP', { month: 'short', day: 'numeric' })})`;
+
+                      return (
+                        <div key={weekIndex} className="border border-border/60 rounded-lg overflow-hidden">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const newExpanded = new Set(expandedWeeks);
+                              if (isExpanded) {
+                                newExpanded.delete(weekIndex);
+                              } else {
+                                newExpanded.add(weekIndex);
+                              }
+                              setExpandedWeeks(newExpanded);
+                            }}
+                            className="w-full px-4 py-3 flex items-center justify-between bg-muted/30 hover:bg-muted/50 transition-colors"
+                          >
+                            <div className="flex items-center gap-2">
+                              <span className="font-medium text-sm">{weekLabel}</span>
+                              <Badge variant="secondary" className="text-xs">
+                                {weekEvents.length}件
+                              </Badge>
+                              {weekEvents.some((event) =>
+                                previewData.existingEvents.some((existing) => {
+                                  const eventStart = new Date(event.start);
+                                  const eventEnd = new Date(event.end);
+                                  const existingStart = new Date(existing.start);
+                                  const existingEnd = new Date(existing.end);
+                                  return (
+                                    (eventStart >= existingStart && eventStart < existingEnd) ||
+                                    (eventEnd > existingStart && eventEnd <= existingEnd) ||
+                                    (eventStart <= existingStart && eventEnd >= existingEnd)
+                                  );
+                                })
+                              ) && (
+                                <Badge variant="destructive" className="text-xs">重複あり</Badge>
+                              )}
+                            </div>
+                            <span className="text-xs text-muted-foreground">
+                              {isExpanded ? '▼' : '▶'}
+                            </span>
+                          </button>
+                          {isExpanded && (
+                            <div className="p-4 bg-background">
+                              <div className="grid gap-2 sm:grid-cols-2">
+                                {weekEvents.map((event) => {
+                                  const hasConflict = previewData.existingEvents.some((existing) => {
+                                    const eventStart = new Date(event.start);
+                                    const eventEnd = new Date(event.end);
+                                    const existingStart = new Date(existing.start);
+                                    const existingEnd = new Date(existing.end);
+                                    return (
+                                      (eventStart >= existingStart && eventStart < existingEnd) ||
+                                      (eventEnd > existingStart && eventEnd <= existingEnd) ||
+                                      (eventStart <= existingStart && eventEnd >= existingEnd)
+                                    );
+                                  });
+
+                                  const isEdited = editedEvents.has(event.proposalId);
+
+                                  return (
+                                    <div
+                                      key={event.proposalId}
+                                      className={`flex items-start gap-3 rounded-lg border p-3 ${
+                                        hasConflict ? 'border-destructive/50 bg-destructive/5' : 'border-border/60 bg-muted/20'
+                                      }`}
+                                    >
+                                      <div className="flex-1 space-y-1 min-w-0">
+                                        <div className="flex items-center justify-between gap-2">
+                                          <div className="flex items-center gap-2 flex-1 min-w-0">
+                                            <p className="font-medium text-sm truncate">{event.title}</p>
+                                            {isEdited && <Badge variant="secondary" className="text-xs shrink-0">編集済み</Badge>}
+                                          </div>
+                                          {hasConflict && <Badge variant="destructive" className="text-xs shrink-0">重複</Badge>}
+                                        </div>
+                                        <p className="text-xs text-muted-foreground">
+                                          {new Date(event.start).toLocaleDateString('ja-JP', { month: 'short', day: 'numeric', weekday: 'short' })}
+                                          {' '}
+                                          {new Date(event.start).toLocaleTimeString('ja-JP', {
+                                            hour: '2-digit',
+                                            minute: '2-digit'
+                                          })}
+                                          {' - '}
+                                          {new Date(event.end).toLocaleTimeString('ja-JP', {
+                                            hour: '2-digit',
+                                            minute: '2-digit'
+                                          })}
+                                        </p>
+                                      </div>
+                                      <Button
+                                        type="button"
+                                        variant="ghost"
+                                        size="sm"
+                                        onClick={() => setEditingEventId(event.proposalId)}
+                                        className="h-8 w-8 p-0 shrink-0"
+                                        title="編集"
+                                      >
+                                        <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                          <path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                        </svg>
+                                      </Button>
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              );
+            })()}
             </div>
+          );
+        })()}
+        {!previewData && (
+          <div className="text-center py-8 text-muted-foreground">
+            <p className="text-sm">プレビューデータがありません</p>
           </div>
         )}
       </Modal>
+
+      {/* イベント編集モーダル */}
+      {previewData && editingEventId && (() => {
+        // displayEventsを計算（IIFEの外から参照できるように）
+        const calculatedDisplayEvents = (() => {
+          let baseEvents = previewData.proposedEvents;
+          if (useCustomized && customizationResult) {
+            const normaldMap = new Map(
+              customizationResult.customizedEvents.map((c) => [c.proposalId, c])
+            );
+            baseEvents = previewData.proposedEvents.map((event) => {
+              const normald = normaldMap.get(event.proposalId);
+              if (!normald) return event;
+              return {
+                ...event,
+                title: normald.title ?? event.title,
+                description: normald.description ?? event.description,
+                start: normald.start ?? event.start,
+                end: normald.end ?? event.end
+              };
+            });
+          }
+          return baseEvents.map((event) => {
+            const edited = editedEvents.get(event.proposalId);
+            if (!edited) return event;
+            return { ...event, ...edited };
+          });
+        })();
+
+        const event = calculatedDisplayEvents.find((e) => e.proposalId === editingEventId);
+        if (!event) return null;
+
+        return (
+          <EventEditModal
+            event={event}
+            onSave={(edited) => {
+              const newEdited = new Map(editedEvents);
+              newEdited.set(event.proposalId, edited);
+              setEditedEvents(newEdited);
+              setEditingEventId(null);
+            }}
+            onCancel={() => setEditingEventId(null)}
+          />
+        );
+      })()}
     </Card>
   );
 }

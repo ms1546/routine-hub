@@ -11,7 +11,8 @@ import type { RoutineBlockInput } from '@/features/routines';
 type RoutineBlockTimelineEditorProps = {
   blocks: RoutineBlockInput[];
   onChange: (blocks: RoutineBlockInput[]) => void;
-  durationType: 'half-day' | 'full-day' | 'weekly';
+  durationType: 'normal' | 'weekly';
+  normalTimeRange?: { startHour: number; endHour: number }; // normalタイプの場合の時間範囲
 };
 
 const weekdayLabels: Record<string, string> = {
@@ -129,7 +130,8 @@ const roundTo15Minutes = (timeStr: string): string => {
 export function RoutineBlockTimelineEditor({
   blocks,
   onChange,
-  durationType
+  durationType,
+  normalTimeRange
 }: RoutineBlockTimelineEditorProps) {
   const [editingBlock, setEditingBlock] = useState<RoutineBlockInput | null>(null);
   const [draggingBlockId, setDraggingBlockId] = useState<string | null>(null);
@@ -143,19 +145,33 @@ export function RoutineBlockTimelineEditor({
   const timelineRef = useRef<HTMLDivElement>(null);
   const timelineRefsByDay = useRef<Record<string, HTMLDivElement | null>>({});
 
-  const isDayBased = durationType === 'full-day' || durationType === 'half-day';
+  const isDayBased = durationType === 'normal';
 
   // 時間をピクセル位置に変換
   const hourToPixel = useCallback((hour: number, containerWidth: number): number => {
+    if (durationType === 'normal' && normalTimeRange) {
+      // normalタイプで時間範囲が設定されている場合、その範囲内で正規化
+      const rangeHours = normalTimeRange.endHour - normalTimeRange.startHour;
+      const normalizedHour = (hour - normalTimeRange.startHour) / rangeHours;
+      return normalizedHour * containerWidth;
+    }
     return (hour / 24) * containerWidth;
-  }, []);
+  }, [durationType, normalTimeRange]);
 
   // ピクセル位置を時間に変換（スナップ: 15分単位）
   const pixelToHour = useCallback((pixel: number, containerWidth: number): number => {
-    const hour = (pixel / containerWidth) * 24;
+    let hour: number;
+    if (durationType === 'normal' && normalTimeRange) {
+      // normalタイプで時間範囲が設定されている場合、その範囲内で正規化
+      const rangeHours = normalTimeRange.endHour - normalTimeRange.startHour;
+      const normalizedHour = (pixel / containerWidth) * rangeHours;
+      hour = normalTimeRange.startHour + normalizedHour;
+    } else {
+      hour = (pixel / containerWidth) * 24;
+    }
     // 15分単位（0.25時間）でスナップ
     return Math.round(hour * 4) / 4;
-  }, []);
+  }, [durationType, normalTimeRange]);
 
   // Blockの最小時間（15分 = 0.25時間）を確保
   const ensureMinDuration = useCallback((block: RoutineBlockInput): RoutineBlockInput => {
@@ -177,74 +193,33 @@ export function RoutineBlockTimelineEditor({
     let startHour = Math.max(0, block.startHour);
     let endHour = block.endHour;
 
-    if (durationType === 'half-day') {
-      // half-day: 最長12時間、0-24時間の範囲内で自由に配置可能
-      const maxDuration = 12;
+    if (durationType === 'normal') {
+      // normal: Routine全体の時間範囲内でBlockを配置可能（例：8:00-12:00）
+      // 各Blockの最低時間は0.25h（15分）、Routine全体が最低3時間
+      if (normalTimeRange) {
+        // 時間範囲内に制限
+        startHour = Math.max(normalTimeRange.startHour, Math.min(normalTimeRange.endHour, startHour));
+        endHour = Math.max(normalTimeRange.startHour, Math.min(normalTimeRange.endHour, endHour));
+      } else {
+        // 時間範囲が設定されていない場合は0-24の範囲内で自由
+        startHour = Math.max(0, Math.min(24, startHour));
+        endHour = Math.min(24, endHour);
+      }
 
-      // startHourは0-24の範囲内で自由
-      startHour = Math.max(0, Math.min(24, startHour));
-
-      // endHourは24を超えないように制限
-      endHour = Math.min(24, endHour);
-
-      // 期間が最小期間未満の場合は調整
+      // 最低期間（0.25h = 15分）を確保
       if (endHour - startHour < minDuration) {
-        // endHourを延ばすか、startHourを縮める
-        if (endHour + minDuration <= 24 && endHour + minDuration - startHour <= maxDuration) {
-          endHour = startHour + minDuration;
+        if (normalTimeRange) {
+          if (startHour + minDuration <= normalTimeRange.endHour) {
+            endHour = startHour + minDuration;
+          } else {
+            startHour = Math.max(normalTimeRange.startHour, endHour - minDuration);
+          }
         } else {
-          startHour = Math.max(0, endHour - minDuration);
-        }
-      }
-
-      // 期間が12時間を超える場合は、endHourを12時間に制限（重要：これが勝手に伸びるのを防ぐ）
-      if (endHour - startHour > maxDuration) {
-        endHour = startHour + maxDuration;
-      }
-
-      // 最終的なendHourが24を超えないように保証
-      if (endHour > 24) {
-        endHour = 24;
-        // endHourが24になった場合、startHourを調整して最小期間を確保
-        if (endHour - startHour < minDuration) {
-          startHour = Math.max(0, endHour - minDuration);
-        }
-        // 12時間の制限も再確認
-        if (endHour - startHour > maxDuration) {
-          endHour = startHour + maxDuration;
-        }
-      }
-    } else if (durationType === 'full-day') {
-      // full-day: 最長24時間、0-24時間の範囲内で自由に配置可能
-      const maxDuration = 24;
-
-      // startHourは0-24の範囲内で自由（制限を緩和）
-      startHour = Math.max(0, Math.min(24, startHour));
-
-      // endHourは24を超えないように制限
-      endHour = Math.min(24, endHour);
-
-      // 期間が最小期間未満の場合は調整
-      if (endHour - startHour < minDuration) {
-        // endHourを延ばすか、startHourを縮める
-        if (endHour + minDuration <= 24) {
-          endHour = startHour + minDuration;
-        } else {
-          startHour = Math.max(0, endHour - minDuration);
-        }
-      }
-
-      // 期間が24時間を超える場合は、endHourを24時間に制限
-      if (endHour - startHour > maxDuration) {
-        endHour = startHour + maxDuration;
-      }
-
-      // 最終的なendHourが24を超えないように保証
-      if (endHour > 24) {
-        endHour = 24;
-        // endHourが24になった場合、startHourを調整して最小期間を確保
-        if (endHour - startHour < minDuration) {
-          startHour = Math.max(0, endHour - minDuration);
+          if (startHour + minDuration <= 24) {
+            endHour = startHour + minDuration;
+          } else {
+            startHour = Math.max(0, endHour - minDuration);
+          }
         }
       }
     } else {
@@ -269,16 +244,23 @@ export function RoutineBlockTimelineEditor({
       startHour,
       endHour
     };
-  }, [durationType]);
+  }, [durationType, normalTimeRange]);
 
   // 時間ブロックの重複をチェック（除外するブロックIDを指定可能）
+  // 重複判定: 同じ曜日で、時間帯が重複する（境界を含む場合も重複とみなす）
+  // ロジック: !(end1 <= start2 || start1 >= end2) つまり (start1 < end2 && end1 > start2)
+  // ただし、start1 === start2 かつ end1 === end2 の場合も重複とみなす
   const checkBlockOverlap = useCallback((block: RoutineBlockInput, excludeBlockId?: string): boolean => {
     return blocks.some((b) => {
       if (b.id === excludeBlockId) return false; // 自分自身は除外
       if (b.day !== block.day) return false; // 異なる曜日は重複しない
 
-      // 時間帯の重複判定: (start1 < end2 && end1 > start2)
-      return b.startHour < block.endHour && b.endHour > block.startHour;
+      // 時間帯の重複判定: 同じ時間範囲、または時間が重複する場合
+      // 1. 完全に同じ時間範囲: (start1 === start2 && end1 === end2)
+      // 2. 部分的に重複: (start1 < end2 && end1 > start2)
+      const isSameTimeRange = b.startHour === block.startHour && b.endHour === block.endHour;
+      const hasTimeOverlap = b.startHour < block.endHour && b.endHour > block.startHour;
+      return isSameTimeRange || hasTimeOverlap;
     });
   }, [blocks]);
 
@@ -364,22 +346,20 @@ export function RoutineBlockTimelineEditor({
       const minDuration = 0.25; // 15分（最短）
       if (resizeSide === 'left') {
         let maxStartHour = block.endHour - minDuration;
-        if (durationType === 'half-day') {
-          // half-day: 12時間の制限を考慮
-          // 現在のendHourから12時間を引いた値と、24時間から最小期間を引いた値の小さい方
-          maxStartHour = Math.min(24 - minDuration, maxStartHour);
-          // 12時間の制限を考慮
-          if (block.endHour - currentHour > 12) {
-            maxStartHour = Math.min(maxStartHour, block.endHour - 12);
+        let minStartHour = 0;
+        if (durationType === 'normal') {
+          // normal: 時間範囲内に制限
+          if (normalTimeRange) {
+            maxStartHour = Math.min(normalTimeRange.endHour - minDuration, maxStartHour);
+            minStartHour = normalTimeRange.startHour;
+          } else {
+            maxStartHour = Math.min(24 - minDuration, maxStartHour);
           }
-        } else if (durationType === 'full-day') {
-          // full-day: 24時間の制限のみ考慮（startHourは自由に移動可能）
-          maxStartHour = Math.min(24 - minDuration, maxStartHour);
         } else {
           // weekly: 制限なし
           maxStartHour = block.endHour - minDuration;
         }
-        const newStartHour = Math.max(0, Math.min(currentHour, maxStartHour));
+        const newStartHour = Math.max(minStartHour, Math.min(currentHour, maxStartHour));
         let updatedBlock = {
           ...block,
           startHour: newStartHour
@@ -391,12 +371,14 @@ export function RoutineBlockTimelineEditor({
       } else {
         let minEndHour = block.startHour + minDuration;
         let maxEndHour = Infinity;
-        if (durationType === 'half-day') {
-          // half-day: 12時間の制限と24時間の上限
-          maxEndHour = Math.min(24, block.startHour + 12);
-        } else if (durationType === 'full-day') {
-          // full-day: 24時間の上限
-          maxEndHour = 24;
+        if (durationType === 'normal') {
+          // normal: 時間範囲内に制限
+          if (normalTimeRange) {
+            maxEndHour = normalTimeRange.endHour;
+            minEndHour = Math.max(minEndHour, normalTimeRange.startHour + minDuration);
+          } else {
+            maxEndHour = 24;
+          }
         } else {
           // weekly: 制限なし
           maxEndHour = Infinity;
@@ -467,7 +449,7 @@ export function RoutineBlockTimelineEditor({
             onChange(newBlocks);
             return;
           } else {
-            // half-day/full-day: 24時間内に制限
+            // normal/normal: 24時間内に制限
             if (newStartHour < 0) {
               newEndHour -= newStartHour;
               newStartHour = 0;
@@ -520,30 +502,20 @@ export function RoutineBlockTimelineEditor({
       const originalDuration = block.endHour - block.startHour;
 
       // 新しい開始時刻を計算（マウス位置に基づく）
-      const newStartHour = pixelToHour(relativeX, containerWidth);
+      let newStartHour = pixelToHour(relativeX, containerWidth);
       let newEndHour = newStartHour + originalDuration;
 
-      // isDayBasedの場合はhalf-dayまたはfull-dayのみ
-      if (durationType === 'half-day') {
-        // half-day: 0-24時間の範囲内で、12時間の制限を考慮
-        // まず、24時間の範囲内に収める
-        if (newStartHour < 0) {
-          newEndHour = originalDuration;
-          // 最小15分を確保
-          if (newEndHour < 0.25) {
-            return;
-          }
-        } else if (newEndHour > 24) {
-          newEndHour = 24;
-          // 最小15分を確保
-          if (newEndHour - newStartHour < 0.25) {
-            return;
-          }
-        }
-
-        // 12時間の制限を適用（期間が12時間を超えないように）
-        if (newEndHour - newStartHour > 12) {
-          newEndHour = newStartHour + 12;
+      // isDayBasedの場合はnormalタイプのみ
+      if (durationType === 'normal') {
+        // normal: 時間範囲内に制限
+        if (normalTimeRange) {
+          // 時間範囲内に収める
+          newStartHour = Math.max(normalTimeRange.startHour, Math.min(normalTimeRange.endHour, newStartHour));
+          newEndHour = Math.max(normalTimeRange.startHour, Math.min(normalTimeRange.endHour, newEndHour));
+        } else {
+          // 時間範囲が設定されていない場合は0-24の範囲内
+          newStartHour = Math.max(0, Math.min(24, newStartHour));
+          newEndHour = Math.min(24, newEndHour);
         }
 
         // 最小15分を確保
@@ -553,20 +525,23 @@ export function RoutineBlockTimelineEditor({
 
         const updated: RoutineBlockInput = {
           ...block,
-          startHour: Math.max(0, Math.min(24, newStartHour)),
-          endHour: Math.max(0.25, Math.min(24, newEndHour))
+          startHour: newStartHour,
+          endHour: newEndHour
         };
 
+        // clampHoursで再チェック（確実に範囲内に収める）
+        const clampedUpdated = clampHours(updated);
+
         // 重複チェック（必須）
-        if (checkBlockOverlap(updated, block.id)) {
+        if (checkBlockOverlap(clampedUpdated, block.id)) {
           return; // 重複している場合は移動を拒否
         }
 
-        const newBlocks = blocks.map((b) => (b.id === block.id ? updated : b));
+        const newBlocks = blocks.map((b) => (b.id === block.id ? clampedUpdated : b));
         onChange(newBlocks);
         return;
       } else {
-        // full-day: 0-24時間の範囲内で自由に移動可能
+        // normal: 0-24時間の範囲内で自由に移動可能
         // 24時間の範囲内に収める
         if (newStartHour < 0) {
           newEndHour = originalDuration;
@@ -661,7 +636,7 @@ export function RoutineBlockTimelineEditor({
       day: (day ?? 'monday') as typeof blocks[0]['day'],
       startHour: Math.max(0, hour),
       endHour: hour + 0.25, // 15分（最小）
-      label: '新しいBlock',
+      label: '',
       objective: '目的を入力してください',
       energyLevel: 'medium'
     };
@@ -682,40 +657,6 @@ export function RoutineBlockTimelineEditor({
   const handleTimelineDoubleClick = (e: React.MouseEvent, day?: string) => {
     e.preventDefault();
     handleTimelineClick(e, day);
-  };
-
-  // Block追加
-  const handleAddBlock = () => {
-    const newBlock: RoutineBlockInput = {
-      id: `block-${Date.now()}`,
-      day: isDayBased ? 'monday' : 'monday',
-      startHour: 9,
-      endHour: 9.25, // 15分（最小）
-      label: '新しいBlock',
-      objective: '目的を入力してください',
-      energyLevel: 'medium'
-    };
-    const validBlock = ensureMinDuration(newBlock);
-
-    // 重複チェック
-    if (checkBlockOverlap(validBlock)) {
-      // 重複している場合は別の時間に配置を試みる
-      let foundSlot = false;
-      for (let hour = 0; hour <= 21; hour += 3) {
-        const testBlock = { ...validBlock, startHour: hour, endHour: hour + 3 };
-        if (!checkBlockOverlap(testBlock)) {
-          onChange([...blocks, testBlock]);
-          foundSlot = true;
-          break;
-        }
-      }
-      if (!foundSlot) {
-        // 空きが見つからない場合は警告を表示（後で実装）
-        console.warn('時間ブロックを追加できません。すべての時間帯が埋まっています。');
-      }
-    } else {
-      onChange([...blocks, validBlock]);
-    }
   };
 
   // Block削除
@@ -742,32 +683,64 @@ export function RoutineBlockTimelineEditor({
   };
 
   if (isDayBased) {
-    // full-day/half-day: 1日のタイムライン
+    // normal/normal: 1日のタイムライン
     const sortedBlocks = [...blocks].sort((a, b) => a.startHour - b.startHour);
 
     return (
       <div className="space-y-4">
         <div className="flex items-center justify-between">
           <h3 className="text-lg font-semibold">時間ブロック</h3>
-          <Button type="button" variant="outline" size="sm" onClick={handleAddBlock}>
-            ブロックを追加
-          </Button>
         </div>
 
         {/* 時間軸 */}
         <div className="relative h-6">
-          {Array.from({ length: 9 }, (_, i) => {
-            const hour = i * 3;
-            return (
-              <div
-                key={hour}
-                className="absolute text-xs text-muted-foreground font-medium"
-                style={{ left: `${(hour / 24) * 100}%`, transform: 'translateX(-50%)' }}
-              >
-                {hour}
-              </div>
-            );
-          })}
+          {(() => {
+            // normalタイプで時間範囲が設定されている場合、その範囲内の時間軸を表示
+            if (normalTimeRange) {
+              const startHour = Math.floor(normalTimeRange.startHour);
+              const endHour = Math.ceil(normalTimeRange.endHour);
+              const rangeHours = endHour - startHour;
+              // 時間軸の間隔を計算（範囲に応じて調整）
+              const interval = rangeHours <= 6 ? 1 : rangeHours <= 12 ? 2 : 3; // 6時間以下なら1時間単位、12時間以下なら2時間単位、それ以上なら3時間単位
+              const hours: number[] = [];
+              for (let h = startHour; h <= endHour; h += interval) {
+                hours.push(h);
+              }
+              // 終了時刻が含まれていない場合は追加
+              const lastHour = hours[hours.length - 1];
+              if (lastHour !== undefined && lastHour < endHour) {
+                hours.push(endHour);
+              }
+              return hours.map((hour) => {
+                const normalizedHour = hour - normalTimeRange.startHour;
+                const rangeHours2 = normalTimeRange.endHour - normalTimeRange.startHour;
+                const leftPercent = (normalizedHour / rangeHours2) * 100;
+                return (
+                  <div
+                    key={hour}
+                    className="absolute text-xs text-muted-foreground font-medium"
+                    style={{ left: `${leftPercent}%`, transform: 'translateX(-50%)' }}
+                  >
+                    {hour}
+                  </div>
+                );
+              });
+            } else {
+              // デフォルト: 0-24時の範囲で3時間間隔
+              return Array.from({ length: 9 }, (_, i) => {
+                const hour = i * 3;
+                return (
+                  <div
+                    key={hour}
+                    className="absolute text-xs text-muted-foreground font-medium"
+                    style={{ left: `${(hour / 24) * 100}%`, transform: 'translateX(-50%)' }}
+                  >
+                    {hour}
+                  </div>
+                );
+              });
+            }
+          })()}
         </div>
 
         {/* タイムライン */}
@@ -778,11 +751,31 @@ export function RoutineBlockTimelineEditor({
           onDoubleClick={(e) => handleTimelineDoubleClick(e)}
         >
           {sortedBlocks.map((block) => {
-            const leftPercent = (block.startHour / 24) * 100;
+            // normalタイプで時間範囲が設定されている場合、その範囲内で正規化
+            let leftPercent: number;
+            let actualWidthPercent: number;
             const actualDuration = block.endHour - block.startHour;
-            const actualWidthPercent = (actualDuration / 24) * 100;
+            if (durationType === 'normal' && normalTimeRange) {
+              const rangeHours = normalTimeRange.endHour - normalTimeRange.startHour;
+              const normalizedStart = (block.startHour - normalTimeRange.startHour) / rangeHours;
+              leftPercent = normalizedStart * 100;
+              actualWidthPercent = (actualDuration / rangeHours) * 100;
+            } else {
+              leftPercent = (block.startHour / 24) * 100;
+              actualWidthPercent = (actualDuration / 24) * 100;
+            }
             const isValid = actualDuration >= 0.25; // 15分（最短）
+
+            // タイムラインコンテナの幅を取得（レンダリング後に計算）
+            const containerWidth = timelineRef.current?.offsetWidth ?? 0;
             const minDisplayWidthPx = 60; // 最小表示幅（ピクセル）
+            const calculatedWidthPx = (actualWidthPercent / 100) * containerWidth;
+
+            // 計算された幅が最小表示幅よりも小さい場合でも、位置は正確に保つ
+            // minWidthは使用せず、実際の幅を使用する（ただし、視認性のためにコンテンツの調整が必要な場合は別途対応）
+            const finalWidthPercent = containerWidth > 0 && calculatedWidthPx < minDisplayWidthPx
+              ? (minDisplayWidthPx / containerWidth) * 100
+              : actualWidthPercent;
 
             return (
               <div
@@ -790,8 +783,7 @@ export function RoutineBlockTimelineEditor({
                 className={`absolute top-0 h-full border-2 ${energyLevelColors[block.energyLevel] || energyLevelColors.low} rounded-sm cursor-move transition-all ${!isValid ? 'border-destructive' : ''}`}
                 style={{
                   left: `${leftPercent}%`,
-                  width: `${actualWidthPercent}%`,
-                  minWidth: `${minDisplayWidthPx}px`
+                  width: `${finalWidthPercent}%`
                 }}
                 onMouseDown={(e) => handleDragStart(e, block)}
                 onClick={(e) => {
@@ -865,6 +857,7 @@ export function RoutineBlockTimelineEditor({
           <BlockEditModal
             block={editingBlock}
             durationType={durationType}
+            normalTimeRange={normalTimeRange}
             onSave={handleSaveBlockEdit}
             onDelete={handleDeleteBlock}
             onClose={() => setEditingBlock(null)}
@@ -958,9 +951,6 @@ export function RoutineBlockTimelineEditor({
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <h3 className="text-lg font-semibold">時間ブロック</h3>
-        <Button type="button" variant="outline" size="sm" onClick={handleAddBlock}>
-          ブロックを追加
-        </Button>
       </div>
 
       <div className="space-y-4">
@@ -1022,7 +1012,17 @@ export function RoutineBlockTimelineEditor({
                       const isValid = actualDuration >= 0.25; // 15分（最短）
                       // 分割されたBlockの場合は重複チェックをスキップ（元のBlockでチェック）
                       const hasOverlap = isSplitBlock || !block.id ? false : checkBlockOverlap(block, block.id);
+
+                      // タイムラインコンテナの幅を取得
+                      const dayTimelineEl = timelineRefsByDay.current[day];
+                      const containerWidth = dayTimelineEl?.offsetWidth ?? 0;
                       const minDisplayWidthPx = 60; // 最小表示幅（ピクセル）
+                      const calculatedWidthPx = (actualWidthPercent / 100) * containerWidth;
+
+                      // 計算された幅が最小表示幅よりも小さい場合でも、位置は正確に保つ
+                      const finalWidthPercent = containerWidth > 0 && calculatedWidthPx < minDisplayWidthPx
+                        ? (minDisplayWidthPx / containerWidth) * 100
+                        : actualWidthPercent;
 
                       return (
                         <div
@@ -1031,8 +1031,7 @@ export function RoutineBlockTimelineEditor({
                           className={`absolute top-0 h-full border-2 ${energyLevelColors[block.energyLevel] || energyLevelColors.low} rounded-sm cursor-move transition-all ${!isValid || hasOverlap ? 'border-destructive' : ''} ${isSplitBlock ? 'opacity-80' : ''}`}
                           style={{
                             left: `${leftPercent}%`,
-                            width: `${actualWidthPercent}%`,
-                            minWidth: `${minDisplayWidthPx}px`
+                            width: `${finalWidthPercent}%`
                           }}
                           onMouseDown={(e) => {
                             // リサイズハンドルがクリックされた場合はドラッグを開始しない
@@ -1113,6 +1112,7 @@ export function RoutineBlockTimelineEditor({
           <BlockEditModal
             block={editingBlock}
             durationType={durationType}
+            normalTimeRange={normalTimeRange}
             onSave={handleSaveBlockEdit}
             onDelete={handleDeleteBlock}
             onClose={() => setEditingBlock(null)}
@@ -1125,13 +1125,14 @@ export function RoutineBlockTimelineEditor({
 // Block編集モーダル
 type BlockEditModalProps = {
   block: RoutineBlockInput;
-  durationType: 'half-day' | 'full-day' | 'weekly';
+  durationType: 'normal' | 'weekly';
+  normalTimeRange?: { startHour: number; endHour: number };
   onSave: (block: RoutineBlockInput) => void;
   onDelete?: (blockId: string) => void;
   onClose: () => void;
 };
 
-function BlockEditModal({ block, durationType, onSave, onDelete, onClose }: BlockEditModalProps) {
+function BlockEditModal({ block, durationType, normalTimeRange, onSave, onDelete, onClose }: BlockEditModalProps) {
   const [label, setLabel] = useState(block.label);
   const [objective, setObjective] = useState(block.objective);
   const [energyLevel, setEnergyLevel] = useState(block.energyLevel);
@@ -1139,6 +1140,8 @@ function BlockEditModal({ block, durationType, onSave, onDelete, onClose }: Bloc
   const [startTime, setStartTime] = useState(formatHourToTime(block.startHour));
   const [endHour, setEndHour] = useState(block.endHour);
   const [duration, setDuration] = useState(block.endHour - block.startHour);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [labelError, setLabelError] = useState<string | null>(null);
   const timeOptions = generateTimeOptions();
 
   // blockが変更されたときにstartTimeを更新
@@ -1160,15 +1163,21 @@ function BlockEditModal({ block, durationType, onSave, onDelete, onClose }: Bloc
     const newStartHour = parseTimeToHour(roundedTime);
     let validStartHour = Math.max(0, newStartHour);
 
-    // half-day/full-dayの場合は21時まで
-    if (durationType !== 'weekly') {
-      validStartHour = Math.min(21, validStartHour);
+    if (durationType === 'normal' && normalTimeRange) {
+      // normalタイプで時間範囲が設定されている場合、その範囲内に制限
+      validStartHour = Math.max(normalTimeRange.startHour, Math.min(normalTimeRange.endHour, newStartHour));
+    } else if (durationType !== 'weekly') {
+      // normalタイプで時間範囲が設定されていない場合は24時間まで
+      validStartHour = Math.min(24, validStartHour);
     }
 
     let newEndHour = validStartHour + duration;
 
-    // half-day/full-dayの場合は24時間まで
-    if (durationType !== 'weekly') {
+    if (durationType === 'normal' && normalTimeRange) {
+      // normalタイプで時間範囲が設定されている場合、その範囲内に制限
+      newEndHour = Math.min(normalTimeRange.endHour, newEndHour);
+    } else if (durationType !== 'weekly') {
+      // normalタイプで時間範囲が設定されていない場合は24時間まで
       newEndHour = Math.min(24, newEndHour);
     }
 
@@ -1180,10 +1189,8 @@ function BlockEditModal({ block, durationType, onSave, onDelete, onClose }: Bloc
     const minDuration = 0.25; // 15分（最短）
     let maxDuration: number;
 
-    if (durationType === 'half-day') {
-      maxDuration = 12; // half-day: 最長12時間
-    } else if (durationType === 'full-day') {
-      maxDuration = 24; // full-day: 最長24時間
+    if (durationType === 'normal') {
+      maxDuration = 24; // normal: 1日未満（24時間未満）
     } else {
       maxDuration = Infinity; // weekly: 制限なし
     }
@@ -1194,7 +1201,7 @@ function BlockEditModal({ block, durationType, onSave, onDelete, onClose }: Bloc
     const currentStartHour = parseTimeToHour(startTime);
     let newEndHour = currentStartHour + validDuration;
 
-    // half-day/full-dayの場合は24時間まで
+    // normal/normalの場合は24時間まで
     if (durationType !== 'weekly') {
       newEndHour = Math.min(24, newEndHour);
     }
@@ -1203,14 +1210,23 @@ function BlockEditModal({ block, durationType, onSave, onDelete, onClose }: Bloc
   };
 
   const handleSave = () => {
+    // ラベルのバリデーション
+    if (!label || label.trim().length === 0) {
+      setLabelError('Blockの名前は必須です（3文字以上80文字以下）');
+      return;
+    }
+    if (label.length < 3 || label.length > 80) {
+      setLabelError('Blockの名前は3文字以上80文字以下である必要があります');
+      return;
+    }
+    setLabelError(null);
+
     // 最小15分を確保
     const minDuration = 0.25;
     let maxDuration: number;
 
-    if (durationType === 'half-day') {
-      maxDuration = 12;
-    } else if (durationType === 'full-day') {
-      maxDuration = 24;
+    if (durationType === 'normal') {
+      maxDuration = 24; // 1日未満（24時間未満）
     } else {
       maxDuration = Infinity;
     }
@@ -1220,9 +1236,21 @@ function BlockEditModal({ block, durationType, onSave, onDelete, onClose }: Bloc
     let validEndHour = currentStartHour + validDuration;
     let validStartHour = Math.max(0, currentStartHour);
 
-    // half-day/full-dayの場合は24時間まで
-    if (durationType !== 'weekly') {
-      validStartHour = Math.min(21, validStartHour);
+    if (durationType === 'normal' && normalTimeRange) {
+      // normalタイプで時間範囲が設定されている場合、その範囲内に制限
+      validStartHour = Math.max(normalTimeRange.startHour, Math.min(normalTimeRange.endHour, currentStartHour));
+      validEndHour = Math.max(normalTimeRange.startHour, Math.min(normalTimeRange.endHour, validEndHour));
+      // 最小期間を確保
+      if (validEndHour - validStartHour < minDuration) {
+        if (validStartHour + minDuration <= normalTimeRange.endHour) {
+          validEndHour = validStartHour + minDuration;
+        } else {
+          validStartHour = Math.max(normalTimeRange.startHour, validEndHour - minDuration);
+        }
+      }
+    } else if (durationType !== 'weekly') {
+      // normalタイプで時間範囲が設定されていない場合は24時間まで
+      validStartHour = Math.min(24, validStartHour);
       validEndHour = Math.min(24, validEndHour);
     }
 
@@ -1238,14 +1266,25 @@ function BlockEditModal({ block, durationType, onSave, onDelete, onClose }: Bloc
   };
 
   const handleDelete = () => {
-    if (onDelete && confirm('このブロックを削除しますか？')) {
+    if (onDelete) {
+      setShowDeleteConfirm(true);
+    }
+  };
+
+  const handleConfirmDelete = () => {
+    if (onDelete) {
       onDelete(block.id!);
       onClose();
     }
   };
 
+  const handleCancelDelete = () => {
+    setShowDeleteConfirm(false);
+  };
+
   return (
-    <Modal
+    <>
+      <Modal
       open={true}
       onClose={onClose}
       title="ブロックを編集"
@@ -1276,10 +1315,16 @@ function BlockEditModal({ block, durationType, onSave, onDelete, onClose }: Bloc
           <Input
             id="edit-label"
             value={label}
-            onChange={(e) => setLabel(e.target.value)}
-            placeholder="Blockの名前"
+            onChange={(e) => {
+              setLabel(e.target.value);
+              setLabelError(null);
+            }}
+            placeholder="Blockの名前（必須）"
             required
           />
+          {labelError && (
+            <p className="text-sm text-destructive">{labelError}</p>
+          )}
         </div>
 
         <div className="space-y-2">
@@ -1334,8 +1379,8 @@ function BlockEditModal({ block, durationType, onSave, onDelete, onClose }: Bloc
               id="edit-duration"
               type="number"
               step="0.25"
-              min={0.25}
-              max={durationType === 'half-day' ? 12 : durationType === 'full-day' ? 24 : undefined}
+              min={durationType === 'normal' ? 3 : 0.25}
+              max={durationType === 'normal' ? 24 : undefined}
               value={duration}
               onChange={(e) => handleDurationChange(Number(e.target.value))}
               required
@@ -1369,5 +1414,35 @@ function BlockEditModal({ block, durationType, onSave, onDelete, onClose }: Bloc
         </div>
       </div>
     </Modal>
+
+    {/* 削除確認モーダル */}
+    {showDeleteConfirm && (
+      <Modal
+        open={true}
+        onClose={handleCancelDelete}
+        title="ブロックを削除"
+        size="sm"
+        footer={
+          <div className="flex justify-end gap-2">
+            <Button variant="outline" onClick={handleCancelDelete}>
+              キャンセル
+            </Button>
+            <Button variant="destructive" onClick={handleConfirmDelete}>
+              削除する
+            </Button>
+          </div>
+        }
+      >
+        <div className="space-y-4">
+          <p className="text-sm text-foreground">
+            このブロック「{block.label || '(名前なし)'}」を削除しますか？
+          </p>
+          <p className="text-xs text-muted-foreground">
+            この操作は取り消せません。
+          </p>
+        </div>
+      </Modal>
+    )}
+    </>
   );
 }

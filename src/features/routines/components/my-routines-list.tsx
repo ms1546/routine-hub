@@ -189,8 +189,8 @@ export function MyRoutinesList({ routines, userId, userEmail }: MyRoutinesListPr
 
                   <dl className="grid grid-cols-4 gap-2 pt-2 border-t border-border/50 text-xs">
                     <div className="text-center">
-                      <dt className="text-muted-foreground">Fork</dt>
-                      <dd className="font-semibold">{routine.stats.forks}</dd>
+                      <dt className="text-muted-foreground">Clone</dt>
+                      <dd className="font-semibold">{routine.stats.clones}</dd>
                     </div>
                     <div className="text-center">
                       <dt className="text-muted-foreground">適用</dt>

@@ -296,7 +296,7 @@ export async function reorderRoutineBlocksAction(
 
 // createRoutineSchemaにsuperRefineがあるため、.partial()が使えない
 // そのため、overridesを直接定義する
-const forkRoutineSchema = z.object({
+const cloneRoutineSchema = z.object({
   routineId: z.string().uuid(),
   owner: z.string().min(3),
   overrides: z
@@ -312,19 +312,31 @@ const forkRoutineSchema = z.object({
     .optional()
 });
 
-export type ForkRoutinePayload = z.infer<typeof forkRoutineSchema>;
+/**
+ * Clone Routine Payload
+ *
+ * Used to create a personal copy (clone) of a public Routine.
+ * Clones are isolated copies - the original Routine is never modified.
+ */
+export type CloneRoutinePayload = z.infer<typeof cloneRoutineSchema>;
 
-export async function forkRoutineAction(
-  payload: z.infer<typeof forkRoutineSchema>
+/**
+ * Clone Routine Action (Legacy - use features/routines/actions/routines.ts)
+ *
+ * Creates a personal copy (clone) of a public Routine.
+ * The cloned Routine is private by default and owned by the specified user.
+ */
+export async function cloneRoutineAction(
+  payload: z.infer<typeof cloneRoutineSchema>
 ): Promise<ActionResult<Routine>> {
   try {
-    const parsed = forkRoutineSchema.parse(payload);
-    const forked = await routinesRepository.fork(parsed.routineId, {
+    const parsed = cloneRoutineSchema.parse(payload);
+    const cloned = await routinesRepository.clone(parsed.routineId, {
       owner: parsed.owner,
       ...parsed.overrides
     });
-    revalidateRoutinePaths(forked.id);
-    return { ok: true, data: forked };
+    revalidateRoutinePaths(cloned.id);
+    return { ok: true, data: cloned };
   } catch (error) {
     return handleActionError<Routine>(error);
   }

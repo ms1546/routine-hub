@@ -5,6 +5,22 @@ import {
   PutSecretValueCommand
 } from '@aws-sdk/client-secrets-manager';
 
+/**
+ * OAuth Boundary for Google Calendar Integration
+ *
+ * PORTFOLIO MODE DESIGN:
+ * - Refresh tokens are NOT stored in portfolio mode
+ * - Each calendar write requires explicit OAuth consent
+ * - Access tokens are short-lived and discarded immediately
+ * - This is an intentional security tradeoff for portfolio context
+ *
+ * Production Considerations (NOT IMPLEMENTED):
+ * - Refresh token storage would use AWS Secrets Manager
+ * - Offline access would be enabled with stored refresh tokens
+ * - Background jobs could sync calendar events automatically
+ *
+ * See docs/oauth-design.md for detailed design rationale.
+ */
 const secretsClient = new SecretsManagerClient({ region: process.env.AWS_REGION });
 const secretPrefix = process.env.GOOGLE_REFRESH_TOKEN_SECRET_PREFIX ?? 'routinehub/google';
 const scopes = ['https://www.googleapis.com/auth/calendar.events'];
@@ -32,13 +48,22 @@ function getOAuthClient() {
   );
 }
 
+/**
+ * Build Google OAuth URL for calendar access
+ *
+ * PORTFOLIO MODE: Uses prompt=consent to ensure explicit user intent.
+ * Access tokens are short-lived; refresh tokens are NOT stored.
+ *
+ * This function is used for calendar writes, which are admin-only.
+ * Each calendar write requires new OAuth consent.
+ */
 export function buildGoogleOAuthUrl(state: string) {
   const oauth2Client = getOAuthClient();
   return oauth2Client.generateAuthUrl({
-    access_type: 'offline',
+    access_type: 'offline', // Note: refresh tokens are NOT stored in portfolio mode
     scope: scopes,
     state,
-    prompt: 'consent'
+    prompt: 'consent' // Ensures explicit user intent per write
   });
 }
 
@@ -52,6 +77,18 @@ export async function exchangeCodeForTokens(code: string): Promise<TokenExchange
   };
 }
 
+/**
+ * Store Refresh Token (NOT USED in Portfolio Mode)
+ *
+ * This function exists but is NOT called in portfolio mode.
+ * Refresh tokens are intentionally NOT stored to reduce:
+ * - Credential exposure risk
+ * - Operational complexity
+ * - Security surface area
+ *
+ * In production, this would store encrypted refresh tokens
+ * in AWS Secrets Manager or similar secure storage.
+ */
 export async function storeRefreshToken(userId: string, refreshToken: string) {
   const secretId = `${secretPrefix}/${userId}`;
   await secretsClient.send(

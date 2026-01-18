@@ -2,7 +2,6 @@ import Link from 'next/link';
 import { AppShell } from '@/shared/components/app-shell';
 import { RoutineList } from '@/features/routines/components/routine-list';
 import { buttonVariants } from '@/shared/ui/button-variants';
-import { updateRoutineVisibilityAction } from '@/features/routines/actions/routines';
 import { routinesRepository, toRoutineListItem } from '@/features/routines';
 import { getCurrentUser } from '@/infrastructure/auth/session';
 
@@ -33,7 +32,7 @@ export default async function HomePage() {
             <h2 className="text-2xl font-bold tracking-tight mb-2">人気のRoutine</h2>
             <p className="text-muted-foreground">コミュニティで最も評価されているRoutineです</p>
           </div>
-          <RoutineList routines={highlighted} onToggleVisibility={updateRoutineVisibilityAction} userEmail={currentUser.email} />
+          <RoutineList routines={highlighted} userEmail={currentUser.email} />
         </section>
 
         <div className="text-center pt-8">

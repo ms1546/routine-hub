@@ -11,7 +11,7 @@ const energyLevelColors: Record<string, string> = {
 
 type RoutineScheduleVisualizationCompactProps = {
   timeBlocks: RoutineDetailView['timeBlocks'];
-  durationType?: 'half-day' | 'full-day' | 'weekly';
+  durationType?: 'normal' | 'normal' | 'weekly';
   className?: string;
 };
 
@@ -24,11 +24,11 @@ export function RoutineScheduleVisualizationCompact({
   durationType,
   className
 }: RoutineScheduleVisualizationCompactProps) {
-  // full-dayやhalf-dayの場合は曜日表示なし（1日のタイムラインのみ）
-  const isDayBased = durationType === 'full-day' || durationType === 'half-day';
+  // normalの場合は曜日表示なし（1日のタイムラインのみ）
+  const isDayBased = durationType === 'normal';
 
   if (isDayBased) {
-    // full-dayやhalf-day: 曜日表示なし、1日のタイムラインのみ
+    // normalやnormal: 曜日表示なし、1日のタイムラインのみ
     return (
       <div className={className}>
         <div className="relative h-12 bg-muted/30 rounded-md overflow-hidden">

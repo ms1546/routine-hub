@@ -3,7 +3,7 @@ import type { Routine } from '@/features/routines';
 import type { RoutineApplicationPreview } from '@/features/calendar/domain/mock';
 import type {
   ApplyRoutinePayload,
-  ForkRoutinePayload,
+  CloneRoutinePayload,
   VisibilityTogglePayload
 } from '@/features/routines/actions/routines';
 
@@ -21,4 +21,4 @@ export const stubApplyRoutine = (_payload: ApplyRoutinePayload) =>
     endDate: '2024-01-07',
     slots: []
   });
-export const stubForkRoutine = (_payload: ForkRoutinePayload) => ok<Routine>();
+export const stubCloneRoutine = (_payload: CloneRoutinePayload) => ok<Routine>();

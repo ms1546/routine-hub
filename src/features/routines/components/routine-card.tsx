@@ -94,8 +94,8 @@ export const RoutineCard = ({
             <dd className="text-sm font-semibold">{routine.blockCount}</dd>
           </div>
           <div className="text-center">
-            <dt className="text-xs text-muted-foreground">Forks</dt>
-            <dd className="text-sm font-semibold">{routine.stats.forks}</dd>
+            <dt className="text-xs text-muted-foreground">Clones</dt>
+            <dd className="text-sm font-semibold">{routine.stats.clones}</dd>
           </div>
           <div className="text-center">
             <dt className="text-xs text-muted-foreground">Likes</dt>
