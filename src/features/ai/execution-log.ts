@@ -29,6 +29,7 @@ export type ExecutionRecord = {
   hasHumanEvaluation: boolean;
   failureReason?: string;
   humanEvaluations: HumanEvaluation[];
+  langfuseTraceId?: string; // LangfuseのtraceId（評価記録用）
 };
 
 const executionRecords: ExecutionRecord[] = [];
@@ -99,7 +100,8 @@ export function recordWorkflowSuccess(input: {
     judgeScore: getAverageJudgeScore(input.result),
     judgeVerdict: input.result.evaluation.data.verdict,
     hasHumanEvaluation: false,
-    humanEvaluations: []
+    humanEvaluations: [],
+    langfuseTraceId: input.result.meta.langfuseTraceId ?? undefined
   };
   return pushRecord(record);
 }

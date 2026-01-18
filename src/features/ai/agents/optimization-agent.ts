@@ -8,6 +8,7 @@ import type {
 } from '../types';
 import { optimizationAgentDataSchema } from '../schemas';
 import { invokeBedrockWithFallback, isBedrockEnabled } from '../providers/bedrock';
+import { getSystemPrompt } from '../evaluation/prompt-helper';
 
 export type OptimizationAgentInput = {
   routine: Routine;
@@ -41,10 +42,10 @@ export async function runOptimizationAgent({
     ]
   };
 
+  const systemPrompt = await getSystemPrompt('optimization-agent');
   const data = await invokeBedrockWithFallback(
     {
-      systemPrompt:
-        'あなたは Routine Hub のオプティマイザーです。人間の決裁を前提に、複数の提案とトレードオフを日本語で提示してください。',
+      systemPrompt,
       userPrompt: `ルーチン: ${routine.name}\n意図: ${interpretation.data.intent}\n衝突: ${
         conflicts.data.conflicts.map((c) => `${c.label}(${c.severity})`).join(', ') || 'なし'
       }\nペルソナ: ${profile.data.persona}`,

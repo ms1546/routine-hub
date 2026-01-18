@@ -6,6 +6,7 @@ import type {
 } from '../types';
 import { futureSimulationDataSchema } from '../schemas';
 import { invokeBedrockWithFallback, isBedrockEnabled } from '../providers/bedrock';
+import { getSystemPrompt } from '../evaluation/prompt-helper';
 
 export type FutureSimulationAgentInput = {
   routineName: string;
@@ -28,10 +29,10 @@ export async function runFutureSimulationAgent({
     followUpQuestions: ['直近で変化した制約はあるか？', '他カレンダーとの整合は取れているか？']
   };
 
+  const systemPrompt = await getSystemPrompt('future-simulation-agent');
   const data = await invokeBedrockWithFallback(
     {
-      systemPrompt:
-        'あなたは Routine Hub のシミュレーション担当です。提案を採用した場合の見通し、ガードレール、フォローアップ質問を必ず日本語で回答してください。',
+      systemPrompt,
       userPrompt: `ルーチン: ${routineName}\nトーンガイダンス: ${profile.data.toneGuidance}\n提案一覧: ${optimizations.data.proposals
         .map((p) => p.title)
         .join(', ')}`,

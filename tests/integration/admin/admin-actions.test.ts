@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { addHumanEvaluationAction } from '@/app/actions/admin';
+// import { addHumanEvaluationAction } from '@/app/actions/admin';
+// 人間評価はLangfuse UIで行うため、アプリ側の評価機能は削除しました
 import { routinesRepository } from '@/features/routines';
 import {
   recordWorkflowSuccess,
@@ -86,33 +87,9 @@ describe('admin actions', () => {
     process.env.MOCK_USER_EMAIL = originalUser;
   });
 
-  it('allows admins to store human evaluations', async () => {
-    process.env.MOCK_USER_EMAIL = 'routinehub.dev@gmail.com';
-    const routines = await routinesRepository.list();
-    const routine = routines[0];
-    if (!routine) {
-      throw new Error('No routine found');
-    }
-    const workflow = buildWorkflowResult();
-    const user = getCurrentUser();
-    recordWorkflowSuccess({ result: workflow, workflowName: 'routine-ai-workflow', routine, user });
-
-    const updated = await addHumanEvaluationAction({
-      executionId: workflow.meta.executionId,
-      score: 4,
-      comment: 'Looks aligned with guardrails.'
-    });
-
-    expect(updated.hasHumanEvaluation).toBe(true);
-    expect(updated.humanEvaluations[0]?.comment).toContain('guardrails');
-  });
-
-  it('rejects members when writing human evaluations', async () => {
-    process.env.MOCK_USER_EMAIL = 'owner@example.com';
-    await expect(
-      addHumanEvaluationAction({ executionId: 'missing', score: 3, comment: 'n/a' })
-    ).rejects.toThrowError('Admin access required');
-  });
+  // 人間評価はLangfuse UIで行うため、アプリ側の評価機能テストは削除しました
+  // it('allows admins to store human evaluations', async () => { ... });
+  // it('rejects members when writing human evaluations', async () => { ... });
 
   it('surfaces evaluation metadata without exposing prompts', async () => {
     process.env.MOCK_USER_EMAIL = 'routinehub.dev@gmail.com';

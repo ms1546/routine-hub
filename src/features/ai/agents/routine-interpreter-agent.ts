@@ -6,6 +6,7 @@ import type {
 } from '../types';
 import { interpretationAgentDataSchema } from '../schemas';
 import { invokeBedrockWithFallback, isBedrockEnabled } from '../providers/bedrock';
+import { getSystemPrompt } from '../evaluation/prompt-helper';
 
 export type RoutineInterpreterAgentInput = {
   routine: Routine;
@@ -22,10 +23,10 @@ export async function runRoutineInterpreterAgent({
     riskSignals: routine.timeBlocks.length > 4 ? ['ブロック数が多く、疲労リスクがある'] : []
   };
 
+  const systemPrompt = await getSystemPrompt('routine-interpreter-agent');
   const data = await invokeBedrockWithFallback(
     {
-      systemPrompt:
-        'あなたは Routine Hub の分析担当です。ルーチンの意図、成功要因、リスク要因を必ず日本語で列挙してください。',
+      systemPrompt,
       userPrompt: `ルーチン名: ${routine.name}\nタグ: ${routine.tags.join(', ')}\n目的: ${routine.purpose}\nユーザーペルソナ: ${profileSummary.persona}`,
       schema: interpretationAgentDataSchema,
       shapeExample: JSON.stringify(fallbackData),

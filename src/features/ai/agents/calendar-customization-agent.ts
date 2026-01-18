@@ -3,6 +3,7 @@ import type { ProposedCalendarEvent, CalendarEvent } from '@/features/calendar/d
 import type { UserProfileContext } from '../types';
 import { invokeBedrockWithFallback, isBedrockEnabled } from '../providers/bedrock';
 import type { AgentResult } from '../types';
+import { getSystemPrompt } from '../evaluation/prompt-helper';
 
 export const calendarCustomizationAgentDataSchema = z.object({
   customizedEvents: z.array(
@@ -101,10 +102,10 @@ export async function runCalendarCustomizationAgent({
   };
 
   // LLMによるカスタマイズ提案
+  const systemPrompt = await getSystemPrompt('calendar-customization-agent');
   const data = await invokeBedrockWithFallback(
     {
-      systemPrompt:
-        'あなたは Routine Hub のカレンダーカスタマイズ担当です。ユーザーのプロファイル、Routineの目的、既存のカレンダーイベントを考慮して、提案されたイベントを個人に最適化してください。時間調整、エネルギーレベルに基づく最適化、競合解決を提案してください。',
+      systemPrompt,
       userPrompt: `
 提案イベント:
 ${JSON.stringify(proposedEvents.map((e) => ({ id: e.proposalId, title: e.title, start: e.start, end: e.end })), null, 2)}

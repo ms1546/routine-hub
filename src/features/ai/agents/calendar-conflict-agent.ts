@@ -8,6 +8,7 @@ import type {
 } from '../types';
 import { conflictAgentDataSchema } from '../schemas';
 import { invokeBedrockWithFallback, isBedrockEnabled } from '../providers/bedrock';
+import { getSystemPrompt } from '../evaluation/prompt-helper';
 
 export type CalendarConflictAgentInput = {
   routine: Routine;
@@ -47,10 +48,10 @@ export async function runCalendarConflictAgent({
     assumptions: [`${calendarWindow.startDate}〜${calendarWindow.endDate} の期間では、${interpretedRoutineIntent.intent} を守るため手動確認が必要。`]
   };
 
+  const systemPrompt = await getSystemPrompt('calendar-conflict-agent');
   const data = await invokeBedrockWithFallback(
     {
-      systemPrompt:
-        'あなたは Routine Hub の衝突検出担当です。カレンダーウィンドウと意図を比較し、起こり得る衝突と必要な前提を日本語で列挙してください。',
+      systemPrompt,
       userPrompt: `ルーチン: ${routine.name}\n意図: ${interpretedRoutineIntent.intent}\n期間: ${calendarWindow.startDate}〜${calendarWindow.endDate}\nユーザー制約: ${userProfile.constraints.join(', ') || 'なし'}`,
       schema: conflictAgentDataSchema,
       shapeExample: JSON.stringify(fallbackData),

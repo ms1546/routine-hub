@@ -12,7 +12,7 @@ export default async function MyRoutinesPage() {
 
   return (
     <AppShell
-      title="マイRoutine"
+      title="My Routine"
       description="自分のRoutineを管理し、設定を変更できます"
     >
       <MyRoutinesList routines={listItems} userId={currentUser.id} userEmail={currentUser.email} />
