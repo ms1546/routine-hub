@@ -1,6 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react';
 import { ExecutionHistoryCard } from '@/features/admin/components/admin/execution-history-card';
-import { HumanEvaluationForm } from '@/features/admin/components/admin/human-evaluation-form';
 import { MaintenanceCard } from '@/features/admin/components/admin/maintenance-card';
 import type { ExecutionRecord } from '@/features/ai/execution-log';
 import type { MaintenanceState } from '@/infrastructure/system/maintenance';
@@ -53,22 +52,14 @@ const meta = {
 
 export default meta;
 
-export const HistoryCard: StoryObj = {
-  render: () => <ExecutionHistoryCard records={mockRecords} />
+export const HistoryCard: StoryObj<typeof ExecutionHistoryCard> = {
+  args: {
+    records: mockRecords
+  }
 };
 
-export const EvaluationForm: StoryObj = {
-  render: () => (
-    <HumanEvaluationForm
-      executions={mockRecords.map((record) => ({
-        id: record.id,
-        label: `${record.workflowName} · ${record.routineName}`,
-        hasHumanEvaluation: record.hasHumanEvaluation
-      }))}
-      action={async () => ({})}
-    />
-  )
-};
+// HumanEvaluationFormは削除されました。人間評価はLangfuse UIで行います。
+// 詳細: docs/langfuse-evaluation-integration.md
 
 const maintenanceState: MaintenanceState = {
   enabled: true,

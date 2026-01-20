@@ -10,3 +10,5 @@ coverage
 .DS_Store
 npm-debug.log*
 tsconfig.tsbuildinfo
+# Storybook用のnext/configスタブ（自動生成される）
+node_modules/next/config.js

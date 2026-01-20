@@ -7,6 +7,7 @@ const meta: Meta<typeof ApplyRoutineForm> = {
   component: ApplyRoutineForm,
   args: {
     routineId: 'story-routine',
+    durationType: 'weekly',
     action: stubApplyRoutine
   }
 };

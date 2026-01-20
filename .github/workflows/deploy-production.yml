@@ -1,0 +1,76 @@
+name: Deploy Production
+
+on:
+    push:
+        branches:
+            - main
+
+jobs:
+    deploy:
+        name: Deploy to Production
+        runs-on: ubuntu-latest
+        environment:
+            name: production
+        permissions:
+            contents: read
+        steps:
+            - name: Checkout code
+              uses: actions/checkout@v4
+
+            - name: Setup Node.js
+              uses: actions/setup-node@v4
+              with:
+                  node-version: "20"
+                  cache: "npm"
+
+            - name: Install dependencies
+              run: npm ci
+
+            - name: Build application
+              run: npm run build
+
+            - name: Configure AWS credentials
+              uses: aws-actions/configure-aws-credentials@v4
+              with:
+                  aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+                  aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+                  aws-region: ${{ secrets.AWS_REGION || 'ap-northeast-1' }}
+
+            - name: Setup Terraform
+              uses: hashicorp/setup-terraform@v3
+              with:
+                  terraform_version: "1.0.0"
+
+            - name: Terraform Init (Production)
+              working-directory: ./terraform
+              env:
+                  TF_BACKEND_BUCKET: ${{ secrets.TERRAFORM_STATE_BUCKET }}
+                  TF_BACKEND_REGION: ${{ secrets.AWS_REGION || 'ap-northeast-1' }}
+              run: |
+                  terraform init \
+                    -backend-config="bucket=${TF_BACKEND_BUCKET}" \
+                    -backend-config="key=production/terraform.tfstate" \
+                    -backend-config="region=${TF_BACKEND_REGION}" \
+                    -backend-config="encrypt=true"
+
+            - name: Terraform Plan (Production)
+              working-directory: ./terraform
+              run: |
+                  terraform plan \
+                    -var="environment=production" \
+                    -var="vpc_id=${{ secrets.AWS_VPC_ID }}" \
+                    -var="subnet_ids=[${{ secrets.AWS_SUBNET_IDS }}]" \
+                    -var="ecr_repository_url=${{ secrets.ECR_REPOSITORY_URL }}" \
+                    -var="docker_image_tag=latest" \
+                    -var="ecs_desired_count=${{ secrets.ECS_DESIRED_COUNT || '2' }}" \
+                    -out=tfplan
+
+            - name: Terraform Apply (Production)
+              working-directory: ./terraform
+              run: terraform apply tfplan
+
+            - name: Get deployment status
+              working-directory: ./terraform
+              run: |
+                  echo "Production deployment completed"
+                  echo "ALB DNS: $(terraform output -raw alb_dns_name)"

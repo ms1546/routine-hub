@@ -259,7 +259,7 @@ export function RoutineBlockEditor({
                           readOnly
                         />
                         <p className="text-xs text-muted-foreground">
-                          時間ブロックの時間は編集できません。Routineの構造を保つためです。異なる時間で新しいRoutineを作成する場合はFork機能をご利用ください。
+                          時間ブロックの時間は編集できません。Routineの構造を保つためです。異なる時間で新しいRoutineを作成する場合は、このRoutineをCloneしてから編集してください。
                         </p>
                       </div>
 

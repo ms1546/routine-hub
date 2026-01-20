@@ -22,19 +22,19 @@ const baseInput = {
 };
 
 describe('createRoutineSchema', () => {
-  it('rejects blocks shorter than 3 hours', () => {
+  it('rejects routines with total hours less than 3 (single short block)', () => {
     const invalid = {
       ...baseInput,
       timeBlocks: [
         {
           ...baseInput.timeBlocks[0],
           startHour: 9,
-          endHour: 10
+          endHour: 10 // 1 hour - total is less than 3 hours
         }
       ]
     };
 
-    expect(() => createRoutineSchema.parse(invalid)).toThrow(/各時間ブロックは最低3時間/);
+    expect(() => createRoutineSchema.parse(invalid)).toThrow(/Routine全体の合計時間は最低3時間必要です/);
   });
 
   it('rejects routines with total hours less than 3', () => {
@@ -78,8 +78,10 @@ describe('createRoutineSchema', () => {
       ]
     };
 
-    // Should fail because individual blocks must be 3+ hours
-    expect(() => createRoutineSchema.parse(valid)).toThrow();
+    // Should pass because total is 3+ hours (even though individual blocks are less than 3 hours)
+    const result = createRoutineSchema.parse(valid);
+    expect(result.timeBlocks.length).toBe(2);
+    expect(result.timeBlocks.reduce((acc, b) => acc + (b.endHour - b.startHour), 0)).toBe(3);
   });
 
   it('accepts a well formed routine', () => {

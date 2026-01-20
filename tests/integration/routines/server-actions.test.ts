@@ -10,13 +10,13 @@ const buildFormData = () => {
   formData.set('name', 'Story Routine');
   formData.set('description', 'A long enough description to satisfy schema.');
   formData.set('purpose', 'Illustrate server actions.');
-  formData.set('durationType', 'half-day');
+  formData.set('durationType', 'weekly');
   formData.set('visibility', 'private');
   formData.set('tags', 'demo, focus');
   formData.set('owner', 'storybook@example.com');
   formData.set('blockDay', 'wednesday');
   formData.set('blockStartHour', '9');
-  formData.set('blockEndHour', '12');
+  formData.set('blockEndHour', '12'); // 3 hours - meets minimum total requirement
   formData.set('blockLabel', 'Demo Label');
   formData.set('blockObjective', 'Explain workflows');
   formData.set('blockEnergy', 'medium');

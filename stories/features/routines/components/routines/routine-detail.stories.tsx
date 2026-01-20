@@ -85,6 +85,7 @@ const meta: Meta<typeof RoutineDetail> = {
   component: RoutineDetail,
   args: {
     routine: mockRoutineDetail,
+    ownerDisplayName: 'Story User',
     onToggleVisibility: stubToggleVisibility,
     onApplyRoutine: stubApplyRoutine,
     onCloneRoutine: stubCloneRoutine,
