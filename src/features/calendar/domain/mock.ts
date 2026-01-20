@@ -1,6 +1,8 @@
-import { randomUUID } from 'node:crypto';
+import { createDefaultUUIDGenerator } from '@/shared/utils/uuid';
 import { z } from 'zod';
 import type { Routine } from '@/features/routines';
+
+const generateUUID = createDefaultUUIDGenerator();
 
 export const recurrencePatternSchema = z.discriminatedUnion('type', [
   z.object({ type: z.literal('none') }),
@@ -62,7 +64,7 @@ export const buildRoutinePreview = (
   const totalHours = routine.timeBlocks.reduce((acc, block) => acc + (block.endHour - block.startHour), 0);
 
   return {
-    idempotencyKey: `${routine.id}:${request.startDate}:${request.endDate}:${randomUUID()}`,
+    idempotencyKey: `${routine.id}:${request.startDate}:${request.endDate}:${generateUUID()}`,
     routineId: routine.id,
     totalBlocks: routine.timeBlocks.length,
     totalHours,

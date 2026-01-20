@@ -1,6 +1,5 @@
 import { redirect } from 'next/navigation';
-import { signIn } from '@/auth';
-import { auth } from '@/auth';
+import { signIn, auth } from '@/infrastructure/auth/next-auth-config';
 import { AppShell } from '@/shared/components/app-shell';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/shared/ui/card';
 import { Button } from '@/shared/ui/button';

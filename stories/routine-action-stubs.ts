@@ -1,5 +1,5 @@
 import type { ActionResult } from '@/shared/types/actionResult';
-import type { Routine } from '@/features/routines';
+import type { Routine } from '@/features/routines/types';
 import type { RoutineApplicationPreview } from '@/features/calendar/domain/mock';
 import type {
   ApplyRoutinePayload,

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useTransition, FormEvent } from 'react';
-import { useSession } from 'next-auth/react';
+import { useSession } from '@/shared/hooks/use-session';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/shared/ui/card';
 import { Input } from '@/shared/ui/input';
 import { Label } from '@/shared/ui/label';

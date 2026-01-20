@@ -1,9 +1,9 @@
 'use client';
 
-import { signOut } from 'next-auth/react';
-import { useSession } from 'next-auth/react';
+import { signOut } from '@/shared/hooks/use-sign-out';
+import { useSession } from '@/shared/hooks/use-session';
 import { Button } from '@/shared/ui/button';
-import Link from 'next/link';
+import { AppLink } from './app-link';
 
 export function AuthButton() {
   const { data: session, status } = useSession();
@@ -14,21 +14,21 @@ export function AuthButton() {
 
   if (!session) {
     return (
-      <Link href="/auth/signin">
+      <AppLink href="/auth/signin">
         <Button variant="outline" size="sm">
           ログイン
         </Button>
-      </Link>
+      </AppLink>
     );
   }
 
   return (
     <div className="flex items-center gap-3">
-      <Link href="/settings">
+      <AppLink href="/settings">
         <Button variant="ghost" size="sm">
           {session.user?.displayName ?? session.user?.name ?? '設定'}
         </Button>
-      </Link>
+      </AppLink>
       <form
         action={async () => {
           await signOut({ redirectTo: '/' });

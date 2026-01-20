@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useSession } from 'next-auth/react';
+import { useSession } from '@/shared/hooks/use-session';
 import { DisplayNameModal } from './display-name-modal';
 import { getUserSettingsAction } from '@/app/actions/user-settings';
 

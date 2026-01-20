@@ -3,7 +3,7 @@ import { runRoutineAiWorkflow } from '@/features/ai';
 import type { RoutineAiWorkflowResult } from '@/features/ai/types';
 import type { CalendarEvent, ProposedCalendarEvent, CalendarTimeRange } from './types';
 import { buildProposedEvents } from './proposals';
-import { getCalendarClient } from './client';
+import { getCalendarClient } from '@/infrastructure/calendar/calendar-client-factory';
 import { createDefaultCalendarWindow } from './window';
 import { hasStoredRefreshToken } from '@/infrastructure/auth/oauth-boundary';
 import type { AuthenticatedUser } from '@/infrastructure/auth/session';

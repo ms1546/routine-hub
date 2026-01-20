@@ -1,4 +1,4 @@
-import { randomUUID } from 'node:crypto';
+import { createDefaultUUIDGenerator } from '@/shared/utils/uuid';
 import type {
   RoutineAiWorkflowInput,
   RoutineAiWorkflowOptions,
@@ -21,9 +21,11 @@ const WORKFLOW_AGENTS: AgentPromptName[] = [
   'calendar-customization-agent'
 ];
 
+const generateUUID = createDefaultUUIDGenerator();
+
 export class MastraRoutineAiWorkflowRunner implements RoutineAiWorkflowRunner {
   async run(input: RoutineAiWorkflowInput, options?: RoutineAiWorkflowOptions): Promise<RoutineAiWorkflowResult> {
-    const traceId = options?.traceId ?? randomUUID();
+    const traceId = options?.traceId ?? generateUUID();
 
     // 0. プロンプトバージョン情報を事前に取得（メタデータ記録用）
     const promptVersions: Record<string, { version?: number; labels?: string[]; source: string }> = {};

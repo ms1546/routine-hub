@@ -1,4 +1,4 @@
-import type { RoutineDetailView, RoutineListItem } from '@/features/routines';
+import type { RoutineDetailView, RoutineListItem } from '@/features/routines/types';
 
 export const mockRoutineListItem: RoutineListItem = {
   id: 'story-routine',

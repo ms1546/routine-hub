@@ -1,12 +1,21 @@
+/**
+ * Google Calendar Client Implementation (Node.js only)
+ *
+ * This file contains the Node.js-specific implementation using googleapis.
+ * It should NEVER be imported in browser contexts (Storybook, client components, etc.)
+ *
+ * Clean Architecture: This is an infrastructure adapter that implements
+ * the CalendarClient interface from the domain layer.
+ */
+
 import { calendar_v3, google } from 'googleapis';
-import type { CalendarClient } from './client';
+import type { CalendarClient } from '@/features/calendar/domain/client';
 import type {
   CalendarEvent,
   CalendarInsertResult,
   CalendarTimeRange,
-  ProposedCalendarEvent,
-  RecurrencePattern
-} from './types';
+  ProposedCalendarEvent
+} from '@/features/calendar/domain/types';
 import { getAccessTokenForUser } from '@/infrastructure/auth/oauth-boundary';
 
 const CALENDAR_ID = 'primary';

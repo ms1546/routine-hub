@@ -1,4 +1,4 @@
-import { randomUUID } from 'node:crypto';
+import { createDefaultUUIDGenerator } from '@/shared/utils/uuid';
 import type {
   RoutineAiWorkflowInput,
   RoutineAiWorkflowOptions,
@@ -12,6 +12,8 @@ import { runOptimizationAgent } from '../agents/optimization-agent';
 import { runFutureSimulationAgent } from '../agents/future-simulation-agent';
 import { evaluateWorkflow } from '../evaluation/judge';
 import { recordLangfuseTrace } from '../evaluation/langfuse-boundary';
+
+const generateUUID = createDefaultUUIDGenerator();
 
 export class MockRoutineAiWorkflowRunner implements RoutineAiWorkflowRunner {
   async run(input: RoutineAiWorkflowInput, options?: RoutineAiWorkflowOptions): Promise<RoutineAiWorkflowResult> {
@@ -43,7 +45,7 @@ export class MockRoutineAiWorkflowRunner implements RoutineAiWorkflowRunner {
       futureSimulation
     });
 
-    const executionId = options?.traceId ?? randomUUID();
+    const executionId = options?.traceId ?? generateUUID();
     const langfuse = await recordLangfuseTrace({
       workflow: 'routine-planning-workflow',
       payload: { routineId: input.routine.id, executionId },

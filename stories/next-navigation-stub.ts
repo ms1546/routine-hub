@@ -1,5 +1,7 @@
-// Storybook用のモック: next/navigation
-// StorybookではNext.jsのルーターが動作しないため、モックに置き換える
+/**
+ * Storybook用のモック: next/navigation
+ * StorybookではNext.jsのルーターが動作しないため、モックに置き換える
+ */
 
 import { useState, useCallback } from 'react';
 
@@ -40,7 +42,6 @@ export function useRouter() {
 
 export function useSearchParams() {
   const [params] = useState(() => new URLSearchParams());
-
   return params;
 }
 
@@ -51,7 +52,6 @@ export function usePathname() {
 export function redirect(url: string) {
   console.log('[Storybook Mock] redirect:', url);
   // Storybookでは実際のリダイレクトは行わない
-  // Next.jsのredirectは特殊なエラーをthrowするが、Storybookでは通常のエラーで十分
   throw new Error(`[Storybook Mock] redirect called with: ${url}. This is a mock and does not perform actual redirection.`);
 }
 

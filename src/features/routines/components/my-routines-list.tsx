@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useTransition } from 'react';
-import Link from 'next/link';
+import { AppLink } from '@/shared/components/app-link';
 import { Badge } from '@/shared/ui/badge';
 import { Button } from '@/shared/ui/button';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/shared/ui/card';
@@ -207,14 +207,14 @@ export function MyRoutinesList({ routines, userId, userEmail }: MyRoutinesListPr
                   </dl>
                 </CardContent>
                 <CardFooter className="gap-2">
-                  <Link
+                  <AppLink
                     href={`/routines/${routine.id}`}
                     className="flex-1"
                   >
                     <Button variant="default" size="sm" className="w-full">
                       詳細・編集
                     </Button>
-                  </Link>
+                  </AppLink>
                   <Button
                     variant="destructive"
                     size="sm"

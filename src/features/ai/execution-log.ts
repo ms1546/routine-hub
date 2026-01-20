@@ -1,7 +1,9 @@
-import { randomUUID } from 'node:crypto';
+import { createDefaultUUIDGenerator } from '@/shared/utils/uuid';
 import type { Routine } from '@/features/routines';
 import type { RoutineAiWorkflowResult } from './types';
 import type { AuthenticatedUser } from '@/infrastructure/auth/session';
+
+const generateUUID = createDefaultUUIDGenerator();
 
 export type ExecutionStatus = 'success' | 'failure';
 
@@ -55,7 +57,7 @@ export function addHumanEvaluation(input: {
     throw new Error('Execution record not found');
   }
   const entry: HumanEvaluation = {
-    id: randomUUID(),
+    id: generateUUID(),
     executionId: record.id,
     reviewerId: input.reviewer.id,
     reviewerName: input.reviewer.displayName,
@@ -113,7 +115,7 @@ export function recordWorkflowFailure(input: {
   error: Error;
 }): ExecutionRecord {
   const record: ExecutionRecord = {
-    id: randomUUID(),
+    id: generateUUID(),
     workflowName: input.workflowName,
     routineId: input.routine.id,
     routineName: input.routine.name,

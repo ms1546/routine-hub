@@ -1,4 +1,4 @@
-import Link from 'next/link';
+import { AppLink } from '@/shared/components/app-link';
 import { Badge } from '@/shared/ui/badge';
 import { buttonVariants } from '@/shared/ui/button-variants';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/shared/ui/card';
@@ -8,7 +8,7 @@ import type { ActionResult } from '@/shared/types/actionResult';
 import { VisibilityToggleButton } from './visibility-toggle-button';
 import { LikeButton } from './like-button';
 import { RoutineScheduleVisualizationCompact } from './routine-schedule-visualization-compact';
-import { routinesRepository } from '@/features/routines';
+import { routinesRepository } from '@/features/routines/repository';
 import { getCurrentUser } from '@/infrastructure/auth/session';
 
 export type RoutineCardProps = {
@@ -104,12 +104,12 @@ export const RoutineCard = ({
         </dl>
       </CardContent>
       <CardFooter className="gap-2">
-        <Link
+        <AppLink
           className={buttonVariants({ variant: 'default', size: 'sm' })}
           href={`/routines/${routine.id}`}
         >
           View detail
-        </Link>
+        </AppLink>
       </CardFooter>
     </Card>
   );

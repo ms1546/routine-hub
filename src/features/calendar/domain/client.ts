@@ -1,35 +1,30 @@
+/**
+ * Calendar Client Interface (Domain Layer)
+ *
+ * This file defines the CalendarClient interface that domain logic depends on.
+ * It does NOT import any Node.js-specific implementations (googleapis).
+ *
+ * Clean Architecture: Domain layer only knows about interfaces, not implementations.
+ * Implementations are provided by infrastructure layer via dependency injection.
+ */
+
 import type {
   CalendarEvent,
   CalendarTimeRange,
   ProposedCalendarEvent,
   CalendarInsertResult
 } from './types';
-import { MockCalendarClient } from './mock-client';
-import { GoogleCalendarClient } from './google-client';
 
+/**
+ * Calendar Client Interface
+ *
+ * Domain layer depends on this interface, not concrete implementations.
+ * Implementations are provided by infrastructure layer.
+ */
 export interface CalendarClient {
   listEvents(range: CalendarTimeRange): Promise<CalendarEvent[]>;
   insertEvents(events: ProposedCalendarEvent[]): Promise<CalendarInsertResult>;
 }
 
-let overrideClient: CalendarClient | null = null;
-
-export function getCalendarClient(userId?: string): CalendarClient {
-  if (overrideClient) {
-    return overrideClient;
-  }
-
-  const provider = process.env.CALENDAR_CLIENT ?? 'mock';
-  if (provider === 'google') {
-    if (!userId) {
-      throw new Error('User id is required when using Google Calendar client');
-    }
-    return new GoogleCalendarClient(userId);
-  }
-
-  return new MockCalendarClient();
-}
-
-export function setCalendarClient(client: CalendarClient | null) {
-  overrideClient = client;
-}
+// Note: getCalendarClient() and setCalendarClient() are now in infrastructure layer
+// Import from '@/infrastructure/calendar/calendar-client-factory' if you need them

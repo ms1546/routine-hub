@@ -1,12 +1,14 @@
 'use server';
 
-import { randomUUID } from 'node:crypto';
+import { createDefaultUUIDGenerator } from '@/shared/utils/uuid';
 import type { ProposedCalendarEvent, CalendarEvent } from '@/features/calendar/domain/types';
 import type { UserProfileContext } from '@/features/ai/types';
 import { userSettingsRepository } from '@/features/users';
 import { getCurrentUser } from '@/infrastructure/auth/session';
 import { mastraRepository } from '@/features/ai/mastra/repository';
 import { routinesRepository } from '@/features/routines';
+
+const generateUUID = createDefaultUUIDGenerator();
 
 export type CalendarCustomizationResult = {
   customizedEvents: Array<{
@@ -70,7 +72,7 @@ export async function customizeCalendarEventsAction({
     }
 
     const run = await workflow.createRunAsync();
-    const traceId = randomUUID();
+    const traceId = generateUUID();
     const runResult = await run.start({
       inputData: {
         proposedEvents,

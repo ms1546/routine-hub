@@ -1,7 +1,7 @@
 import { AppShell } from '@/shared/components/app-shell';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/shared/ui/card';
 import { Button } from '@/shared/ui/button';
-import Link from 'next/link';
+import { AppLink } from '@/shared/components/app-link';
 
 export default function AuthErrorPage({
   searchParams
@@ -21,12 +21,12 @@ export default function AuthErrorPage({
               ログイン処理中に問題が発生しました。もう一度お試しください。
             </p>
             <div className="flex gap-3">
-              <Link href="/auth/signin">
+              <AppLink href="/auth/signin">
                 <Button>再度ログイン</Button>
-              </Link>
-              <Link href="/">
+              </AppLink>
+              <AppLink href="/">
                 <Button variant="outline">ホームに戻る</Button>
-              </Link>
+              </AppLink>
             </div>
           </CardContent>
         </Card>

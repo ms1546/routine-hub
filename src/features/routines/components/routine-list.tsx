@@ -2,7 +2,7 @@ import type { RoutineListItem, Routine } from '@/features/routines';
 import type { VisibilityTogglePayload, ToggleLikePayload } from '@/features/routines/actions/routines';
 import type { ActionResult } from '@/shared/types/actionResult';
 import { RoutineCard } from './routine-card';
-import { routinesRepository } from '@/features/routines';
+import { routinesRepository } from '@/features/routines/repository';
 import { getCurrentUser } from '@/infrastructure/auth/session';
 import { toggleRoutineLikeAction } from '@/app/actions/routines';
 

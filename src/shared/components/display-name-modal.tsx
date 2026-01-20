@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useTransition } from 'react';
-import { useSession } from 'next-auth/react';
+import { useSession } from '@/shared/hooks/use-session';
 import { Modal } from '@/shared/ui/modal';
 import { Button } from '@/shared/ui/button';
 import { Input } from '@/shared/ui/input';

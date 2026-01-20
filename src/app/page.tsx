@@ -1,4 +1,4 @@
-import Link from 'next/link';
+import { AppLink } from '@/shared/components/app-link';
 import { AppShell } from '@/shared/components/app-shell';
 import { RoutineList } from '@/features/routines/components/routine-list';
 import { buttonVariants } from '@/shared/ui/button-variants';
@@ -21,9 +21,9 @@ export default async function HomePage() {
       title="Routine Hub"
       description="人気のRoutineを発見し、あなたの生活に取り入れましょう"
       actions={
-        <Link href="/routines" className={buttonVariants()}>
+        <AppLink href="/routines" className={buttonVariants()}>
           ライブラリを探索
-        </Link>
+        </AppLink>
       }
     >
       <div className="space-y-8">
@@ -36,9 +36,9 @@ export default async function HomePage() {
         </section>
 
         <div className="text-center pt-8">
-          <Link href="/routines" className={buttonVariants({ variant: 'outline' })}>
+          <AppLink href="/routines" className={buttonVariants({ variant: 'outline' })}>
             すべてのRoutineを見る
-          </Link>
+          </AppLink>
         </div>
       </div>
     </AppShell>

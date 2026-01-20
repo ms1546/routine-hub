@@ -1,45 +1,17 @@
-import NextAuth from 'next-auth';
-import Google from 'next-auth/providers/google';
-import { userSettingsRepository } from '@/features/users';
+/**
+ * Auth Module Re-export (Server-only)
+ *
+ * This file re-exports NextAuth configuration from infrastructure layer.
+ * It exists for backward compatibility with existing imports.
+ *
+ * IMPORTANT: This file should ONLY be imported in server contexts
+ * (Server Actions, API Routes, Server Components).
+ *
+ * For browser contexts (Storybook, client components), use:
+ * - next-auth/react for client-side auth hooks
+ * - Infrastructure layer provides browser-safe implementations
+ */
 
-export const { handlers, signIn, signOut, auth } = NextAuth({
-  trustHost: true, // NextAuth.js v5でリダイレクトURIを自動検出
-  providers: [
-    Google({
-      clientId: process.env.GOOGLE_OAUTH_CLIENT_ID,
-      clientSecret: process.env.GOOGLE_OAUTH_CLIENT_SECRET,
-      authorization: {
-        params: {
-          scope: 'openid email profile https://www.googleapis.com/auth/calendar.events',
-          access_type: 'offline',
-          prompt: 'consent'
-        }
-      }
-    })
-  ],
-  callbacks: {
-    async session({ session, token }) {
-      if (session.user) {
-        session.user.id = token.sub ?? '';
-        // userSettingsからdisplayNameを取得してセッションに含める
-        const userId = session.user.email ?? session.user.id ?? '';
-        if (userId) {
-          const settings = await userSettingsRepository.get(userId);
-          session.user.displayName = settings?.displayName ?? session.user.name ?? null;
-        }
-      }
-      return session;
-    },
-    async jwt({ token, account, profile }) {
-      if (account) {
-        token.accessToken = account.access_token;
-        token.refreshToken = account.refresh_token;
-      }
-      return token;
-    }
-  },
-  pages: {
-    signIn: '/auth/signin',
-    error: '/auth/error'
-  }
-});
+// Re-export from infrastructure layer
+// This ensures next-auth is only loaded in server contexts
+export { handlers, signIn, signOut, auth } from './infrastructure/auth/next-auth-config';

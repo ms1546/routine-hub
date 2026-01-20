@@ -2,10 +2,10 @@
 
 import { useState, useEffect } from 'react';
 import { usePathname } from 'next/navigation';
-import Link from 'next/link';
-import { useSession } from 'next-auth/react';
+import { AppLink } from '@/shared/components/app-link';
+import { useSession } from '@/shared/hooks/use-session';
 import { Button } from '@/shared/ui/button';
-import { signOut } from 'next-auth/react';
+import { signOut } from '@/shared/hooks/use-sign-out';
 import { cn } from '@/shared/utils';
 
 export function HamburgerMenu() {
@@ -114,7 +114,7 @@ export function HamburgerMenu() {
             </div>
           ) : (
             <div className="mb-6">
-              <Link
+              <AppLink
                 href="/auth/signin"
                 onClick={handleLinkClick}
                 className="block w-full"
@@ -122,7 +122,7 @@ export function HamburgerMenu() {
                 <Button variant="outline" className="w-full">
                   ログイン
                 </Button>
-              </Link>
+              </AppLink>
             </div>
           )}
 
@@ -132,7 +132,7 @@ export function HamburgerMenu() {
               const isActive = pathname === item.href || (item.href !== '/' && pathname?.startsWith(item.href));
               return (
                 <li key={item.href}>
-                  <Link
+                  <AppLink
                     href={item.href}
                     onClick={handleLinkClick}
                     className={cn(
@@ -143,7 +143,7 @@ export function HamburgerMenu() {
                     )}
                   >
                     {item.label}
-                  </Link>
+                  </AppLink>
                 </li>
               );
             })}

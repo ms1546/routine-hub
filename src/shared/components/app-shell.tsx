@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import Link from 'next/link';
+import { AppLink } from './app-link';
 import { cn } from '@/shared/utils';
 import { HamburgerMenu } from './hamburger-menu';
 
@@ -23,7 +23,7 @@ export function AppShell({ title, description, children, actions, breadcrumb }: 
           <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
             <div className="space-y-2">
               {breadcrumb && (
-                <Link
+                <AppLink
                   href={breadcrumb.href}
                   className="inline-flex items-center gap-1.5 text-sm text-muted-foreground transition-colors hover:text-primary"
                 >
@@ -31,7 +31,7 @@ export function AppShell({ title, description, children, actions, breadcrumb }: 
                     <path strokeLinecap="round" strokeLinejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
                   </svg>
                   {breadcrumb.label}
-                </Link>
+                </AppLink>
               )}
               <h1 className="text-3xl font-bold tracking-tight sm:text-4xl text-foreground">{title}</h1>
               {description && (

@@ -2,7 +2,7 @@
 
 import { routinesRepository } from '@/features/routines';
 import { buildProposedEvents } from '@/features/calendar/domain/proposals';
-import { getCalendarClient } from '@/features/calendar/domain/client';
+import { getCalendarClient } from '@/infrastructure/calendar/calendar-client-factory';
 import { createDefaultCalendarWindow } from '@/features/calendar/domain/window';
 import type { CalendarEvent, CalendarInsertFailure, RecurrencePattern, CalendarTimeRange } from '@/features/calendar/domain/types';
 
