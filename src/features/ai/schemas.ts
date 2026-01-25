@@ -7,7 +7,7 @@ export const profileAgentDataSchema = z.object({
 });
 
 export const interpretationAgentDataSchema = z.object({
-  intent: z.string(),
+  intent: z.array(z.string()),
   successSignals: z.array(z.string()),
   riskSignals: z.array(z.string())
 });

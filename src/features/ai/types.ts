@@ -39,7 +39,7 @@ export type ProfileAgentData = {
 };
 
 export type InterpretationAgentData = {
-  intent: string;
+  intent: string[];
   successSignals: string[];
   riskSignals: string[];
 };

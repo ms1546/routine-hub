@@ -44,6 +44,26 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ secrets.AWS_REGION || 'ap-northeast-1' }}
 
+      - name: Login to Amazon ECR
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build & Push Docker Image (PR)
+        env:
+          ECR_REPOSITORY_URL: ${{ secrets.ECR_REPOSITORY_URL }}
+          IMAGE_TAG: pr-${{ github.event.pull_request.number }}
+          MASTRA_USE_MOCK: "true"
+          DISABLE_CALENDAR_WRITES: "true"
+        run: |
+          if [ -z "$ECR_REPOSITORY_URL" ]; then
+            echo "ECR_REPOSITORY_URL is not set."
+            exit 1
+          fi
+          docker build \
+            --build-arg MASTRA_USE_MOCK="$MASTRA_USE_MOCK" \
+            --build-arg DISABLE_CALENDAR_WRITES="$DISABLE_CALENDAR_WRITES" \
+            -t "$ECR_REPOSITORY_URL:$IMAGE_TAG" .
+          docker push "$ECR_REPOSITORY_URL:$IMAGE_TAG"
+
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
         with:
@@ -78,7 +98,7 @@ jobs:
         working-directory: ./terraform
         run: |
           ALB_DNS=$(terraform output -raw alb_dns_name)
-          echo "url=$ALB_DNS/pr-${{ github.event.pull_request.number }}" >> $GITHUB_OUTPUT
+          echo "url=http://$ALB_DNS" >> $GITHUB_OUTPUT
 
       - name: Comment PR with preview URL
         uses: actions/github-script@v7

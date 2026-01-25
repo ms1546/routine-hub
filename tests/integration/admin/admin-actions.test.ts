@@ -26,7 +26,7 @@ const buildWorkflowResult = (): RoutineAiWorkflowResult => {
       agent: 'interpreter',
       generatedAt: now,
       data: {
-        intent: 'Stay aligned',
+        intent: ['Stay aligned'],
         successSignals: ['Friction noted'],
         riskSignals: ['Fatigue']
       }

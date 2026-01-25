@@ -32,9 +32,8 @@ export async function runRoutineAiWorkflow(
   input: RoutineAiWorkflowInput,
   options?: RoutineAiWorkflowOptions
 ): Promise<RoutineAiWorkflowResult> {
-  const runnerOverride = overrideRunner;
-  if (runnerOverride) {
-    return runnerOverride.run(input, options);
+  if (overrideRunner) {
+    return overrideRunner.run(input, options);
   }
 
   if (shouldUseMastra()) {
@@ -42,7 +41,10 @@ export async function runRoutineAiWorkflow(
       const mastraRunner = await loadMastraRunner();
       return await mastraRunner.run(input, options);
     } catch (error) {
-      console.warn('[RoutineHub] Mastra workflow not available, falling back to mock runner.', error);
+      console.warn(
+        '[RoutineHub] Mastra workflow not available, falling back to mock runner.',
+        error
+      );
     }
   }
 

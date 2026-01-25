@@ -18,7 +18,7 @@ const mockWorkflow: RoutineAiWorkflowResult = {
     agent: 'bedrock/routine-interpreter-agent',
     generatedAt: new Date().toISOString(),
     data: {
-      intent: '集中ブロックと回復ブロックを交互に置き、成果と余白を両立する',
+      intent: ['集中ブロックと回復ブロックを交互に置き、成果と余白を両立する'],
       successSignals: ['午前の集中時間', '午後のレビュー'],
       riskSignals: ['週前半に負荷が集中']
     }

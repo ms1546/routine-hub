@@ -18,7 +18,7 @@ export async function runRoutineInterpreterAgent({
   profileSummary
 }: RoutineInterpreterAgentInput): Promise<AgentResult<InterpretationAgentData>> {
   const fallbackData: InterpretationAgentData = {
-    intent: `${routine.name} は「${routine.purpose}」を狙うルーチン。`,
+    intent: [`${routine.name} は「${routine.purpose}」を狙うルーチン。`],
     successSignals: ['各ブロックは最低3時間を維持', `公開範囲: ${routine.visibility}`, `期間: ${routine.durationType}`],
     riskSignals: routine.timeBlocks.length > 4 ? ['ブロック数が多く、疲労リスクがある'] : []
   };

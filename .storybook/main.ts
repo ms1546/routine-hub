@@ -26,9 +26,7 @@ const config: StorybookConfig = {
     name: '@storybook/nextjs-vite',
     options: {},
   },
-  addons: [
-    '@storybook/addon-docs',
-  ],
+  addons: ['@storybook/addon-docs', '@storybook/addon-mcp', '@storybook/addon-vitest'],
 
   viteFinal: async (config) => {
     // Create a plugin to intercept node:crypto imports as a safety net
