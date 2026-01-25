@@ -18,8 +18,8 @@
     "test:unit": "vitest run --dir tests/unit",
     "test:integration": "vitest run --dir tests/integration",
     "storybook": "storybook dev -p 6006",
-    "storybook:build": "storybook build",
-    "build-storybook": "storybook build"
+    "build-storybook": "storybook build",
+    "chromatic": "chromatic"
   },
   "dependencies": {
     "@aws-sdk/client-bedrock-runtime": "^3.645.0",
@@ -59,6 +59,7 @@
     "ajv": "^8.17.1",
     "ajv-keywords": "^5.1.0",
     "buffer": "^6.0.3",
+    "chromatic": "^13.3.5",
     "crypto-browserify": "^3.12.1",
     "eslint": "^9.12.0",
     "eslint-config-next": "^16.1.1",
