@@ -67,18 +67,37 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Detect UI changes
+        id: ui_changes
+        uses: dorny/paths-filter@v3
+        with:
+          filters: |
+            ui:
+              - 'src/**'
+              - 'stories/**'
+              - 'public/**'
+              - 'components.json'
+              - 'tailwind.config.ts'
+              - 'postcss.config.mjs'
+
+      - name: Skip Chromatic (no UI changes)
+        if: steps.ui_changes.outputs.ui != 'true'
+        run: echo "No UI changes detected. Skipping Chromatic UI tests."
+
       - uses: actions/setup-node@v4
+        if: steps.ui_changes.outputs.ui == 'true'
         with:
           node-version: "20"
           cache: "npm"
 
       - run: npm ci
+        if: steps.ui_changes.outputs.ui == 'true'
 
       - name: Publish to Chromatic
-        uses: chromaui/action@v1
+        if: steps.ui_changes.outputs.ui == 'true'
+        uses: chromaui/action@latest
         with:
           projectToken: ${{ secrets.CHROMATIC_PROJECT_TOKEN }}
           onlyChanged: true
-          autoAcceptChanges: main
           exitZeroOnChanges: true
-          exitOnceUploaded: false
+          autoAcceptChanges: main
