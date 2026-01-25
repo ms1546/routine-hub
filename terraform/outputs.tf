@@ -47,3 +47,8 @@ output "cloudwatch_log_group_name" {
   description = "Name of the CloudWatch log group"
   value       = aws_cloudwatch_log_group.ecs_logs.name
 }
+
+output "dynamodb_ai_execution_logs_table" {
+  description = "Name of the DynamoDB AI execution logs table"
+  value       = aws_dynamodb_table.ai_execution_logs.name
+}

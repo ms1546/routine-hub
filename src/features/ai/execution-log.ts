@@ -1,61 +1,143 @@
+import { PutCommand, GetCommand, QueryCommand, UpdateCommand } from '@aws-sdk/lib-dynamodb';
+import { dynamoDBDocumentClient, AI_EXECUTION_LOGS_TABLE } from '@/infrastructure/db/dynamodb-client';
 import { createDefaultUUIDGenerator } from '@/shared/utils/uuid';
 import type { Routine } from '@/features/routines';
 import type { RoutineAiWorkflowResult } from './types';
 import type { AuthenticatedUser } from '@/infrastructure/auth/session';
+import type { ExecutionRecord, ExecutionStatus, HumanEvaluation } from './execution-log-types';
 
 const generateUUID = createDefaultUUIDGenerator();
 
-export type ExecutionStatus = 'success' | 'failure';
+// In-memory cache for quick access (最新50件のみ)
+const executionRecordsCache: ExecutionRecord[] = [];
+const MAX_CACHE_SIZE = 50;
 
-export type HumanEvaluation = {
-  id: string;
-  executionId: string;
-  reviewerId: string;
-  reviewerName: string;
-  score: number;
-  comment: string;
-  createdAt: string;
-};
-
-export type ExecutionRecord = {
-  id: string;
-  workflowName: string;
-  routineId: string;
-  routineName: string;
-  triggeredBy: string;
-  triggeredByEmail: string;
-  status: ExecutionStatus;
-  executedAt: string;
-  judgeScore?: number;
-  judgeVerdict?: RoutineAiWorkflowResult['evaluation']['data']['verdict'];
-  hasHumanEvaluation: boolean;
-  failureReason?: string;
-  humanEvaluations: HumanEvaluation[];
-  langfuseTraceId?: string; // LangfuseのtraceId（評価記録用）
-};
-
-const executionRecords: ExecutionRecord[] = [];
-const userExecutionCounts = new Map<string, number>();
+// User execution counts cache (DynamoDBから読み込む)
+const userExecutionCountsCache = new Map<string, number>();
 const MAX_NON_ADMIN_EXECUTIONS = 1;
 
+/**
+ * DynamoDBから実行記録を取得
+ */
+async function getExecutionRecordFromDB(executionId: string): Promise<ExecutionRecord | null> {
+  try {
+    const result = await dynamoDBDocumentClient.send(
+      new GetCommand({
+        TableName: AI_EXECUTION_LOGS_TABLE,
+        Key: { executionId }
+      })
+    );
+
+    if (!result.Item) {
+      return null;
+    }
+
+    // DynamoDBのItemをExecutionRecordに変換
+    const item = result.Item as any;
+    return {
+      ...item,
+      humanEvaluations: item.humanEvaluations || []
+    } as ExecutionRecord;
+  } catch (error) {
+    console.error(`[execution-log.getExecutionRecordFromDB] Error:`, error);
+    return null;
+  }
+}
+
+/**
+ * DynamoDBに実行記録を保存
+ */
+async function saveExecutionRecordToDB(record: ExecutionRecord): Promise<void> {
+  try {
+    await dynamoDBDocumentClient.send(
+      new PutCommand({
+        TableName: AI_EXECUTION_LOGS_TABLE,
+        Item: {
+          ...record,
+          // TTLを設定（90日後）
+          ttl: Math.floor(Date.now() / 1000) + 90 * 24 * 60 * 60
+        }
+      })
+    );
+
+    // キャッシュに追加（最新50件のみ保持）
+    executionRecordsCache.unshift(record);
+    if (executionRecordsCache.length > MAX_CACHE_SIZE) {
+      executionRecordsCache.pop();
+    }
+  } catch (error) {
+    console.error(`[execution-log.saveExecutionRecordToDB] Error:`, error);
+    throw error;
+  }
+}
+
+/**
+ * ユーザーの実行回数をDynamoDBから取得
+ */
+async function getUserExecutionCountFromDB(userId: string): Promise<number> {
+  try {
+    const result = await dynamoDBDocumentClient.send(
+      new QueryCommand({
+        TableName: AI_EXECUTION_LOGS_TABLE,
+        IndexName: 'user-executed-at-index',
+        KeyConditionExpression: 'userId = :userId',
+        FilterExpression: '#status = :status',
+        ExpressionAttributeNames: {
+          '#status': 'status'
+        },
+        ExpressionAttributeValues: {
+          ':userId': userId,
+          ':status': 'success'
+        },
+        Select: 'COUNT'
+      })
+    );
+
+    return result.Count || 0;
+  } catch (error) {
+    console.error(`[execution-log.getUserExecutionCountFromDB] Error:`, error);
+    return 0;
+  }
+}
+
+/**
+ * ユーザーの実行回数を更新
+ */
+async function updateUserExecutionCount(userId: string, increment: number): Promise<void> {
+  // キャッシュを更新
+  const current = userExecutionCountsCache.get(userId) || 0;
+  userExecutionCountsCache.set(userId, current + increment);
+}
+
 export function getExecutionRecords(limit = 50): ExecutionRecord[] {
-  return executionRecords.slice(0, limit);
+  // キャッシュから返す（最新のもの）
+  return executionRecordsCache.slice(0, limit);
 }
 
 export function getExecutionRecord(executionId: string): ExecutionRecord | undefined {
-  return executionRecords.find((record) => record.id === executionId);
+  // まずキャッシュを確認
+  const cached = executionRecordsCache.find((record) => record.id === executionId);
+  if (cached) {
+    return cached;
+  }
+
+  // キャッシュにない場合はDynamoDBから取得（非同期だが、同期関数として扱う）
+  // 実際の実装では、非同期関数にするか、事前にロードする必要がある
+  return undefined;
 }
 
-export function addHumanEvaluation(input: {
+export async function addHumanEvaluation(input: {
   executionId: string;
   reviewer: AuthenticatedUser;
   score: number;
   comment: string;
-}): ExecutionRecord {
-  const record = executionRecords.find((item) => item.id === input.executionId);
+}): Promise<ExecutionRecord> {
+  // DynamoDBから取得
+  const record = await getExecutionRecordFromDB(input.executionId);
   if (!record) {
     throw new Error('Execution record not found');
   }
+
   const entry: HumanEvaluation = {
     id: generateUUID(),
     executionId: record.id,
@@ -65,8 +147,34 @@ export function addHumanEvaluation(input: {
     comment: input.comment,
     createdAt: new Date().toISOString()
   };
+
   record.humanEvaluations.unshift(entry);
   record.hasHumanEvaluation = true;
+
+  // DynamoDBに更新
+  try {
+    await dynamoDBDocumentClient.send(
+      new UpdateCommand({
+        TableName: AI_EXECUTION_LOGS_TABLE,
+        Key: { executionId: record.id },
+        UpdateExpression: 'SET humanEvaluations = :evals, hasHumanEvaluation = :hasEval',
+        ExpressionAttributeValues: {
+          ':evals': record.humanEvaluations,
+          ':hasEval': true
+        }
+      })
+    );
+  } catch (error) {
+    console.error(`[execution-log.addHumanEvaluation] Error:`, error);
+    throw error;
+  }
+
+  // キャッシュを更新
+  const cacheIndex = executionRecordsCache.findIndex((r) => r.id === record.id);
+  if (cacheIndex >= 0) {
+    executionRecordsCache[cacheIndex] = record;
+  }
+
   return record;
 }
 
@@ -76,20 +184,12 @@ const getAverageJudgeScore = (result: RoutineAiWorkflowResult): number => {
   return Math.round((total / 3) * 10) / 10;
 };
 
-const pushRecord = (record: ExecutionRecord) => {
-  executionRecords.unshift(record);
-  if (executionRecords.length > 200) {
-    executionRecords.length = 200;
-  }
-  return record;
-};
-
-export function recordWorkflowSuccess(input: {
+export async function recordWorkflowSuccess(input: {
   result: RoutineAiWorkflowResult;
   workflowName: string;
   routine: Routine;
   user: AuthenticatedUser;
-}): ExecutionRecord {
+}): Promise<ExecutionRecord> {
   const record: ExecutionRecord = {
     id: input.result.meta.executionId,
     workflowName: input.workflowName,
@@ -97,6 +197,7 @@ export function recordWorkflowSuccess(input: {
     routineName: input.routine.name,
     triggeredBy: input.user.displayName,
     triggeredByEmail: input.user.email,
+    userId: input.user.id, // DynamoDB用に追加
     status: 'success',
     executedAt: new Date().toISOString(),
     judgeScore: getAverageJudgeScore(input.result),
@@ -105,15 +206,22 @@ export function recordWorkflowSuccess(input: {
     humanEvaluations: [],
     langfuseTraceId: input.result.meta.langfuseTraceId ?? undefined
   };
-  return pushRecord(record);
+
+  // DynamoDBに保存
+  await saveExecutionRecordToDB(record);
+
+  // ユーザーの実行回数を更新
+  await updateUserExecutionCount(input.user.id, 1);
+
+  return record;
 }
 
-export function recordWorkflowFailure(input: {
+export async function recordWorkflowFailure(input: {
   workflowName: string;
   routine: Routine;
   user: AuthenticatedUser;
   error: Error;
-}): ExecutionRecord {
+}): Promise<ExecutionRecord> {
   const record: ExecutionRecord = {
     id: generateUUID(),
     workflowName: input.workflowName,
@@ -121,41 +229,54 @@ export function recordWorkflowFailure(input: {
     routineName: input.routine.name,
     triggeredBy: input.user.displayName,
     triggeredByEmail: input.user.email,
+    userId: input.user.id, // DynamoDB用に追加
     status: 'failure',
     executedAt: new Date().toISOString(),
     failureReason: input.error.message,
     hasHumanEvaluation: false,
     humanEvaluations: []
   };
-  return pushRecord(record);
+
+  // DynamoDBに保存
+  await saveExecutionRecordToDB(record);
+
+  // 失敗でも実行回数はカウントする
+  await updateUserExecutionCount(input.user.id, 1);
+
+  return record;
 }
 
-export function getExecutionLimit(user: AuthenticatedUser): { limit: number | null; used: number; remaining: number | null } {
+export async function getExecutionLimit(user: AuthenticatedUser): Promise<{ limit: number | null; used: number; remaining: number | null }> {
   if (user.role === 'admin') {
     return { limit: null, used: 0, remaining: null };
   }
-  const used = userExecutionCounts.get(user.id) ?? 0;
+
+  // キャッシュから取得、なければDynamoDBから取得
+  let used = userExecutionCountsCache.get(user.id);
+  if (used === undefined) {
+    used = await getUserExecutionCountFromDB(user.id);
+    userExecutionCountsCache.set(user.id, used);
+  }
+
   const remaining = Math.max(0, MAX_NON_ADMIN_EXECUTIONS - used);
   return { limit: MAX_NON_ADMIN_EXECUTIONS, used, remaining };
 }
 
-export function canExecuteWorkflow(user: AuthenticatedUser): boolean {
+export async function canExecuteWorkflow(user: AuthenticatedUser): Promise<boolean> {
   if (user.role === 'admin') {
     return true;
   }
-  const usage = userExecutionCounts.get(user.id) ?? 0;
-  return usage < MAX_NON_ADMIN_EXECUTIONS;
+
+  const limit = await getExecutionLimit(user);
+  return limit.remaining !== null && limit.remaining > 0;
 }
 
-export function registerExecutionUsage(user: AuthenticatedUser): void {
+export async function registerExecutionUsage(user: AuthenticatedUser): Promise<void> {
   if (user.role === 'admin') {
     return;
   }
-  const usage = userExecutionCounts.get(user.id) ?? 0;
-  userExecutionCounts.set(user.id, usage + 1);
+  await updateUserExecutionCount(user.id, 1);
 }
 
-export function resetExecutionLogForTests(): void {
-  executionRecords.length = 0;
-  userExecutionCounts.clear();
-}
+// Re-export types for convenience
+export type { ExecutionRecord, ExecutionStatus, HumanEvaluation } from './execution-log-types';

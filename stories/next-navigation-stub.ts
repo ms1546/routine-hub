@@ -3,15 +3,43 @@
  * StorybookではNext.jsのルーターが動作しないため、モックに置き換える
  */
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
+
+// Storybook内でクエリパラメータを管理するためのグローバル状態
+let globalSearchParams = new URLSearchParams();
 
 export function useRouter() {
   const push = useCallback((url: string) => {
     console.log('[Storybook Mock] Router.push:', url);
+    // URLからクエリパラメータを抽出して更新
+    try {
+      const urlObj = new URL(url, 'http://localhost');
+      globalSearchParams = new URLSearchParams(urlObj.search);
+      // コンポーネントの再レンダリングをトリガーするために、イベントを発火
+      window.dispatchEvent(new CustomEvent('storybook:search-params-changed'));
+    } catch (e) {
+      // URLが相対パスの場合
+      const match = url.match(/\?(.+)$/);
+      if (match) {
+        globalSearchParams = new URLSearchParams(match[1]);
+        window.dispatchEvent(new CustomEvent('storybook:search-params-changed'));
+      }
+    }
   }, []);
 
   const replace = useCallback((url: string) => {
     console.log('[Storybook Mock] Router.replace:', url);
+    try {
+      const urlObj = new URL(url, 'http://localhost');
+      globalSearchParams = new URLSearchParams(urlObj.search);
+      window.dispatchEvent(new CustomEvent('storybook:search-params-changed'));
+    } catch (e) {
+      const match = url.match(/\?(.+)$/);
+      if (match) {
+        globalSearchParams = new URLSearchParams(match[1]);
+        window.dispatchEvent(new CustomEvent('storybook:search-params-changed'));
+      }
+    }
   }, []);
 
   const refresh = useCallback(() => {
@@ -41,7 +69,18 @@ export function useRouter() {
 }
 
 export function useSearchParams() {
-  const [params] = useState(() => new URLSearchParams());
+  const [params, setParams] = useState(() => new URLSearchParams(globalSearchParams));
+
+  useEffect(() => {
+    const handleChange = () => {
+      setParams(new URLSearchParams(globalSearchParams));
+    };
+    window.addEventListener('storybook:search-params-changed', handleChange);
+    return () => {
+      window.removeEventListener('storybook:search-params-changed', handleChange);
+    };
+  }, []);
+
   return params;
 }
 

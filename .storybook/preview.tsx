@@ -1,17 +1,11 @@
-import type { Preview } from '@storybook/react';
 import React from 'react';
 import '../src/app/globals.css';
 
-// Initialize UUID generator for Storybook (browser-safe)
-// This ensures domain layer uses browser-compatible UUID generation
-// Note: '@/shared/utils/uuid' resolves to uuid.browser.ts via alias in main.ts
-import { createBrowserUUIDGenerator } from '@/shared/utils/uuid';
-import { createRoutinesRepository } from '../src/features/routines/domain/store';
-
-// Initialize routines repository with browser-safe UUID generator
-// This prevents node:crypto from being imported in Storybook
-const browserUUIDGenerator = createBrowserUUIDGenerator();
-createRoutinesRepository(browserUUIDGenerator);
+// Note: We don't initialize routinesRepository here because:
+// 1. store.ts appears to be empty (needs investigation)
+// 2. repository.ts initializes with createNodeUUIDGenerator which would cause node:crypto errors
+// 3. Storybook stories should use mocked/stubbed implementations instead
+// If routinesRepository is needed in stories, it should be mocked at the story level
 
 // MCP addon（そのまま維持）
 let getMCPClient: (() => any) | null = null;
@@ -23,6 +17,23 @@ try {
 }
 
 const MCPContext = React.createContext<{ client: any | null }>({ client: null });
+
+// 実際のappと同じ構造にするためのデコレータ
+// Interフォントはpreview-head.htmlでGoogle Fontsから読み込まれる
+const withAppLayout = (Story: any) => {
+  return (
+    <div
+      style={{
+        minHeight: '100vh',
+        backgroundColor: 'hsl(var(--background))',
+        fontFamily: 'var(--font-sans, system-ui, -apple-system, sans-serif)',
+      }}
+      className="antialiased"
+    >
+      <Story />
+    </div>
+  );
+};
 
 const withMCP = (Story: any) => {
   const [client, setClient] = React.useState<any | null>(null);
@@ -41,17 +52,17 @@ const withMCP = (Story: any) => {
   );
 };
 
-const preview: Preview = {
-  decorators: [withMCP],
+const preview = {
+  decorators: [withAppLayout, withMCP],
   parameters: {
     layout: 'fullscreen',
-
-
+    // 実際のappと同じ明るいテーマを使用
     backgrounds: {
-      default: 'hub-dark',
+      default: 'light',
       values: [
-        { name: 'hub-dark', value: '#050709' },
-        { name: 'neutral', value: '#11131a' },
+        { name: 'light', value: 'hsl(var(--background))' },
+        { name: 'muted', value: 'hsl(var(--muted))' },
+        { name: 'card', value: 'hsl(var(--card))' },
       ],
     },
   },

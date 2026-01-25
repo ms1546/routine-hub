@@ -99,3 +99,22 @@ variable "tags" {
   type        = map(string)
   default     = {}
 }
+
+# Scheduled Shutdown Configuration
+variable "enable_scheduled_shutdown" {
+  description = "Enable scheduled shutdown/startup of ECS service and ALB"
+  type        = bool
+  default     = false
+}
+
+variable "stop_schedule_expression" {
+  description = "Cron expression for stopping ECS/ALB (e.g., 'cron(0 22 * * ? *)' for 22:00 UTC)"
+  type        = string
+  default     = "cron(0 22 * * ? *)" # 22:00 UTC (7:00 JST next day)
+}
+
+variable "start_schedule_expression" {
+  description = "Cron expression for starting ECS/ALB (e.g., 'cron(0 6 * * ? *)' for 6:00 UTC)"
+  type        = string
+  default     = "cron(0 6 * * ? *)" # 6:00 UTC (15:00 JST)
+}

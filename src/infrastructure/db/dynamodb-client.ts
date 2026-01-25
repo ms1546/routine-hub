@@ -21,3 +21,4 @@ export const dynamoDBDocumentClient = DynamoDBDocumentClient.from(client, {
 
 export const USER_SETTINGS_TABLE = process.env.DYNAMODB_USER_SETTINGS_TABLE || 'routine-hub-user-settings';
 export const ROUTINES_TABLE = process.env.DYNAMODB_ROUTINES_TABLE || 'routine-hub-routines';
+export const AI_EXECUTION_LOGS_TABLE = process.env.DYNAMODB_AI_EXECUTION_LOGS_TABLE || 'routine-hub-ai-execution-logs';

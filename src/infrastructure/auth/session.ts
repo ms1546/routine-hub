@@ -9,9 +9,12 @@
  * - Next.js: resolves to session.next.ts (normal import resolution)
  * - Storybook: resolves to session.browser.ts (via vite alias)
  *
+ * IMPORTANT: We use absolute path (@/infrastructure/auth/session.next) instead of
+ * relative path (./session.next) so that Vite alias can properly replace it.
+ *
  * This approach eliminates runtime conditionals and ensures
  * proper tree-shaking and bundling for each environment.
  */
 
-export type { UserRole, AuthenticatedUser } from './session.next';
-export { getCurrentUser, isAdminUser, assertAdminUser } from './session.next';
+export type { UserRole, AuthenticatedUser } from '@/infrastructure/auth/session.next';
+export { getCurrentUser, isAdminUser, assertAdminUser } from '@/infrastructure/auth/session.next';

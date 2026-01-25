@@ -8,6 +8,9 @@
  * via module resolution (alias) at build time:
  * - Next.js: resolves to use-sign-out.next.tsx (normal import resolution)
  * - Storybook: resolves to use-sign-out.browser.tsx (via vite alias)
+ *
+ * IMPORTANT: We use absolute path (@/shared/hooks/use-sign-out.next) instead of
+ * relative path (./use-sign-out.next) so that Vite alias can properly replace it.
  */
 
-export { signOut } from './use-sign-out.next';
+export { signOut } from '@/shared/hooks/use-sign-out.next';

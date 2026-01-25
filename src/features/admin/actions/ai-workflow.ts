@@ -28,7 +28,7 @@ export async function previewRoutineAiAction(routineId: string) {
     throw new Error('Routine not found');
   }
   const user = await getCurrentUser();
-  if (!canExecuteWorkflow(user)) {
+  if (!(await canExecuteWorkflow(user))) {
     throw new Error('AI preview limit reached for this account.');
   }
 
@@ -38,8 +38,8 @@ export async function previewRoutineAiAction(routineId: string) {
       user: defaultUserContext,
       calendarWindow: defaultWindow
     });
-    registerExecutionUsage(user);
-    recordWorkflowSuccess({
+    await registerExecutionUsage(user);
+    await recordWorkflowSuccess({
       result,
       workflowName: 'routine-ai-workflow',
       routine,
@@ -47,8 +47,8 @@ export async function previewRoutineAiAction(routineId: string) {
     });
     return result;
   } catch (error) {
-    registerExecutionUsage(user);
-    recordWorkflowFailure({
+    await registerExecutionUsage(user);
+    await recordWorkflowFailure({
       workflowName: 'routine-ai-workflow',
       routine,
       user,

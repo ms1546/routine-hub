@@ -109,6 +109,42 @@ resource "aws_dynamodb_table" "routines" {
   }
 }
 
+# DynamoDB Table for AI Execution Logs
+resource "aws_dynamodb_table" "ai_execution_logs" {
+  name           = "${local.name_prefix}-ai-execution-logs"
+  billing_mode   = "PAY_PER_REQUEST"
+  hash_key       = "executionId"
+
+  attribute {
+    name = "executionId"
+    type = "S"
+  }
+
+  attribute {
+    name = "userId"
+    type = "S"
+  }
+
+  attribute {
+    name = "executedAt"
+    type = "S"
+  }
+
+  global_secondary_index {
+    name            = "user-executed-at-index"
+    hash_key        = "userId"
+    range_key       = "executedAt"
+  }
+
+  point_in_time_recovery {
+    enabled = var.enable_point_in_time_recovery
+  }
+
+  tags = {
+    Name = "${local.name_prefix}-ai-execution-logs"
+  }
+}
+
 # IAM Role for ECS Task Execution
 resource "aws_iam_role" "ecs_task_execution_role" {
   name = "${local.name_prefix}-ecs-task-execution"
@@ -211,7 +247,9 @@ resource "aws_iam_role_policy" "ecs_task_policy" {
         Resource = [
           aws_dynamodb_table.user_settings.arn,
           aws_dynamodb_table.routines.arn,
-          "${aws_dynamodb_table.routines.arn}/index/*"
+          "${aws_dynamodb_table.routines.arn}/index/*",
+          aws_dynamodb_table.ai_execution_logs.arn,
+          "${aws_dynamodb_table.ai_execution_logs.arn}/index/*"
         ]
       },
       {
@@ -433,4 +471,185 @@ resource "aws_ecs_service" "main" {
   tags = {
     Name = local.name_prefix
   }
+}
+
+# IAM Role for Lambda (ECS/ALB Start/Stop)
+resource "aws_iam_role" "scheduler_lambda_role" {
+  count = var.enable_scheduled_shutdown ? 1 : 0
+
+  name = "${local.name_prefix}-scheduler-lambda-role"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Action = "sts:AssumeRole"
+        Effect = "Allow"
+        Principal = {
+          Service = "lambda.amazonaws.com"
+        }
+      }
+    ]
+  })
+
+  tags = {
+    Name = "${local.name_prefix}-scheduler-lambda-role"
+  }
+}
+
+# IAM Policy for Lambda to control ECS and ALB
+resource "aws_iam_role_policy" "scheduler_lambda_policy" {
+  count = var.enable_scheduled_shutdown ? 1 : 0
+
+  name = "${local.name_prefix}-scheduler-lambda-policy"
+  role = aws_iam_role.scheduler_lambda_role[0].id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = [
+          "logs:CreateLogGroup",
+          "logs:CreateLogStream",
+          "logs:PutLogEvents"
+        ]
+        Resource = "arn:aws:logs:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:*"
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "ecs:UpdateService",
+          "ecs:DescribeServices"
+        ]
+        Resource = aws_ecs_service.main.id
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "elasticloadbalancing:ModifyLoadBalancerAttributes",
+          "elasticloadbalancing:DescribeLoadBalancers"
+        ]
+        Resource = aws_lb.main.arn
+      }
+    ]
+  })
+}
+
+# CloudWatch Log Group for Lambda
+resource "aws_cloudwatch_log_group" "scheduler_lambda_logs" {
+  count = var.enable_scheduled_shutdown ? 1 : 0
+
+  name              = "/aws/lambda/${local.name_prefix}-scheduler"
+  retention_in_days = 7
+
+  tags = {
+    Name = "${local.name_prefix}-scheduler-lambda-logs"
+  }
+}
+
+# Lambda function for ECS/ALB scheduling
+resource "aws_lambda_function" "scheduler" {
+  count = var.enable_scheduled_shutdown ? 1 : 0
+
+  function_name = "${local.name_prefix}-scheduler"
+  role          = aws_iam_role.scheduler_lambda_role[0].arn
+  handler       = "index.handler"
+  runtime       = "python3.11"
+  timeout       = 60
+
+  filename         = "${path.module}/lambda/scheduler.zip"
+  source_code_hash = fileexists("${path.module}/lambda/scheduler.zip") ? filebase64sha256("${path.module}/lambda/scheduler.zip") : null
+
+  environment {
+    variables = {
+      ECS_CLUSTER_NAME = aws_ecs_cluster.main.name
+      ECS_SERVICE_NAME = aws_ecs_service.main.name
+      ALB_ARN          = aws_lb.main.arn
+    }
+  }
+
+  depends_on = [
+    aws_cloudwatch_log_group.scheduler_lambda_logs,
+    aws_iam_role_policy.scheduler_lambda_policy
+  ]
+
+  tags = {
+    Name = "${local.name_prefix}-scheduler"
+  }
+}
+
+# EventBridge Rule for stopping ECS/ALB (night)
+resource "aws_cloudwatch_event_rule" "stop_service" {
+  count = var.enable_scheduled_shutdown ? 1 : 0
+
+  name                = "${local.name_prefix}-stop-service"
+  description         = "Stop ECS service and ALB at night"
+  schedule_expression = var.stop_schedule_expression
+  state               = "ENABLED"
+
+  tags = {
+    Name = "${local.name_prefix}-stop-service"
+  }
+}
+
+# EventBridge Rule for starting ECS/ALB (morning)
+resource "aws_cloudwatch_event_rule" "start_service" {
+  count = var.enable_scheduled_shutdown ? 1 : 0
+
+  name                = "${local.name_prefix}-start-service"
+  description         = "Start ECS service and ALB in the morning"
+  schedule_expression = var.start_schedule_expression
+  state               = "ENABLED"
+
+  tags = {
+    Name = "${local.name_prefix}-start-service"
+  }
+}
+
+# EventBridge Target for stopping service
+resource "aws_cloudwatch_event_target" "stop_service" {
+  count = var.enable_scheduled_shutdown ? 1 : 0
+
+  rule      = aws_cloudwatch_event_rule.stop_service[0].name
+  target_id = "StopService"
+  arn       = aws_lambda_function.scheduler[0].arn
+
+  input = jsonencode({
+    action = "stop"
+  })
+}
+
+# EventBridge Target for starting service
+resource "aws_cloudwatch_event_target" "start_service" {
+  count = var.enable_scheduled_shutdown ? 1 : 0
+
+  rule      = aws_cloudwatch_event_rule.start_service[0].name
+  target_id = "StartService"
+  arn       = aws_lambda_function.scheduler[0].arn
+
+  input = jsonencode({
+    action = "start"
+  })
+}
+
+# Lambda permission for EventBridge
+resource "aws_lambda_permission" "allow_eventbridge_stop" {
+  count = var.enable_scheduled_shutdown ? 1 : 0
+
+  statement_id  = "AllowExecutionFromEventBridgeStop"
+  action         = "lambda:InvokeFunction"
+  function_name  = aws_lambda_function.scheduler[0].function_name
+  principal      = "events.amazonaws.com"
+  source_arn     = aws_cloudwatch_event_rule.stop_service[0].arn
+}
+
+resource "aws_lambda_permission" "allow_eventbridge_start" {
+  count = var.enable_scheduled_shutdown ? 1 : 0
+
+  statement_id  = "AllowExecutionFromEventBridgeStart"
+  action         = "lambda:InvokeFunction"
+  function_name  = aws_lambda_function.scheduler[0].function_name
+  principal      = "events.amazonaws.com"
+  source_arn     = aws_cloudwatch_event_rule.start_service[0].arn
 }

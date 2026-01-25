@@ -197,6 +197,8 @@ export function ApplyRoutineForm({
   const [weekCount, setWeekCount] = useState<number>(1); // weeklyタイプの場合の週数
   const [endDate, setEndDate] = useState<string>(plusDays(7)); // normal/normal用
   const [expandedWeeks, setExpandedWeeks] = useState<Set<number>>(new Set()); // すべての週を展開
+  const [recurrenceType, setRecurrenceType] = useState<'none' | 'weekly' | 'monthly'>('none');
+  const [recurrenceInterval, setRecurrenceInterval] = useState<number>(1);
 
   // weeklyの場合、終了日を週数から計算
   const calculatedEndDate = durationType === 'weekly'
@@ -227,8 +229,13 @@ export function ApplyRoutineForm({
     const validatedStartDate = startDateValue;
     const validatedEndDate = durationType === 'weekly' ? calculatedEndDate : endDate;
 
-    // 繰り返し設定は削除（シンプルに）
-    const recurrence: { type: 'none' } = { type: 'none' };
+    // 繰り返し設定
+    const recurrence: RecurrencePattern =
+      recurrenceType === 'none'
+        ? { type: 'none' }
+        : recurrenceType === 'weekly'
+          ? { type: 'weekly', interval: recurrenceInterval }
+          : { type: 'monthly', interval: recurrenceInterval };
 
     startTransition(async () => {
       // まずプレビューを取得
@@ -370,6 +377,42 @@ export function ApplyRoutineForm({
                 required
               />
             </div>
+          )}
+        </div>
+
+        {/* 繰り返し設定 */}
+        <div className="space-y-2">
+          <Label>繰り返し設定</Label>
+          <div className="flex gap-2">
+            <select
+              value={recurrenceType}
+              onChange={(e) => setRecurrenceType(e.target.value as 'none' | 'weekly' | 'monthly')}
+              className="h-11 flex-1 rounded-lg border border-input bg-background px-4 py-2.5 text-sm text-foreground transition-all duration-300 hover:border-primary/40 hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:border-ring/50"
+            >
+              <option value="none">繰り返さない</option>
+              <option value="weekly">毎週</option>
+              <option value="monthly">毎月</option>
+            </select>
+            {recurrenceType !== 'none' && (
+              <select
+                value={recurrenceInterval}
+                onChange={(e) => setRecurrenceInterval(Number(e.target.value))}
+                className="h-11 w-24 rounded-lg border border-input bg-background px-4 py-2.5 text-sm text-foreground transition-all duration-300 hover:border-primary/40 hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:border-ring/50"
+              >
+                {Array.from({ length: 12 }, (_, i) => i + 1).map((n) => (
+                  <option key={n} value={n}>
+                    {n}
+                  </option>
+                ))}
+              </select>
+            )}
+          </div>
+          {recurrenceType !== 'none' && (
+            <p className="text-xs text-muted-foreground">
+              {recurrenceType === 'weekly'
+                ? `毎週${recurrenceInterval > 1 ? `${recurrenceInterval}週間` : ''}ごとに繰り返します`
+                : `毎月${recurrenceInterval > 1 ? `${recurrenceInterval}ヶ月` : ''}ごとに繰り返します`}
+            </p>
           )}
         </div>
 

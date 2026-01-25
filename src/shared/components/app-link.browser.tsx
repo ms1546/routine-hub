@@ -5,6 +5,9 @@
  * It is used in Storybook via alias configuration.
  *
  * Next.js will NOT import this file due to normal import resolution.
+ *
+ * IMPORTANT: This file also serves as a replacement for next/link via alias.
+ * It exports both named export (AppLink) and default export (for next/link compatibility).
  */
 
 import type { ComponentProps, ReactNode } from 'react';
@@ -31,3 +34,7 @@ export function AppLink({ href, children, className, onClick, ...props }: AppLin
     </a>
   );
 }
+
+// Default export for next/link compatibility
+// This allows 'next/link' to be aliased to this file
+export default AppLink;

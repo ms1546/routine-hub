@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react';
 import { ExecutionHistoryCard } from '@/features/admin/components/admin/execution-history-card';
 import { MaintenanceCard } from '@/features/admin/components/admin/maintenance-card';
-import type { ExecutionRecord } from '@/features/ai/execution-log';
+import type { ExecutionRecord } from '@/features/ai/execution-log-types';
 import type { MaintenanceState } from '@/infrastructure/system/maintenance';
 
 const mockRecords: ExecutionRecord[] = [

@@ -159,7 +159,7 @@ async function* streamWorkflow(
     };
 
     // Record success
-    recordWorkflowSuccess({
+    await recordWorkflowSuccess({
       result,
       workflowName: 'routine-ai-workflow',
       routine,
@@ -169,7 +169,7 @@ async function* streamWorkflow(
     yield { type: 'complete', data: result };
   } catch (error) {
     // Record failure
-    recordWorkflowFailure({
+    await recordWorkflowFailure({
       workflowName: 'routine-ai-workflow',
       routine,
       user,
@@ -218,7 +218,7 @@ export async function POST(request: NextRequest) {
         headers: { 'Content-Type': 'application/json' },
       });
     }
-    if (!canExecuteWorkflow(user)) {
+    if (!(await canExecuteWorkflow(user))) {
       return new Response(JSON.stringify({ error: 'AI preview limit reached' }), {
         status: 403,
         headers: { 'Content-Type': 'application/json' },
@@ -273,7 +273,7 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    registerExecutionUsage(user);
+    await registerExecutionUsage(user);
 
     return createStreamResponse(sseStream);
   } catch (error) {

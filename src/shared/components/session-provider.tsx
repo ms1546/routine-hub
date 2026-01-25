@@ -8,7 +8,10 @@
  * via module resolution (alias) at build time:
  * - Next.js: resolves to session-provider.next.tsx (normal import resolution)
  * - Storybook: resolves to session-provider.browser.tsx (via vite alias)
+ *
+ * IMPORTANT: We use absolute path (@/shared/components/session-provider.next) instead of
+ * relative path (./session-provider.next) so that Vite alias can properly replace it.
  */
 
-export type { SessionProviderProps } from './session-provider.next';
-export { SessionProvider } from './session-provider.next';
+export type { SessionProviderProps } from '@/shared/components/session-provider.next';
+export { SessionProvider } from '@/shared/components/session-provider.next';

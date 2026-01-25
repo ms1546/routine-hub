@@ -35,15 +35,15 @@ export async function planRoutineWithCalendar(routine: Routine, viewer: Authenti
   // AI Analysisはボタン押下時に実行するため、ここでは実行しない
   const workflow: RoutineAiWorkflowResult | null = null;
   const executionId: string | null = null;
-  const limitSnapshot = getExecutionLimit(viewer);
-  const allowedToExecute = canExecuteWorkflow(viewer);
+  const limitSnapshot = await getExecutionLimit(viewer);
+  const allowedToExecute = await canExecuteWorkflow(viewer);
 
   const proposedEvents = buildProposedEvents(routine, calendarWindow);
   const isCalendarConnected = await hasStoredRefreshToken(routine.owner);
   const client = getCalendarClient(routine.owner);
   const existingEvents = await client.listEvents(calendarWindow);
   const allowance = allowedToExecute
-    ? getExecutionLimit(viewer)
+    ? await getExecutionLimit(viewer)
     : limitSnapshot;
 
   const aiAccess = allowedToExecute
