@@ -3,8 +3,22 @@ import storybook from "eslint-plugin-storybook";
 
 import nextConfig from 'eslint-config-next';
 
-export default [...nextConfig, {
-  rules: {
-    'react/jsx-props-no-spreading': 'off'
-  }
-}, ...storybook.configs["flat/recommended"]];
+const config = [
+  {
+    ignores: [
+      '.next/**',
+      'coverage/**',
+      'node_modules/**',
+      'storybook-static/**'
+    ]
+  },
+  ...nextConfig,
+  {
+    rules: {
+      'react/jsx-props-no-spreading': 'off'
+    }
+  },
+  ...storybook.configs["flat/recommended"]
+];
+
+export default config;

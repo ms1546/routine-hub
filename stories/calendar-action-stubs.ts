@@ -33,7 +33,8 @@ export async function getCalendarPreviewAction({
         start: `${startDate}T09:00:00+09:00`,
         end: `${startDate}T10:00:00+09:00`,
         routineId,
-        blockId: 'mock-block-1'
+        blockId: 'mock-block-1',
+        status: 'pending'
       }
     ],
     existingEvents: []

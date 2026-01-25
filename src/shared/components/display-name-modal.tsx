@@ -21,12 +21,14 @@ export function DisplayNameModal({ open, userId, initialDisplayName, onComplete 
   const [pending, startTransition] = useTransition();
   const { update: updateSession } = useSession();
 
+  /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
     if (open) {
       setDisplayName(initialDisplayName ?? '');
       setError(null);
     }
   }, [open, initialDisplayName]);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();

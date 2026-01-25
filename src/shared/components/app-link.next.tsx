@@ -15,11 +15,11 @@ export type AppLinkProps = {
   children: ReactNode;
   className?: string;
   onClick?: () => void;
-} & Omit<ComponentProps<'a'>, 'href' | 'children' | 'className' | 'onClick'>;
+} & Omit<ComponentProps<typeof NextLink>, 'href' | 'children' | 'className' | 'onClick'>;
 
 export function AppLink({ href, children, className, onClick, ...props }: AppLinkProps) {
   return (
-    <NextLink href={href} className={className} onClick={onClick} {...(props as ComponentProps<typeof NextLink>)}>
+    <NextLink href={href} className={className} onClick={onClick} {...props}>
       {children}
     </NextLink>
   );

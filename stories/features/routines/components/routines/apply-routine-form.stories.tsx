@@ -1,4 +1,4 @@
-import type { Meta, StoryObj } from '@storybook/react';
+import type { Meta, StoryObj } from '@storybook/nextjs-vite';
 import { ApplyRoutineForm } from '@/features/routines/components/apply-routine-form';
 import { stubApplyRoutine } from '../../../../routine-action-stubs';
 

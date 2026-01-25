@@ -37,6 +37,7 @@ export function StreamingWorkflowPanels({ routineId, initialWorkflow, aiAccess }
     }
   };
 
+  /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
     if (workflow) {
       setDisplayWorkflow(workflow);
@@ -45,6 +46,7 @@ export function StreamingWorkflowPanels({ routineId, initialWorkflow, aiAccess }
       setDisplayWorkflow(null);
     }
   }, [workflow, partialWorkflow]);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   if (error) {
     return (

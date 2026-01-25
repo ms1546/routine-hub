@@ -20,7 +20,7 @@ const MCPContext = React.createContext<{ client: any | null }>({ client: null })
 
 // 実際のappと同じ構造にするためのデコレータ
 // Interフォントはpreview-head.htmlでGoogle Fontsから読み込まれる
-const withAppLayout = (Story: any) => {
+const WithAppLayout = (Story: any) => {
   return (
     <div
       style={{
@@ -35,7 +35,7 @@ const withAppLayout = (Story: any) => {
   );
 };
 
-const withMCP = (Story: any) => {
+const WithMCP = (Story: any) => {
   const [client, setClient] = React.useState<any | null>(null);
 
   React.useEffect(() => {
@@ -53,7 +53,7 @@ const withMCP = (Story: any) => {
 };
 
 const preview = {
-  decorators: [withAppLayout, withMCP],
+  decorators: [WithAppLayout, WithMCP],
   parameters: {
     layout: 'fullscreen',
     // 実際のappと同じ明るいテーマを使用

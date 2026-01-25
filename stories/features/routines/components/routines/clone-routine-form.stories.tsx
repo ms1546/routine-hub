@@ -1,4 +1,4 @@
-import type { Meta, StoryObj } from '@storybook/react';
+import type { Meta, StoryObj } from '@storybook/nextjs-vite';
 import { CloneRoutineForm } from '@/features/routines/components/clone-routine-form';
 import { stubCloneRoutine } from '../../../../routine-action-stubs';
 

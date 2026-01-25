@@ -67,15 +67,15 @@ describe('Routine popularity sorting', () => {
     // likes数を手動で設定（updateを使用）
     const updated1 = await routinesRepository.update({
       id: routine1.id,
-      patch: { stats: { forks: 0, applications: 0, likes: 5 } }
+      patch: { stats: { clones: 0, applications: 0, likes: 5 } }
     });
     const updated2 = await routinesRepository.update({
       id: routine2.id,
-      patch: { stats: { forks: 0, applications: 0, likes: 20 } }
+      patch: { stats: { clones: 0, applications: 0, likes: 20 } }
     });
     const updated3 = await routinesRepository.update({
       id: routine3.id,
-      patch: { stats: { forks: 0, applications: 0, likes: 10 } }
+      patch: { stats: { clones: 0, applications: 0, likes: 10 } }
     });
 
     // 更新が正しく反映されていることを確認
@@ -89,9 +89,15 @@ describe('Routine popularity sorting', () => {
     // likes数でソート
     const sorted = [...testRoutines].sort((a, b) => b.stats.likes - a.stats.likes);
 
+    expect(sorted).toHaveLength(3);
+    const [first, second, third] = sorted;
+    if (!first || !second || !third) {
+      throw new Error('Expected three routines after sorting');
+    }
+
     // 降順でソートされていることを確認
-    expect(sorted[0].stats.likes).toBeGreaterThanOrEqual(sorted[1].stats.likes);
-    expect(sorted[1].stats.likes).toBeGreaterThanOrEqual(sorted[2].stats.likes);
+    expect(first.stats.likes).toBeGreaterThanOrEqual(second.stats.likes);
+    expect(second.stats.likes).toBeGreaterThanOrEqual(third.stats.likes);
 
     // 最もlikesが多いものが最初（routine2は20 likes）
     // ソート後の順序を確認
@@ -99,8 +105,8 @@ describe('Routine popularity sorting', () => {
     expect(likesValues).toEqual([20, 10, 5]);
 
     // routine2が最初にあることを確認
-    expect(sorted[0].id).toBe(routine2.id);
-    expect(sorted[0].stats.likes).toBe(20);
+    expect(first.id).toBe(routine2.id);
+    expect(first.stats.likes).toBe(20);
   });
 
   it('handles routines with zero likes correctly', async () => {
@@ -121,14 +127,16 @@ describe('Routine popularity sorting', () => {
           objective: 'Test',
           energyLevel: 'high'
         }
-      ],
-      stats: { forks: 0, applications: 0, likes: 0 }
+      ]
     });
 
     const publicRoutines = await routinesRepository.list({ visibility: 'public' });
     const found = publicRoutines.find((r) => r.id === routine.id);
 
-    expect(found).not.toBeUndefined();
-    expect(found?.stats.likes).toBe(0);
+    expect(found).toBeDefined();
+    if (!found) {
+      throw new Error('Expected routine to be present in public list');
+    }
+    expect(found.stats.likes).toBe(0);
   });
 });

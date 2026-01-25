@@ -1,20 +1,40 @@
 import { describe, expect, it, beforeEach } from 'vitest';
 import { confirmProposedEventsAction } from '@/app/actions/calendar';
-import { setCalendarClient } from '@/features/calendar/domain/client';
+import { setCalendarClient } from '@/infrastructure/calendar/calendar-client-factory';
 import { MockCalendarClient } from '@/features/calendar/domain/mock-client';
 import { routinesRepository } from '@/features/routines';
 import { buildProposedEvents } from '@/features/calendar/domain/proposals';
 import { createDefaultCalendarWindow } from '@/features/calendar/domain/window';
 
 let proposalId: string;
+let routineId: string;
 
 beforeEach(async () => {
+  process.env.MOCK_USER_EMAIL = 'routinehub.dev@gmail.com';
   const client = new MockCalendarClient();
   client.reset([]);
   setCalendarClient(client);
 
-  const routine = await routinesRepository.get('11111111-1111-4111-8111-111111111111');
-  if (!routine) throw new Error('Seed routine missing');
+  const routine = await routinesRepository.create({
+    name: 'Calendar Seed',
+    description: 'Seed routine for calendar action tests.',
+    purpose: 'Ensure routine exists for calendar actions.',
+    durationType: 'weekly',
+    visibility: 'public',
+    tags: ['seed'],
+    owner: 'account-ops',
+    timeBlocks: [
+      {
+        day: 'monday',
+        startHour: 9,
+        endHour: 12,
+        label: 'Seed Block',
+        objective: 'Seed objective',
+        energyLevel: 'medium'
+      }
+    ]
+  });
+  routineId = routine.id;
   const proposals = buildProposedEvents(routine, createDefaultCalendarWindow());
   proposalId = proposals[0]?.proposalId ?? '';
 });
@@ -23,7 +43,7 @@ describe('confirmProposedEventsAction', () => {
   it('inserts events once per proposal id', async () => {
     if (!proposalId) throw new Error('Missing proposal id in test setup');
     const firstInsert = await confirmProposedEventsAction({
-      routineId: '11111111-1111-4111-8111-111111111111',
+      routineId,
       proposalIds: [proposalId]
     });
 
@@ -31,7 +51,7 @@ describe('confirmProposedEventsAction', () => {
     expect(firstInsert.failureCount).toBe(0);
 
     const secondInsert = await confirmProposedEventsAction({
-      routineId: '11111111-1111-4111-8111-111111111111',
+      routineId,
       proposalIds: [proposalId]
     });
 
@@ -46,7 +66,7 @@ describe('confirmProposedEventsAction', () => {
     setCalendarClient(client);
 
     const result = await confirmProposedEventsAction({
-      routineId: '11111111-1111-4111-8111-111111111111',
+      routineId,
       proposalIds: [proposalId]
     });
 
@@ -56,7 +76,7 @@ describe('confirmProposedEventsAction', () => {
   });
 
   it('handles recurrence pattern in proposals', async () => {
-    const routine = await routinesRepository.get('11111111-1111-4111-8111-111111111111');
+    const routine = await routinesRepository.get(routineId, undefined);
     if (!routine) throw new Error('Seed routine missing');
     const proposals = buildProposedEvents(routine, createDefaultCalendarWindow(), {
       type: 'weekly',
@@ -65,7 +85,7 @@ describe('confirmProposedEventsAction', () => {
     const proposalIdWithRecurrence = proposals[0]?.proposalId ?? '';
 
     const result = await confirmProposedEventsAction({
-      routineId: '11111111-1111-4111-8111-111111111111',
+      routineId,
       proposalIds: [proposalIdWithRecurrence],
       recurrence: { type: 'weekly', interval: 1 }
     });

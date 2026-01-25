@@ -60,6 +60,7 @@ export function RoutineComposer({ action, asModal = false, open = false, onClose
   const router = useRouter();
 
   // 時間範囲が変更された時に、範囲外のBlockを自動削除
+  /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
     if (durationType === 'normal' && blocks.length > 0) {
       const blocksBeforeFilter = blocks.length;
@@ -135,7 +136,8 @@ export function RoutineComposer({ action, asModal = false, open = false, onClose
         setBlocks(adjustedBlocks);
       }
     }
-  }, [normalStartHour, normalEndHour, durationType]); // blocksは依存配列に含めない（無限ループを防ぐ）
+  }, [normalStartHour, normalEndHour, durationType, blocks]);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();

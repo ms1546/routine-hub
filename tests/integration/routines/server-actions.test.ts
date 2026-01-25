@@ -1,9 +1,11 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, beforeEach, afterEach } from 'vitest';
 import {
   applyRoutineAction,
   createRoutineAction
 } from '@/app/actions/routines';
 import { routinesRepository } from '@/features/routines';
+
+let routineId: string;
 
 const buildFormData = () => {
   const formData = new FormData();
@@ -26,8 +28,28 @@ const buildFormData = () => {
 describe('Routine server actions', () => {
   const originalEnv = process.env.MOCK_USER_EMAIL;
 
-  beforeEach(() => {
+  beforeEach(async () => {
     process.env.MOCK_USER_EMAIL = 'storybook@example.com';
+    const routine = await routinesRepository.create({
+      name: 'Seed Routine',
+      description: 'Seed routine for server action tests.',
+      purpose: 'Ensure routine exists for apply tests.',
+      durationType: 'weekly',
+      visibility: 'public',
+      tags: ['seed'],
+      owner: 'storybook@example.com',
+      timeBlocks: [
+        {
+          day: 'monday',
+          startHour: 9,
+          endHour: 12,
+          label: 'Seed Block',
+          objective: 'Seed objective',
+          energyLevel: 'medium'
+        }
+      ]
+    });
+    routineId = routine.id;
   });
 
   afterEach(() => {
@@ -47,10 +69,9 @@ describe('Routine server actions', () => {
   it('builds a preview when applying a routine', async () => {
     const { getCurrentUser } = await import('@/infrastructure/auth/session');
     const currentUser = await getCurrentUser();
-    const targetId = '11111111-1111-4111-8111-111111111111';
-    const before = await routinesRepository.get(targetId, currentUser.id);
+    const before = await routinesRepository.get(routineId, currentUser.id);
     const preview = await applyRoutineAction({
-      routineId: targetId,
+      routineId,
       startDate: '2024-01-01',
       endDate: '2024-01-07',
       recurrence: { type: 'none' }
@@ -59,14 +80,13 @@ describe('Routine server actions', () => {
     expect(preview.ok).toBe(true);
     expect(preview.data?.totalBlocks).toBeGreaterThan(0);
 
-    const after = await routinesRepository.get(targetId, currentUser.id);
+    const after = await routinesRepository.get(routineId, currentUser.id);
     expect(after?.stats.applications).toBe((before?.stats.applications ?? 0) + 1);
   });
 
   it('applies a routine with recurrence pattern', async () => {
-    const targetId = '11111111-1111-4111-8111-111111111111';
     const preview = await applyRoutineAction({
-      routineId: targetId,
+      routineId,
       startDate: '2024-01-01',
       endDate: '2024-01-07',
       recurrence: { type: 'weekly', interval: 1 }

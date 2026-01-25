@@ -29,7 +29,7 @@ const routine: Routine = {
       energyLevel: 'high'
     }
   ],
-  stats: { forks: 1, applications: 10, likes: 5 }
+  stats: { clones: 1, applications: 10, likes: 5 }
 };
 
 const baseInput: RoutineAiWorkflowInput = {

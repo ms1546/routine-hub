@@ -1,4 +1,4 @@
-import type { Meta, StoryObj } from '@storybook/react';
+import type { Meta, StoryObj } from '@storybook/nextjs-vite';
 import { CalendarProposalPanel } from '@/features/routines/components/calendar-proposal-panel';
 import { mockProposedEvents, mockExistingEvents } from '../../../../routine-fixtures';
 

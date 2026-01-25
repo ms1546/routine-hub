@@ -27,7 +27,7 @@ const createMockRoutine = (): Routine => ({
       energyLevel: 'high'
     }
   ],
-  stats: { forks: 0, applications: 0, likes: 0 }
+  stats: { clones: 0, applications: 0, likes: 0 }
 });
 
 describe('recurrencePatternSchema', () => {

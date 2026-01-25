@@ -144,6 +144,7 @@ export function RoutineBlockTimelineEditor({
   const [hasDragged, setHasDragged] = useState(false); // ドラッグが発生したかどうか
   const timelineRef = useRef<HTMLDivElement>(null);
   const timelineRefsByDay = useRef<Record<string, HTMLDivElement | null>>({});
+  const nextBlockIdRef = useRef(0);
 
   const isDayBased = durationType === 'normal';
 
@@ -578,7 +579,7 @@ export function RoutineBlockTimelineEditor({
         return;
       }
     }
-  }, [draggingBlockId, draggingBlock, resizingBlockId, resizeSide, dragStartX, dragStartDay, isDayBased, durationType, blocks, onChange, pixelToHour, clampHours, detectDayFromMousePosition, checkBlockOverlap]);
+  }, [draggingBlockId, draggingBlock, resizingBlockId, resizeSide, dragStartX, isDayBased, durationType, normalTimeRange, blocks, onChange, pixelToHour, clampHours, detectDayFromMousePosition, checkBlockOverlap]);
 
   // マウスアップ（ドラッグ/リサイズ終了）
   const handleMouseUp = useCallback(() => {
@@ -632,7 +633,7 @@ export function RoutineBlockTimelineEditor({
 
     // クリック位置の時間を15分ブロックとして追加
     const newBlock: RoutineBlockInput = {
-      id: `block-${Date.now()}`,
+      id: `block-${nextBlockIdRef.current++}`,
       day: (day ?? 'monday') as typeof blocks[0]['day'],
       startHour: Math.max(0, hour),
       endHour: hour + 0.25, // 15分（最小）
@@ -766,16 +767,8 @@ export function RoutineBlockTimelineEditor({
             }
             const isValid = actualDuration >= 0.25; // 15分（最短）
 
-            // タイムラインコンテナの幅を取得（レンダリング後に計算）
-            const containerWidth = timelineRef.current?.offsetWidth ?? 0;
             const minDisplayWidthPx = 60; // 最小表示幅（ピクセル）
-            const calculatedWidthPx = (actualWidthPercent / 100) * containerWidth;
-
-            // 計算された幅が最小表示幅よりも小さい場合でも、位置は正確に保つ
-            // minWidthは使用せず、実際の幅を使用する（ただし、視認性のためにコンテンツの調整が必要な場合は別途対応）
-            const finalWidthPercent = containerWidth > 0 && calculatedWidthPx < minDisplayWidthPx
-              ? (minDisplayWidthPx / containerWidth) * 100
-              : actualWidthPercent;
+            const finalWidthPercent = actualWidthPercent;
 
             return (
               <div
@@ -783,7 +776,8 @@ export function RoutineBlockTimelineEditor({
                 className={`absolute top-0 h-full border-2 ${energyLevelColors[block.energyLevel] || energyLevelColors.low} rounded-sm cursor-move transition-all ${!isValid ? 'border-destructive' : ''}`}
                 style={{
                   left: `${leftPercent}%`,
-                  width: `${finalWidthPercent}%`
+                  width: `${finalWidthPercent}%`,
+                  minWidth: `${minDisplayWidthPx}px`
                 }}
                 onMouseDown={(e) => handleDragStart(e, block)}
                 onClick={(e) => {
@@ -1013,16 +1007,8 @@ export function RoutineBlockTimelineEditor({
                       // 分割されたBlockの場合は重複チェックをスキップ（元のBlockでチェック）
                       const hasOverlap = isSplitBlock || !block.id ? false : checkBlockOverlap(block, block.id);
 
-                      // タイムラインコンテナの幅を取得
-                      const dayTimelineEl = timelineRefsByDay.current[day];
-                      const containerWidth = dayTimelineEl?.offsetWidth ?? 0;
                       const minDisplayWidthPx = 60; // 最小表示幅（ピクセル）
-                      const calculatedWidthPx = (actualWidthPercent / 100) * containerWidth;
-
-                      // 計算された幅が最小表示幅よりも小さい場合でも、位置は正確に保つ
-                      const finalWidthPercent = containerWidth > 0 && calculatedWidthPx < minDisplayWidthPx
-                        ? (minDisplayWidthPx / containerWidth) * 100
-                        : actualWidthPercent;
+                      const finalWidthPercent = actualWidthPercent;
 
                       return (
                         <div
@@ -1031,7 +1017,8 @@ export function RoutineBlockTimelineEditor({
                           className={`absolute top-0 h-full border-2 ${energyLevelColors[block.energyLevel] || energyLevelColors.low} rounded-sm cursor-move transition-all ${!isValid || hasOverlap ? 'border-destructive' : ''} ${isSplitBlock ? 'opacity-80' : ''}`}
                           style={{
                             left: `${leftPercent}%`,
-                            width: `${finalWidthPercent}%`
+                            width: `${finalWidthPercent}%`,
+                            minWidth: `${minDisplayWidthPx}px`
                           }}
                           onMouseDown={(e) => {
                             // リサイズハンドルがクリックされた場合はドラッグを開始しない

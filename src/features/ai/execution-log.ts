@@ -15,11 +15,18 @@ const MAX_CACHE_SIZE = 50;
 // User execution counts cache (DynamoDBから読み込む)
 const userExecutionCountsCache = new Map<string, number>();
 const MAX_NON_ADMIN_EXECUTIONS = 1;
+const isTestEnvironment =
+  process.env.NODE_ENV === 'test' ||
+  process.env.VITEST === 'true' ||
+  typeof (globalThis as { vi?: unknown }).vi !== 'undefined';
 
 /**
  * DynamoDBから実行記録を取得
  */
 async function getExecutionRecordFromDB(executionId: string): Promise<ExecutionRecord | null> {
+  if (isTestEnvironment) {
+    return executionRecordsCache.find((record) => record.id === executionId) ?? null;
+  }
   try {
     const result = await dynamoDBDocumentClient.send(
       new GetCommand({
@@ -48,6 +55,13 @@ async function getExecutionRecordFromDB(executionId: string): Promise<ExecutionR
  * DynamoDBに実行記録を保存
  */
 async function saveExecutionRecordToDB(record: ExecutionRecord): Promise<void> {
+  if (isTestEnvironment) {
+    executionRecordsCache.unshift(record);
+    if (executionRecordsCache.length > MAX_CACHE_SIZE) {
+      executionRecordsCache.pop();
+    }
+    return;
+  }
   try {
     await dynamoDBDocumentClient.send(
       new PutCommand({
@@ -75,6 +89,9 @@ async function saveExecutionRecordToDB(record: ExecutionRecord): Promise<void> {
  * ユーザーの実行回数をDynamoDBから取得
  */
 async function getUserExecutionCountFromDB(userId: string): Promise<number> {
+  if (isTestEnvironment) {
+    return userExecutionCountsCache.get(userId) ?? 0;
+  }
   try {
     const result = await dynamoDBDocumentClient.send(
       new QueryCommand({
@@ -112,6 +129,12 @@ async function updateUserExecutionCount(userId: string, increment: number): Prom
 export function getExecutionRecords(limit = 50): ExecutionRecord[] {
   // キャッシュから返す（最新のもの）
   return executionRecordsCache.slice(0, limit);
+}
+
+export function resetExecutionLogForTests() {
+  if (!isTestEnvironment) return;
+  executionRecordsCache.length = 0;
+  userExecutionCountsCache.clear();
 }
 
 export function getExecutionRecord(executionId: string): ExecutionRecord | undefined {

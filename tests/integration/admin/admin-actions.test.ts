@@ -93,14 +93,28 @@ describe('admin actions', () => {
 
   it('surfaces evaluation metadata without exposing prompts', async () => {
     process.env.MOCK_USER_EMAIL = 'routinehub.dev@gmail.com';
-    const routines = await routinesRepository.list();
-    const routine = routines[0];
-    if (!routine) {
-      throw new Error('No routine found');
-    }
+    const routine = await routinesRepository.create({
+      name: 'Admin Seed Routine',
+      description: 'Seed routine for admin action tests.',
+      purpose: 'Ensure routine exists for execution log tests.',
+      durationType: 'weekly',
+      visibility: 'public',
+      tags: ['seed'],
+      owner: 'routinehub.dev@gmail.com',
+      timeBlocks: [
+        {
+          day: 'monday',
+          startHour: 9,
+          endHour: 12,
+          label: 'Seed Block',
+          objective: 'Seed objective',
+          energyLevel: 'medium'
+        }
+      ]
+    });
     const workflow = buildWorkflowResult();
-    const user = getCurrentUser();
-    const record = recordWorkflowSuccess({
+    const user = await getCurrentUser();
+    const record = await recordWorkflowSuccess({
       result: workflow,
       workflowName: 'routine-ai-workflow',
       routine,

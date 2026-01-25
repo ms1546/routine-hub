@@ -1,4 +1,4 @@
-import type { Meta, StoryObj } from '@storybook/react';
+import type { Meta, StoryObj } from '@storybook/nextjs-vite';
 import { RoutineCard } from '@/features/routines/components/routine-card';
 import { mockRoutineListItem } from '../../../../routine-fixtures';
 import { stubToggleVisibility } from '../../../../routine-action-stubs';

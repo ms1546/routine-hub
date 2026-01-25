@@ -239,7 +239,7 @@ const recordApplication = async (routineId: string): Promise<void> => {
   routineStore.set(routine.id, routine);
 };
 
-const toggleLike = async (routineId: string, userId: string): Promise<{ liked: boolean }> => {
+const toggleLike = async (routineId: string, userId: string): Promise<{ liked: boolean; likes: number }> => {
   const routine = routineStore.get(routineId);
   if (!routine) {
     throw new Error('Routine not found');
@@ -255,7 +255,7 @@ const toggleLike = async (routineId: string, userId: string): Promise<{ liked: b
     (routine as any).likedBy = [...((routine as any).likedBy ?? []), userId];
   }
   routineStore.set(routine.id, routine);
-  return { liked: !liked };
+  return { liked: !liked, likes: routine.stats.likes };
 };
 
 const isLikedByUser = async (routineId: string, userId: string): Promise<boolean> => {
@@ -266,12 +266,12 @@ const isLikedByUser = async (routineId: string, userId: string): Promise<boolean
   return (routine as any).likedBy?.includes(userId) ?? false;
 };
 
-const deleteRoutine = async (routineId: string, userId: string): Promise<void> => {
+const deleteRoutine = async (routineId: string, userId?: string): Promise<void> => {
   const routine = routineStore.get(routineId);
   if (!routine) {
     throw new Error('Routine not found');
   }
-  if (routine.owner !== userId) {
+  if (userId && routine.owner !== userId) {
     throw new Error('Unauthorized');
   }
   routineStore.delete(routineId);

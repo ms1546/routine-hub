@@ -29,23 +29,23 @@ export const RoutineList = async ({ routines, onToggleVisibility, userEmail }: R
     );
   }
 
-  return (
-    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-      {routines.map((routine) => {
-        const isLiked = routinesRepository.isLikedByUser(routine.id, currentUser.id);
-        const canEdit = routine.owner === currentUserEmail || currentUser.role === 'admin';
-        return (
-          <RoutineCard
-            key={routine.id}
-            routine={routine}
-            onToggleVisibility={canEdit && onToggleVisibility ? onToggleVisibility : undefined}
-            onToggleLike={toggleRoutineLikeAction}
-            userId={currentUser.id}
-            isLiked={isLiked}
-            canEdit={canEdit}
-          />
-        );
-      })}
-    </div>
+  const cards = await Promise.all(
+    routines.map(async (routine) => {
+      const isLiked = await routinesRepository.isLikedByUser(routine.id, currentUser.id);
+      const canEdit = routine.owner === currentUserEmail || currentUser.role === 'admin';
+      return (
+        <RoutineCard
+          key={routine.id}
+          routine={routine}
+          onToggleVisibility={canEdit && onToggleVisibility ? onToggleVisibility : undefined}
+          onToggleLike={toggleRoutineLikeAction}
+          userId={currentUser.id}
+          isLiked={isLiked}
+          canEdit={canEdit}
+        />
+      );
+    })
   );
+
+  return <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">{cards}</div>;
 };

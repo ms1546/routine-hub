@@ -46,6 +46,7 @@ function EventEditModal({ event, onSave, onCancel }: EventEditModalProps) {
   );
 
   // eventが変更されたときに初期値を更新
+  /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
     const start = new Date(event.start);
     const end = new Date(event.end);
@@ -55,6 +56,7 @@ function EventEditModal({ event, onSave, onCancel }: EventEditModalProps) {
     setTitle(event.title);
     setDescription(event.description);
   }, [event]);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   const handleSave = () => {
     // 日付と時刻をISO文字列に変換

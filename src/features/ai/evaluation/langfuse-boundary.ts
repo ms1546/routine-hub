@@ -226,22 +226,14 @@ export async function getLangfusePrompt(
       return null;
     }
 
-    // Langfuse SDKのAPI形式: getPrompt(name, version, options)
-    // version と label は同時に指定できないため、label を優先
     let result: LangfusePrompt;
     if (client.getPrompt) {
-      // client.getPrompt(name, version, options) 形式
-      // label が指定されている場合は version を undefined にする
       if (input.label) {
-        // label のみを使用（version は undefined）
-        result = await client.getPrompt(input.name, undefined, { label: input.label });
+        result = await client.getPrompt(input.name, { label: input.label });
       } else if (input.version !== undefined) {
-        // version のみを使用（label は指定しない）
-        const version = input.version === 'latest' ? 'latest' : input.version;
-        result = await client.getPrompt(input.name, version);
+        result = await client.getPrompt(input.name, { version: input.version });
       } else {
-        // デフォルト: version も label も指定されていない場合は version='latest' で取得
-        result = await client.getPrompt(input.name, 'latest');
+        result = await client.getPrompt(input.name, { version: 'latest' });
       }
     } else {
       throw new Error('Langfuse SDK does not support getPrompt method');

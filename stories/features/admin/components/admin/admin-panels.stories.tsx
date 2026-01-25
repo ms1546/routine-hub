@@ -1,4 +1,4 @@
-import type { Meta, StoryObj } from '@storybook/react';
+import type { Meta, StoryObj } from '@storybook/nextjs-vite';
 import { ExecutionHistoryCard } from '@/features/admin/components/admin/execution-history-card';
 import { MaintenanceCard } from '@/features/admin/components/admin/maintenance-card';
 import type { ExecutionRecord } from '@/features/ai/execution-log-types';
@@ -12,6 +12,7 @@ const mockRecords: ExecutionRecord[] = [
     routineName: 'Deep Focus Reset',
     triggeredBy: 'Ops Team',
     triggeredByEmail: 'ops@routinehub.dev',
+    userId: 'user-ops',
     status: 'success',
     executedAt: new Date().toISOString(),
     judgeScore: 4.3,
@@ -36,6 +37,7 @@ const mockRecords: ExecutionRecord[] = [
     routineName: 'Product Lead Syncopation',
     triggeredBy: 'Ops Team',
     triggeredByEmail: 'ops@routinehub.dev',
+    userId: 'user-ops',
     status: 'success',
     executedAt: new Date(Date.now() - 3600_000).toISOString(),
     judgeScore: 3.1,
