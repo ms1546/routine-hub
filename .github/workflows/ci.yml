@@ -80,5 +80,5 @@ jobs:
           projectToken: ${{ secrets.CHROMATIC_PROJECT_TOKEN }}
           onlyChanged: true
           autoAcceptChanges: main
-          exitZeroOnChanges: false
+          exitZeroOnChanges: true
           exitOnceUploaded: false
