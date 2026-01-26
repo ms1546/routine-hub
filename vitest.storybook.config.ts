@@ -1,6 +1,8 @@
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 import { defineConfig } from 'vitest/config';
+import { storybookTest } from '@storybook/addon-vitest/vitest-plugin';
+import { playwright } from '@vitest/browser-playwright';
 import tsconfigPaths from 'vite-tsconfig-paths';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -9,6 +11,9 @@ const __dirname = path.dirname(__filename);
 export default defineConfig({
   plugins: [
     tsconfigPaths(),
+    storybookTest({
+      configDir: path.join(__dirname, '.storybook'),
+    }),
   ],
 
   resolve: {
@@ -30,13 +35,12 @@ export default defineConfig({
 
   test: {
     globals: true,
-    environment: 'jsdom',
-    testTimeout: 30000,
-    setupFiles: ['./tests/setup/env.ts'],
-    coverage: {
-      provider: 'v8',
-      reporter: ['text', 'lcov'],
-      reportsDirectory: './coverage',
+    setupFiles: ['.storybook/vitest.setup.ts'],
+    browser: {
+      enabled: true,
+      headless: true,
+      provider: playwright({}),
+      instances: [{ browser: 'chromium' }],
     },
   },
 });

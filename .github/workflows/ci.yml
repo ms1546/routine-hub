@@ -86,7 +86,7 @@ jobs:
         run: npx playwright install chromium --with-deps
 
       - name: Run Storybook tests
-        run: npm run test -- --project=storybook
+        run: npm run test:storybook
 
   chromatic:
     name: Chromatic Visual Review
