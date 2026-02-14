@@ -19,7 +19,7 @@ import type {
 import { getAccessTokenForUser } from '@/infrastructure/auth/oauth-boundary';
 
 const CALENDAR_ID = 'primary';
-const PRIVATE_PROP_KEY = 'routinehubProposalId';
+const PRIVATE_PROP_KEY = 'routunehubProposalId';
 
 /**
  * RecurrencePatternからGoogle CalendarのRRULE文字列を生成

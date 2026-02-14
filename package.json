@@ -1,8 +1,8 @@
 {
-  "name": "routine-hub",
+  "name": "routune-hub",
   "version": "0.1.0",
   "private": true,
-  "description": "Routine Hub",
+  "description": "Routune Hub",
   "type": "module",
   "engines": {
     "node": ">=20.9.0"

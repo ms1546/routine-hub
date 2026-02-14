@@ -42,7 +42,7 @@ export function HamburgerMenu() {
 
   // Admin check: In portfolio mode, admin is determined by email address
   // This matches the logic in sessionToAuthenticatedUser() in infrastructure/auth/session.ts
-  const isAdmin = session?.user?.email === 'routinehub.dev@gmail.com';
+  const isAdmin = session?.user?.email === 'routunehub.dev@gmail.com';
 
   const menuItems = [
     { href: '/', label: 'Home' },

@@ -18,7 +18,7 @@ const defaultWindow = {
 
 export async function previewRoutineAiAction(routineId: string) {
   const user = await getCurrentUser();
-  const routine = await routinesRepository.get(routineId, user.id);
+  const routine = await routinesRepository.get(routineId, user.id, user.email);
   if (!routine) {
     throw new Error('Routine not found');
   }

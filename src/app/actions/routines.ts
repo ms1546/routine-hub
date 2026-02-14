@@ -76,7 +76,13 @@ const toCreateInput = (input: FormData | CreateRoutineInput): CreateRoutineInput
       durationType: String(input.get('durationType') ?? 'weekly') as CreateRoutineInput['durationType'],
       visibility: String(input.get('visibility') ?? 'private') as RoutineVisibility,
       tags: tagsFromString(String(input.get('tags') ?? '')),
-      owner: String(input.get('owner') ?? 'demo-user@routinehub.dev'),
+      owner: String(input.get('owner') ?? 'demo-user@routunehub.dev'),
+      normalStartHour: input.get('normalStartHour')
+        ? Number(input.get('normalStartHour'))
+        : undefined,
+      normalEndHour: input.get('normalEndHour')
+        ? Number(input.get('normalEndHour'))
+        : undefined,
       timeBlocks:
         inferredBlocks.length > 0
           ? inferredBlocks
@@ -129,7 +135,7 @@ export async function updateRoutineVisibilityAction(
   try {
     const currentUser = await getCurrentUser();
     const parsed = visibilityToggleSchema.parse(payload);
-    const routine = await routinesRepository.get(parsed.routineId, currentUser.id);
+    const routine = await routinesRepository.get(parsed.routineId, currentUser.id, currentUser.email);
     if (!routine) {
       throw new Error('Routine not found');
     }
@@ -183,7 +189,7 @@ export async function updateRoutineBlockAction(
   try {
     const parsed = updateBlockSchema.parse(payload);
     const currentUser = await getCurrentUser();
-    const routine = await routinesRepository.get(parsed.routineId, currentUser.id);
+    const routine = await routinesRepository.get(parsed.routineId, currentUser.id, currentUser.email);
     if (!routine) {
       throw new Error('Routine not found');
     }
@@ -224,7 +230,7 @@ export async function deleteRoutineBlockAction(
   try {
     const parsed = deleteBlockSchema.parse(payload);
     const currentUser = await getCurrentUser();
-    const routine = await routinesRepository.get(parsed.routineId, currentUser.id);
+    const routine = await routinesRepository.get(parsed.routineId, currentUser.id, currentUser.email);
     if (!routine) {
       throw new Error('Routine not found');
     }
@@ -262,7 +268,7 @@ export async function reorderRoutineBlocksAction(
   try {
     const parsed = reorderBlocksSchema.parse(payload);
     const currentUser = await getCurrentUser();
-    const routine = await routinesRepository.get(parsed.routineId, currentUser.id);
+    const routine = await routinesRepository.get(parsed.routineId, currentUser.id, currentUser.email);
     if (!routine) {
       throw new Error('Routine not found');
     }
@@ -370,7 +376,7 @@ export async function applyRoutineAction(
   try {
     const parsed = routineApplicationSchema.parse(payload);
     const currentUser = await getCurrentUser();
-    const routine = await routinesRepository.get(parsed.routineId, currentUser.id);
+    const routine = await routinesRepository.get(parsed.routineId, currentUser.id, currentUser.email);
     if (!routine) {
       throw new Error('Routine not found');
     }

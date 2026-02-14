@@ -3,6 +3,7 @@
 import { routinesRepository } from '@/features/routines';
 import { buildProposedEvents } from '@/features/calendar/domain/proposals';
 import { getCalendarClient } from '@/infrastructure/calendar/calendar-client-factory';
+import { hasStoredRefreshToken } from '@/infrastructure/auth/oauth-boundary';
 import { createDefaultCalendarWindow } from '@/features/calendar/domain/window';
 import type { CalendarEvent, CalendarInsertFailure, RecurrencePattern, CalendarTimeRange } from '@/features/calendar/domain/types';
 
@@ -26,7 +27,7 @@ export async function getCalendarPreviewAction({
 }): Promise<{ proposedEvents: any[]; existingEvents: CalendarEvent[] }> {
   const { getCurrentUser } = await import('@/infrastructure/auth/session');
   const currentUser = await getCurrentUser();
-  const routine = await routinesRepository.get(routineId, currentUser.id);
+  const routine = await routinesRepository.get(routineId, currentUser.id, currentUser.email);
   if (!routine) {
     throw new Error('Routine not found');
   }
@@ -38,10 +39,12 @@ export async function getCalendarPreviewAction({
   };
 
   const proposedEvents = buildProposedEvents(routine, calendarWindow, recurrence);
-  const client = getCalendarClient(routine.owner);
-  const existingEvents = await client.listEvents(calendarWindow);
+  const isConnected = await hasStoredRefreshToken(routine.owner);
+  const existingEvents = isConnected
+    ? await getCalendarClient(routine.owner).listEvents(calendarWindow)
+    : [];
 
-  return { proposedEvents, existingEvents };
+  return { proposedEvents, existingEvents, isCalendarConnected: isConnected };
 }
 
 /**
@@ -88,7 +91,7 @@ export async function confirmProposedEventsAction({
     );
   }
 
-  const routine = await routinesRepository.get(routineId, currentUser.id);
+  const routine = await routinesRepository.get(routineId, currentUser.id, currentUser.email);
   if (!routine) {
     throw new Error('Routine not found');
   }
@@ -98,6 +101,10 @@ export async function confirmProposedEventsAction({
     proposalIds.includes(proposal.proposalId)
   );
 
+  const isConnected = await hasStoredRefreshToken(routine.owner);
+  if (!isConnected) {
+    throw new Error('Google Calendarの接続が必要です。先に「Connect Calendar」を実行してください。');
+  }
   const client = getCalendarClient(routine.owner);
   const result = await client.insertEvents(proposals);
   return {

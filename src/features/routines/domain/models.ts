@@ -42,13 +42,19 @@ const validateBlockDuration = (block: { startHour: number; endHour: number; day:
   // weeklyは期間制限なし（24時間超も許可）
 };
 
+const getBlockDurationMinutes = (block: { startHour: number; endHour: number }): number => {
+  const durationHours = block.endHour - block.startHour;
+  if (durationHours <= 0) return 0;
+  return Math.round(durationHours * 60);
+};
+
 const routineBlockCoreSchema = z
   .object({
     day: weekdaySchema,
     startHour: z.number().min(0), // 整数制限を解除（小数を許可）
     endHour: z.number().min(0.25), // 最低15分（0.25時間）
-    label: z.string().min(3).max(80),
-    objective: z.string().min(3).max(240),
+    label: z.string().min(1, 'ブロック名は必須です').max(80),
+    objective: z.string().min(1, 'ブロックの目的は必須です').max(240),
     energyLevel: z.enum(['low', 'medium', 'high'])
   });
 
@@ -64,8 +70,8 @@ export const routineSchema = z
   .object({
     id: z.string().uuid(),
     name: z.string().min(3).max(80),
-    description: z.string().min(12).max(600),
-    purpose: z.string().min(8).max(500),
+    description: z.string().min(1, 'Descriptionは必須です').max(600),
+    purpose: z.string().min(1, '目的は必須です').max(500),
     durationType: routineDurationSchema,
     visibility: routineVisibilitySchema,
     tags: z.array(z.string().min(2).max(30)).max(8).optional().default([]),
@@ -141,8 +147,8 @@ export const routineSchema = z
     });
 
     // Routine全体の合計時間は最低3時間（180分）必要
-    const totalHours = routine.timeBlocks.reduce((acc, block) => acc + (block.endHour - block.startHour), 0);
-    if (totalHours < 3) {
+    const totalMinutes = routine.timeBlocks.reduce((acc, block) => acc + getBlockDurationMinutes(block), 0);
+    if (totalMinutes < 180) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
         message: 'Routine全体の合計時間は最低3時間必要です。',
@@ -172,8 +178,8 @@ export const routineSchema = z
 // そのため、createRoutineSchemaを直接定義する
 const routineBaseSchema = z.object({
   name: z.string().min(3, 'Nameは必須です（3文字以上）').max(80),
-  description: z.string().min(12).max(600),
-  purpose: z.string().min(8, '目的は必須です（8文字以上）').max(500),
+  description: z.string().min(1, 'Descriptionは必須です').max(600),
+  purpose: z.string().min(1, '目的は必須です').max(500),
   durationType: routineDurationSchema,
   visibility: routineVisibilitySchema,
   tags: z.array(z.string().min(2).max(30)).max(8).optional().default([]),
@@ -236,8 +242,8 @@ export const createRoutineSchema = routineBaseSchema
     });
 
     // Routine全体の合計時間は最低3時間（180分）必要
-    const totalHours = routine.timeBlocks.reduce((acc, block) => acc + (block.endHour - block.startHour), 0);
-    if (totalHours < 3) {
+    const totalMinutes = routine.timeBlocks.reduce((acc, block) => acc + getBlockDurationMinutes(block), 0);
+    if (totalMinutes < 180) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
         message: 'Routine全体の合計時間は最低3時間必要です。',

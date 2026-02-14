@@ -79,16 +79,20 @@ type LangfuseClient = {
     output?: unknown;
     metadata?: Record<string, unknown>;
   }) => Promise<unknown>;
+  api?: {
+    promptsGet?: (payload: {
+      promptName: string;
+      version?: number | 'latest';
+      label?: string;
+    }) => Promise<LangfusePrompt>;
+  };
   prompts?: {
     getPrompt: (name: string, options?: {
       version?: number | 'latest';
       label?: string;
     }) => Promise<LangfusePrompt>;
   };
-  getPrompt?: (name: string, options?: {
-    version?: number | 'latest';
-    label?: string;
-  }) => Promise<LangfusePrompt>;
+  getPrompt?: (name: string, options?: { version?: number | 'latest'; label?: string } | number | string) => Promise<LangfusePrompt>;
 };
 
 let langfuseClientPromise: Promise<LangfuseClient | null> | null = null;
@@ -105,7 +109,7 @@ async function getLangfuseClient(): Promise<LangfuseClient | null> {
       .then((module) => {
         const LangfuseCtor = (module as { Langfuse?: any; default?: any }).Langfuse ?? (module as any).default;
         if (!LangfuseCtor) {
-          console.warn('[RoutineHub] Langfuse SDK not available, skipping trace export.');
+          console.warn('[RoutuneHub] Langfuse SDK not available, skipping trace export.');
           return null;
         }
         return new LangfuseCtor({
@@ -116,7 +120,7 @@ async function getLangfuseClient(): Promise<LangfuseClient | null> {
         }) as LangfuseClient;
       })
       .catch((error) => {
-        console.warn('[RoutineHub] Failed to initialize Langfuse client.', error);
+        console.warn('[RoutuneHub] Failed to initialize Langfuse client.', error);
         return null;
       });
   }
@@ -148,7 +152,7 @@ export async function recordLangfuseTrace(
       });
     }
   } catch (error) {
-    console.warn('[RoutineHub] Langfuse trace recording failed, continuing without telemetry.', error);
+    console.warn('[RoutuneHub] Langfuse trace recording failed, continuing without telemetry.', error);
   }
 
   return {
@@ -178,7 +182,7 @@ export async function recordLangfuseScore(
       });
     }
   } catch (error) {
-    console.warn('[RoutineHub] Langfuse score recording failed, continuing without telemetry.', error);
+    console.warn('[RoutuneHub] Langfuse score recording failed, continuing without telemetry.', error);
   }
 
   return {
@@ -208,7 +212,7 @@ export async function recordLangfuseObservation(
       });
     }
   } catch (error) {
-    console.warn('[RoutineHub] Langfuse observation recording failed, continuing without telemetry.', error);
+    console.warn('[RoutuneHub] Langfuse observation recording failed, continuing without telemetry.', error);
   }
 
   return {
@@ -227,25 +231,46 @@ export async function getLangfusePrompt(
     }
 
     let result: LangfusePrompt;
-    if (client.getPrompt) {
+    const api = (client as { api?: { promptsGet?: (payload: { promptName: string; version?: number | 'latest'; label?: string }) => Promise<LangfusePrompt> } }).api;
+    if (api?.promptsGet) {
+      const query: { promptName: string; version?: number | 'latest'; label?: string } = {
+        promptName: input.name
+      };
       if (input.label) {
-        result = await client.getPrompt(input.name, { label: input.label });
+        query.label = input.label;
       } else if (input.version !== undefined) {
-        result = await client.getPrompt(input.name, { version: input.version });
+        query.version = input.version;
       } else {
-        result = await client.getPrompt(input.name, { version: 'latest' });
+        query.label = 'production';
+      }
+      result = await api.promptsGet(query);
+    } else if (client.getPrompt) {
+      if (input.label) {
+        result = await client.getPrompt(input.name, input.label);
+      } else if (input.version !== undefined) {
+        result = await client.getPrompt(input.name, input.version);
+      } else {
+        result = await client.getPrompt(input.name, 'latest');
       }
     } else {
-      throw new Error('Langfuse SDK does not support getPrompt method');
+      throw new Error('Langfuse SDK does not support prompt retrieval');
     }
 
+    const promptText = Array.isArray(result.prompt)
+      ? result.prompt
+          .map((entry: { type?: string; content?: string; name?: string }) =>
+            entry.type === 'placeholder' ? `{${entry.name ?? 'placeholder'}}` : entry.content ?? ''
+          )
+          .join('\n')
+      : result.prompt;
+
     return {
-      prompt: result.prompt,
+      prompt: promptText,
       version: result.version,
       labels: result.labels
     };
   } catch (error) {
-    console.warn(`[RoutineHub] Failed to fetch prompt "${input.name}" from Langfuse, using fallback.`, error);
+    console.warn(`[RoutuneHub] Failed to fetch prompt "${input.name}" from Langfuse, using fallback.`, error);
     return null;
   }
 }

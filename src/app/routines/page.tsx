@@ -37,8 +37,8 @@ export default async function RoutinesPage({
   const currentUser = await getCurrentUser();
   const resolvedSearchParams = await searchParams;
   const [allRoutines, filteredRoutines] = await Promise.all([
-    routinesRepository.list(undefined, currentUser.id),
-    routinesRepository.list(parseFilters(resolvedSearchParams), currentUser.id)
+    routinesRepository.list(undefined, currentUser.id, currentUser.email),
+    routinesRepository.list(parseFilters(resolvedSearchParams), currentUser.id, currentUser.email)
   ]);
   const uniqueTags = Array.from(new Set(allRoutines.flatMap((routine) => routine.tags))).sort();
   const listItems = filteredRoutines.map(toRoutineListItem);

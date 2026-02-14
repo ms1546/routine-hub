@@ -9,7 +9,7 @@ describe('auth session', () => {
   });
 
   it('resolves admin role for default account', async () => {
-    process.env.MOCK_USER_EMAIL = 'routinehub.dev@gmail.com';
+    process.env.MOCK_USER_EMAIL = 'routunehub.dev@gmail.com';
     const user = await getCurrentUser();
     expect(user.role).toBe('admin');
     expect(isAdminUser(user)).toBe(true);

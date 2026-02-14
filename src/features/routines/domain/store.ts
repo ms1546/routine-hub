@@ -24,7 +24,12 @@ import {
   updateRoutineSchema
 } from './models';
 
-const routineStore = new Map<string, Routine>();
+const globalStoreKey = '__routuneHubRoutineStore__';
+const globalStore = globalThis as typeof globalThis & {
+  [key: string]: Map<string, Routine> | undefined;
+};
+const routineStore = globalStore[globalStoreKey] ?? new Map<string, Routine>();
+globalStore[globalStoreKey] = routineStore;
 
 const clone = <T>(value: T): T => structuredClone(value);
 
@@ -102,20 +107,26 @@ const list = async (filter?: RoutineFilter, userId?: string, userEmail?: string)
   const routines = Array.from(routineStore.values());
   let filtered = filter ? routines.filter((r) => applyFilter(r, filter)) : routines;
 
-  // If userId is provided, filter by owner
-  if (userId) {
-    filtered = filtered.filter((r) => r.owner === userId);
+  // If userId or userEmail is provided, filter by owner
+  if (userId || userEmail) {
+    filtered = filtered.filter((r) =>
+      (userEmail && r.owner === userEmail) || (userId && r.owner === userId)
+    );
   }
 
   return filtered.map(clone);
 };
 
-const get = async (id: string, userId?: string): Promise<Routine | null> => {
+const get = async (id: string, userId?: string, userEmail?: string): Promise<Routine | null> => {
   const routine = routineStore.get(id);
   if (!routine) {
     return null;
   }
-  if (routine.visibility === 'private' && routine.owner !== userId) {
+  if (
+    routine.visibility === 'private' &&
+    routine.owner !== userId &&
+    routine.owner !== userEmail
+  ) {
     return null;
   }
   return clone(routine);

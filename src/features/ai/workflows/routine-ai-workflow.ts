@@ -42,7 +42,7 @@ export async function runRoutineAiWorkflow(
       return await mastraRunner.run(input, options);
     } catch (error) {
       console.warn(
-        '[RoutineHub] Mastra workflow not available, falling back to mock runner.',
+        '[RoutuneHub] Mastra workflow not available, falling back to mock runner.',
         error
       );
     }

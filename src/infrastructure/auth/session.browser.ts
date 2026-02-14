@@ -27,7 +27,7 @@ export type AuthenticatedUser = {
 export async function getCurrentUser(): Promise<AuthenticatedUser> {
   // In Storybook, use mock user
   // Note: process.env is available in Vite, but we use a default for safety
-  const email = 'routinehub.dev@gmail.com';
+  const email = 'routunehub.dev@gmail.com';
   const mockProfile = getMockUserProfile(email);
   return {
     id: mockProfile.id,

@@ -8,10 +8,10 @@ type MockDirectoryEntry = {
 };
 
 const mockDirectory: Record<string, MockDirectoryEntry> = {
-  'routinehub.dev@gmail.com': {
+  'routunehub.dev@gmail.com': {
     id: 'account-ops',
     displayName: 'Ops Team',
-    email: 'routinehub.dev@gmail.com',
+    email: 'routunehub.dev@gmail.com',
     role: 'admin'
   },
   'owner@example.com': {

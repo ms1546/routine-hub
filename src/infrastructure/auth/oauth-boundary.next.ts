@@ -13,6 +13,7 @@ import {
   GetSecretValueCommand,
   PutSecretValueCommand
 } from '@aws-sdk/client-secrets-manager';
+import { getStoredAccessToken, hasStoredAccessToken, storeAccessToken } from './access-token-store';
 
 /**
  * OAuth Boundary for Google Calendar Integration
@@ -31,7 +32,7 @@ import {
  * See docs/oauth-design.md for detailed design rationale.
  */
 const secretsClient = new SecretsManagerClient({ region: process.env.AWS_REGION });
-const secretPrefix = process.env.GOOGLE_REFRESH_TOKEN_SECRET_PREFIX ?? 'routinehub/google';
+const secretPrefix = process.env.GOOGLE_REFRESH_TOKEN_SECRET_PREFIX ?? 'routunehub/google';
 const scopes = ['https://www.googleapis.com/auth/calendar.events'];
 
 export type OAuthSession = {
@@ -69,7 +70,7 @@ function getOAuthClient() {
 export function buildGoogleOAuthUrl(state: string) {
   const oauth2Client = getOAuthClient();
   return oauth2Client.generateAuthUrl({
-    access_type: 'offline', // Note: refresh tokens are NOT stored in portfolio mode
+    access_type: 'online', // access token only (refresh token is not stored)
     scope: scopes,
     state,
     prompt: 'consent' // Ensures explicit user intent per write
@@ -109,14 +110,14 @@ export async function storeRefreshToken(userId: string, refreshToken: string) {
 }
 
 export async function getAccessTokenForUser(userId: string): Promise<OAuthSession> {
-  const refreshToken = await getRefreshTokenForUser(userId);
-  const oauth2Client = getOAuthClient();
-  oauth2Client.setCredentials({ refresh_token: refreshToken });
-  const { credentials } = await oauth2Client.refreshAccessToken();
+  const token = getStoredAccessToken(userId);
+  if (!token) {
+    throw new Error('No access token available for user');
+  }
   return {
     provider: 'google',
-    accessToken: credentials.access_token ?? '',
-    expiresAt: credentials.expiry_date ? new Date(credentials.expiry_date).toISOString() : ''
+    accessToken: token,
+    expiresAt: ''
   };
 }
 
@@ -131,7 +132,11 @@ async function fetchStoredRefreshToken(userId: string): Promise<string | null> {
       }
     }
   } catch (error) {
-    if (!(error instanceof Error && 'name' in error && error.name === 'ResourceNotFoundException')) {
+    const shouldIgnore =
+      (error instanceof Error && 'name' in error && error.name === 'ResourceNotFoundException') ||
+      process.env.MASTRA_USE_MOCK === 'true' ||
+      !process.env.AWS_ACCESS_KEY_ID;
+    if (!shouldIgnore) {
       throw error;
     }
   }
@@ -150,6 +155,13 @@ async function getRefreshTokenForUser(userId: string): Promise<string> {
 }
 
 export async function hasStoredRefreshToken(userId: string): Promise<boolean> {
-  const token = await fetchStoredRefreshToken(userId);
-  return Boolean(token);
+  const calendarProvider = process.env.CALENDAR_CLIENT ?? 'mock';
+  if (calendarProvider !== 'google') {
+    return true;
+  }
+  return hasStoredAccessToken(userId);
+}
+
+export function storeAccessTokenForUser(userId: string, accessToken: string, expiresAt?: string) {
+  storeAccessToken(userId, accessToken, expiresAt);
 }

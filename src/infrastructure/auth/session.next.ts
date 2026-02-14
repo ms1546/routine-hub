@@ -31,7 +31,7 @@ function sessionToAuthenticatedUser(session: { user?: { id?: string; name?: stri
   const displayName = session.user.displayName ?? session.user.name ?? email.split('@')[0] ?? 'User';
 
   // 管理者判定（開発環境では特定のメールアドレスを管理者として扱う）
-  const adminEmails = ['routinehub.dev@gmail.com'];
+  const adminEmails = ['routunehub.dev@gmail.com'];
   const role: UserRole = adminEmails.includes(email) ? 'admin' : 'member';
 
   return {
@@ -48,7 +48,7 @@ export async function getCurrentUser(): Promise<AuthenticatedUser> {
 
   // セッションがない場合はモックユーザーを返す（開発環境）
   if (!user) {
-    const email = process.env.MOCK_USER_EMAIL ?? 'routinehub.dev@gmail.com';
+    const email = process.env.MOCK_USER_EMAIL ?? 'routunehub.dev@gmail.com';
     const mockProfile = getMockUserProfile(email);
     return {
       id: mockProfile.id,

@@ -92,7 +92,7 @@ describe('admin actions', () => {
   // it('rejects members when writing human evaluations', async () => { ... });
 
   it('surfaces evaluation metadata without exposing prompts', async () => {
-    process.env.MOCK_USER_EMAIL = 'routinehub.dev@gmail.com';
+    process.env.MOCK_USER_EMAIL = 'routunehub.dev@gmail.com';
     const routine = await routinesRepository.create({
       name: 'Admin Seed Routine',
       description: 'Seed routine for admin action tests.',
@@ -100,7 +100,7 @@ describe('admin actions', () => {
       durationType: 'weekly',
       visibility: 'public',
       tags: ['seed'],
-      owner: 'routinehub.dev@gmail.com',
+      owner: 'routunehub.dev@gmail.com',
       timeBlocks: [
         {
           day: 'monday',

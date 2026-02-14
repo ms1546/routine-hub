@@ -8,7 +8,7 @@ import {
 const userSettingsStore = new Map<string, UserSettings>();
 
 // Adminアカウントの初期設定
-const ADMIN_EMAIL = 'routinehub.dev@gmail.com';
+const ADMIN_EMAIL = 'routunehub.dev@gmail.com';
 const initializeAdminSettings = () => {
   if (!userSettingsStore.has(ADMIN_EMAIL)) {
     const now = new Date();

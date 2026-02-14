@@ -58,7 +58,7 @@ export async function customizeCalendarEventsAction({
   let routinePurpose: string | undefined;
   if (routineId) {
     try {
-      const routine = await routinesRepository.get(routineId, currentUser.id);
+      const routine = await routinesRepository.get(routineId, currentUser.id, currentUser.email);
       routinePurpose = routine?.purpose;
     } catch (error) {
       console.warn('[CalendarCustomization] Failed to fetch routine:', error);

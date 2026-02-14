@@ -18,7 +18,7 @@ export function useSession() {
       user: {
         id: 'storybook-user',
         name: 'Storybook User',
-        email: 'routinehub.dev@gmail.com'
+        email: 'routunehub.dev@gmail.com'
       }
     } as Session,
     status: 'authenticated' as const,

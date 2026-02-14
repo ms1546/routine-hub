@@ -1,6 +1,6 @@
 'use server';
 
-import { buildGoogleOAuthUrl, exchangeCodeForTokens } from '@/infrastructure/auth/oauth-boundary';
+import { buildGoogleOAuthUrl, exchangeCodeForTokens, storeAccessTokenForUser } from '@/infrastructure/auth/oauth-boundary';
 
 /**
  * Get Google OAuth URL for calendar access
@@ -28,6 +28,9 @@ export function getGoogleOAuthUrlAction(userId: string) {
  */
 export async function completeGoogleOAuthAction(userId: string, code: string) {
   const tokens = await exchangeCodeForTokens(code);
+  if (tokens.accessToken) {
+    storeAccessTokenForUser(userId, tokens.accessToken, tokens.expiresAt);
+  }
   // PORTFOLIO MODE: Refresh tokens are NOT stored
   // In production, this would store encrypted refresh tokens:
   // if (tokens.refreshToken) {

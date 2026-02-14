@@ -17,7 +17,7 @@ export function getMaintenanceState(): MaintenanceState {
 export function setMaintenanceState(enabled: boolean, message?: string): MaintenanceState {
   maintenanceState = {
     enabled,
-    message: enabled ? message ?? 'Routine Hub is currently in maintenance mode.' : '',
+    message: enabled ? message ?? 'Routune Hub is currently in maintenance mode.' : '',
     updatedAt: new Date().toISOString()
   };
   return getMaintenanceState();

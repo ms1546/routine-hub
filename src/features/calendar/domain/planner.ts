@@ -40,8 +40,9 @@ export async function planRoutineWithCalendar(routine: Routine, viewer: Authenti
 
   const proposedEvents = buildProposedEvents(routine, calendarWindow);
   const isCalendarConnected = await hasStoredRefreshToken(routine.owner);
-  const client = getCalendarClient(routine.owner);
-  const existingEvents = await client.listEvents(calendarWindow);
+  const existingEvents = isCalendarConnected
+    ? await getCalendarClient(routine.owner).listEvents(calendarWindow)
+    : [];
   const allowance = allowedToExecute
     ? await getExecutionLimit(viewer)
     : limitSnapshot;

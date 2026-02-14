@@ -19,12 +19,16 @@ const isTestEnvironment =
   process.env.NODE_ENV === 'test' ||
   process.env.VITEST === 'true' ||
   typeof (globalThis as { vi?: unknown }).vi !== 'undefined';
+const isExecutionLogMocked =
+  isTestEnvironment ||
+  process.env.MASTRA_USE_MOCK === 'true' ||
+  !process.env.AWS_ACCESS_KEY_ID;
 
 /**
  * DynamoDBから実行記録を取得
  */
 async function getExecutionRecordFromDB(executionId: string): Promise<ExecutionRecord | null> {
-  if (isTestEnvironment) {
+  if (isExecutionLogMocked) {
     return executionRecordsCache.find((record) => record.id === executionId) ?? null;
   }
   try {
@@ -55,7 +59,7 @@ async function getExecutionRecordFromDB(executionId: string): Promise<ExecutionR
  * DynamoDBに実行記録を保存
  */
 async function saveExecutionRecordToDB(record: ExecutionRecord): Promise<void> {
-  if (isTestEnvironment) {
+  if (isExecutionLogMocked) {
     executionRecordsCache.unshift(record);
     if (executionRecordsCache.length > MAX_CACHE_SIZE) {
       executionRecordsCache.pop();
@@ -89,7 +93,7 @@ async function saveExecutionRecordToDB(record: ExecutionRecord): Promise<void> {
  * ユーザーの実行回数をDynamoDBから取得
  */
 async function getUserExecutionCountFromDB(userId: string): Promise<number> {
-  if (isTestEnvironment) {
+  if (isExecutionLogMocked) {
     return userExecutionCountsCache.get(userId) ?? 0;
   }
   try {
@@ -132,7 +136,7 @@ export function getExecutionRecords(limit = 50): ExecutionRecord[] {
 }
 
 export function resetExecutionLogForTests() {
-  if (!isTestEnvironment) return;
+  if (!isExecutionLogMocked) return;
   executionRecordsCache.length = 0;
   userExecutionCountsCache.clear();
 }

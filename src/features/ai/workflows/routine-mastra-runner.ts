@@ -40,7 +40,7 @@ export class MastraRoutineAiWorkflowRunner implements RoutineAiWorkflowRunner {
           };
         } catch (error) {
           // プロンプト取得に失敗してもワークフロー実行は継続
-          console.warn(`[RoutineHub] Failed to get prompt info for ${agentName}:`, error);
+          console.warn(`[RoutuneHub] Failed to get prompt info for ${agentName}:`, error);
         }
       })
     );

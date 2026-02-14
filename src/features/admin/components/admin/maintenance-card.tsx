@@ -56,7 +56,7 @@ export function MaintenanceCard({ state, action }: MaintenanceCardProps) {
             rows={3}
             value={message}
             onChange={(event) => setMessage(event.target.value)}
-            placeholder="Routine Hubが一時的に利用できない理由をユーザーに伝えてください。"
+            placeholder="Routune Hubが一時的に利用できない理由をユーザーに伝えてください。"
           />
         </div>
         <Button type="submit" variant="secondary" disabled={pending}>

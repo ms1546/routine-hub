@@ -10,7 +10,7 @@ import { SessionProvider } from '@/shared/components/session-provider';
 const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
-  title: 'Routine Hub',
+  title: 'Routune Hub',
   description: 'Reuse, customize, and apply purposeful routines with AI-assisted guidance.'
 };
 

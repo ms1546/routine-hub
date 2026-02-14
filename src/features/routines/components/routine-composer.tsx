@@ -144,6 +144,28 @@ export function RoutineComposer({ action, asModal = false, open = false, onClose
     const formElement = event.currentTarget;
     const formData = new FormData(formElement);
 
+    const description = String(formData.get('description') ?? '').trim();
+    const purpose = String(formData.get('purpose') ?? '').trim();
+    if (!purpose) {
+      setError('目的は必須です。');
+      return;
+    }
+    if (!description) {
+      setError('Descriptionは必須です。');
+      return;
+    }
+    if (blocks.length === 0) {
+      setError('時間ブロックは少なくとも1つ必要です。');
+      return;
+    }
+
+    const sanitizedBlocks = blocks.map(({ id: _id, ...rest }) => rest);
+
+    formData.set('purpose', purpose);
+    formData.set('description', description);
+    formData.set('timeBlocks', JSON.stringify(sanitizedBlocks));
+    setError(null);
+
     // userEmailが指定されている場合は自動設定
     if (userEmail) {
       formData.set('owner', userEmail);
@@ -195,13 +217,23 @@ export function RoutineComposer({ action, asModal = false, open = false, onClose
         </div>
         <div className="space-y-2">
           <Label htmlFor="routine-purpose">目的</Label>
-          <Input name="purpose" id="routine-purpose" placeholder="Clarify what success looks like" required />
+          <Input
+            name="purpose"
+            id="routine-purpose"
+            placeholder="Clarify what success looks like"
+            required
+          />
         </div>
       </div>
 
       <div className="space-y-2">
         <Label htmlFor="routine-description">Description</Label>
-        <Textarea name="description" id="routine-description" placeholder="Explain the shape of this routine" required />
+        <Textarea
+          name="description"
+          id="routine-description"
+          placeholder="Explain the shape of this routine"
+          required
+        />
       </div>
 
       <div className="space-y-2">

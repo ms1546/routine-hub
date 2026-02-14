@@ -17,12 +17,12 @@ export default async function SignInPage({
   const { callbackUrl } = await searchParams;
 
   return (
-    <AppShell title="ログイン" description="GoogleアカウントでログインしてRoutine Hubを利用開始">
+    <AppShell title="ログイン" description="GoogleアカウントでログインしてRoutune Hubを利用開始">
       <div className="flex items-center justify-center min-h-[60vh]">
         <Card className="w-full max-w-md">
           <CardHeader>
             <CardTitle>ログイン</CardTitle>
-            <CardDescription>GoogleアカウントでログインしてRoutine Hubを利用開始します</CardDescription>
+            <CardDescription>GoogleアカウントでログインしてRoutune Hubを利用開始します</CardDescription>
           </CardHeader>
           <CardContent>
             <form

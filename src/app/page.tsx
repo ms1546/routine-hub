@@ -18,7 +18,7 @@ export default async function HomePage() {
 
   return (
     <AppShell
-      title="Routine Hub"
+      title="Routune Hub"
       description="人気のRoutineを発見し、あなたの生活に取り入れましょう"
       actions={
         <AppLink href="/routines" className={buttonVariants()}>

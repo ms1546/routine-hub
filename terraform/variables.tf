@@ -10,7 +10,7 @@ variable "environment" {
 variable "project_name" {
   description = "Project name for resource naming"
   type        = string
-  default     = "routine-hub"
+  default     = "routune-hub"
 }
 
 variable "aws_region" {
@@ -19,18 +19,66 @@ variable "aws_region" {
   default     = "ap-northeast-1"
 }
 
-variable "vpc_id" {
-  description = "VPC ID where resources will be deployed"
+variable "create_vpc" {
+  description = "Create VPC and public subnets with Terraform"
+  type        = bool
+  default     = true
+}
+
+variable "vpc_cidr" {
+  description = "CIDR block for the VPC"
   type        = string
+  default     = "10.0.0.0/16"
+}
+
+variable "public_subnet_cidrs" {
+  description = "CIDR blocks for public subnets (at least 2)"
+  type        = list(string)
+  default     = ["10.0.1.0/24", "10.0.2.0/24"]
+  validation {
+    condition     = length(var.public_subnet_cidrs) >= 2
+    error_message = "public_subnet_cidrs must include at least 2 CIDR blocks."
+  }
+}
+
+variable "vpc_id" {
+  description = "VPC ID where resources will be deployed when create_vpc is false"
+  type        = string
+  default     = ""
+  validation {
+    condition     = var.create_vpc || var.vpc_id != ""
+    error_message = "When create_vpc is false, vpc_id must be provided."
+  }
 }
 
 variable "subnet_ids" {
-  description = "List of subnet IDs for ECS tasks (at least 2 in different AZs)"
+  description = "List of subnet IDs for ECS tasks when create_vpc is false"
   type        = list(string)
+  default     = []
+  validation {
+    condition     = var.create_vpc || length(var.subnet_ids) >= 2
+    error_message = "When create_vpc is false, subnet_ids must contain at least 2 subnet IDs."
+  }
 }
 
 variable "domain_name" {
   description = "Domain name for the application (optional)"
+  type        = string
+  default     = ""
+  validation {
+    condition     = var.domain_name == "" || var.acm_certificate_arn != "" || var.hosted_zone_id != ""
+    error_message = "When domain_name is set, provide hosted_zone_id or acm_certificate_arn."
+  }
+}
+
+variable "hosted_zone_id" {
+  description = "Route53 hosted zone ID for the domain (optional)"
+  type        = string
+  default     = ""
+}
+
+variable "acm_certificate_arn" {
+  description = "Existing ACM certificate ARN (optional)"
   type        = string
   default     = ""
 }
@@ -66,6 +114,12 @@ variable "container_port" {
   default     = 3000
 }
 
+variable "ecs_assign_public_ip" {
+  description = "Assign public IP to ECS tasks (useful when running in public subnets without NAT)"
+  type        = bool
+  default     = true
+}
+
 # Docker Image
 variable "ecr_repository_url" {
   description = "ECR repository URL for the Docker image"
@@ -84,6 +138,13 @@ variable "env_vars" {
   description = "Environment variables for ECS task (non-sensitive)"
   type        = map(string)
   default     = {}
+}
+
+variable "secret_env_vars" {
+  description = "Secrets Manager ARNs mapped to environment variable names"
+  type        = map(string)
+  default     = {}
+  sensitive   = true
 }
 
 # DynamoDB Configuration

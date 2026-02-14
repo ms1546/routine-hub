@@ -27,7 +27,7 @@ type CloneRoutineFormProps = {
  *   2. The original Routine is never modified
  *   3. Unlike GitHub forks, there's no upstream relationship
  *
- * This aligns with Routine Hub's model where:
+ * This aligns with Routune Hub's model where:
  * - Public Routines are reference templates
  * - Users create their own copy before editing or applying AI suggestions
  */

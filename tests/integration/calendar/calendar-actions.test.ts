@@ -10,7 +10,7 @@ let proposalId: string;
 let routineId: string;
 
 beforeEach(async () => {
-  process.env.MOCK_USER_EMAIL = 'routinehub.dev@gmail.com';
+  process.env.MOCK_USER_EMAIL = 'routunehub.dev@gmail.com';
   const client = new MockCalendarClient();
   client.reset([]);
   setCalendarClient(client);

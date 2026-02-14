@@ -36,7 +36,7 @@ export function useSession(): UseSessionReturn {
     user: {
       id: 'storybook-user',
       name: 'Storybook User',
-      email: 'routinehub.dev@gmail.com',
+      email: 'routunehub.dev@gmail.com',
       displayName: 'Storybook User'
     }
   });

@@ -71,7 +71,7 @@ export async function invokeBedrockStructured<TSchema extends z.ZodTypeAny>(
     attempts.push({ modelId: inferenceProfileArn, label: 'inference-profile' });
   } else if (requiresInferenceProfile) {
     console.warn(
-      `[RoutineHub] Model ${modelId} requires AWS_BEDROCK_INFERENCE_PROFILE_ARN. Falling back to on-demand models.`
+      `[RoutuneHub] Model ${modelId} requires AWS_BEDROCK_INFERENCE_PROFILE_ARN. Falling back to on-demand models.`
     );
   }
 
@@ -127,9 +127,9 @@ export async function invokeBedrockWithFallback<TSchema extends z.ZodTypeAny>(
     try {
       return await invokeBedrockStructured(params);
     } catch (error) {
-      console.warn('[RoutineHub] Bedrock invocation failed, using fallback output.', error);
+      console.warn('[RoutuneHub] Bedrock invocation failed, using fallback output.', error);
       if (error && typeof error === 'object') {
-        console.warn('[RoutineHub] Bedrock error detail:', JSON.stringify(error, null, 2));
+        console.warn('[RoutuneHub] Bedrock error detail:', JSON.stringify(error, null, 2));
       }
       if (!process.env.AWS_BEDROCK_INFERENCE_PROFILE_ARN) {
         console.warn('Set AWS_BEDROCK_INFERENCE_PROFILE_ARN to use provisioned throughput for this model.');

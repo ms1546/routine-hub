@@ -20,8 +20,8 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       clientSecret: process.env.GOOGLE_OAUTH_CLIENT_SECRET,
       authorization: {
         params: {
-          scope: 'openid email profile https://www.googleapis.com/auth/calendar.events',
-          access_type: 'offline',
+          scope: 'openid email profile',
+          access_type: 'online',
           prompt: 'consent'
         }
       }
@@ -43,7 +43,6 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     async jwt({ token, account, profile }) {
       if (account) {
         token.accessToken = account.access_token;
-        token.refreshToken = account.refresh_token;
       }
       return token;
     }

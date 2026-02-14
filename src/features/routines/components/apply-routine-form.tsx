@@ -2,6 +2,7 @@
 
 import { useState, useTransition, useEffect } from 'react';
 import type { FormEvent } from 'react';
+import { usePathname } from 'next/navigation';
 import { Button } from '@/shared/ui/button';
 import { Input } from '@/shared/ui/input';
 import { Label } from '@/shared/ui/label';
@@ -15,6 +16,8 @@ import type { ApplyRoutinePayload } from '@/features/routines/actions/routines';
 import type { RecurrencePattern, ProposedCalendarEvent, CalendarEvent } from '@/features/calendar/domain/types';
 import { getCalendarPreviewAction, confirmProposedEventsAction } from '@/app/actions/calendar';
 import { customizeCalendarEventsAction, type CalendarCustomizationResult } from '@/app/actions/calendar-customization';
+import { getEvidenceAdviceAction } from '@/app/actions/evidence-advice';
+import type { EvidenceAdviceResult } from '@/features/ai/evidence/types';
 import { CalendarPreviewVisualization } from './calendar-preview-visualization';
 
 const today = () => new Date().toISOString().slice(0, 10);
@@ -179,6 +182,8 @@ export function ApplyRoutineForm({
   const [status, setStatus] = useState(
     '⚠️ この機能はポートフォリオデモ用の管理者専用機能です。一般ユーザーには提供されていません。'
   );
+  const pathname = usePathname();
+  const connectUrl = `/api/google-oauth/connect?returnTo=${encodeURIComponent(pathname ?? '/routines')}`;
   const [pending, startTransition] = useTransition();
   const [showPreviewModal, setShowPreviewModal] = useState(false);
   const [previewData, setPreviewData] = useState<{
@@ -187,12 +192,15 @@ export function ApplyRoutineForm({
     startDate: string;
     endDate: string;
     recurrence: RecurrencePattern;
+    isCalendarConnected?: boolean;
   } | null>(null);
   const [previewLoading, setPreviewLoading] = useState(false);
   const [confirming, setConfirming] = useState(false);
   const [customizing, setCustomizing] = useState(false);
   const [useCustomized, setUseCustomized] = useState(false); // カスタマイズされたイベントを使用するか
   const [customizationResult, setCustomizationResult] = useState<CalendarCustomizationResult | null>(null);
+  const [evidenceAdvice, setEvidenceAdvice] = useState<EvidenceAdviceResult | null>(null);
+  const [evidenceLoading, setEvidenceLoading] = useState(false);
   const [editedEvents, setEditedEvents] = useState<Map<string, Partial<ProposedCalendarEvent>>>(new Map()); // 手動編集されたイベント
   const [editingEventId, setEditingEventId] = useState<string | null>(null); // 編集中のイベントID
   const [startDate, setStartDate] = useState<string>(today());
@@ -269,6 +277,7 @@ export function ApplyRoutineForm({
         // カスタマイズ結果をリセット
         setCustomizationResult(null);
         setUseCustomized(false);
+        setEvidenceAdvice(null);
         // 手動編集をリセット
         setEditedEvents(new Map());
       } catch (error) {
@@ -295,6 +304,23 @@ export function ApplyRoutineForm({
       setStatus(error instanceof Error ? error.message : 'カスタマイズに失敗しました');
     } finally {
       setCustomizing(false);
+    }
+  };
+
+  const handleEvidenceAdvice = async () => {
+    setEvidenceLoading(true);
+    try {
+      const result = await getEvidenceAdviceAction({ routineId });
+      setEvidenceAdvice(result);
+      if (result.suggestions.length === 0) {
+        setStatus('根拠が不足しているため提案は表示されませんでした。');
+      } else {
+        setStatus('根拠付きアドバイスを取得しました');
+      }
+    } catch (error) {
+      setStatus(error instanceof Error ? error.message : '根拠付きアドバイスの取得に失敗しました');
+    } finally {
+      setEvidenceLoading(false);
     }
   };
 
@@ -333,6 +359,13 @@ export function ApplyRoutineForm({
 
   return (
     <Card className="w-full p-4">
+      <div className="flex justify-end">
+        <a href={connectUrl}>
+          <Button type="button" variant="outline" size="sm">
+            Google Calendarを接続
+          </Button>
+        </a>
+      </div>
       <form className="space-y-4" onSubmit={handleSubmit}>
         <div className="grid gap-3 sm:grid-cols-2">
           <div className="space-y-1.5">
@@ -444,7 +477,7 @@ export function ApplyRoutineForm({
           </div>
         }
       >
-        {previewData && (() => {
+      {previewData && (() => {
           // 表示用のイベントを決定（優先順位: 手動編集 > AIカスタマイズ > 元のイベント）
           const displayEvents = (() => {
             // まず、カスタマイズ結果または元のイベントを取得
@@ -481,6 +514,14 @@ export function ApplyRoutineForm({
 
           return (
             <div className="space-y-6">
+              {previewData.isCalendarConnected === false && (
+                <div className="rounded-lg border border-warning/50 bg-warning/10 p-3">
+                  <p className="text-sm text-warning-foreground">
+                    Google Calendarが未接続のため、既存予定は取得していません。
+                    反映する場合は先に「Google Calendarを接続」を実行してください。
+                  </p>
+                </div>
+              )}
               {/* AIカスタマイズセクション */}
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
@@ -529,6 +570,92 @@ export function ApplyRoutineForm({
                             </li>
                           ))}
                         </ul>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {/* 根拠付きアドバイスセクション */}
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h4 className="font-semibold mb-1">根拠付きアドバイス</h4>
+                    <p className="text-sm text-muted-foreground">
+                      無料の論文データを参照して提案を生成します
+                    </p>
+                  </div>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={handleEvidenceAdvice}
+                    disabled={evidenceLoading}
+                  >
+                    {evidenceLoading ? '取得中...' : '根拠付きで提案'}
+                  </Button>
+                </div>
+
+                <p className="text-xs text-muted-foreground">
+                  {evidenceAdvice?.disclaimer ??
+                    '本機能は情報提供のみを目的とした提案です。最終判断はユーザーが行ってください。'}
+                </p>
+
+                {evidenceAdvice && (
+                  <div className="rounded-lg border border-muted-foreground/20 bg-muted/20 p-4 space-y-3">
+                    {evidenceAdvice.query && (
+                      <p className="text-xs text-muted-foreground">検索クエリ: {evidenceAdvice.query}</p>
+                    )}
+
+                    {evidenceAdvice.warnings.length > 0 && (
+                      <ul className="space-y-1">
+                        {evidenceAdvice.warnings.map((warning, index) => (
+                          <li key={index} className="text-xs text-warning-foreground">
+                            ⚠️ {warning}
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+
+                    {evidenceAdvice.suggestions.length === 0 ? (
+                      <p className="text-sm text-muted-foreground">
+                        根拠が不足しているため提案を表示できません。
+                      </p>
+                    ) : (
+                      <div className="space-y-3">
+                        {evidenceAdvice.suggestions.map((suggestion) => (
+                          <div key={suggestion.id} className="space-y-2">
+                            <div className="flex items-center gap-2">
+                              <Badge variant="outline">{suggestion.confidence}</Badge>
+                              <p className="text-sm font-medium">提案</p>
+                            </div>
+                            <p className="text-sm text-primary-foreground/80">{suggestion.description}</p>
+                            <div className="rounded-md border border-border/60 bg-background/50 p-3">
+                              <p className="text-xs font-medium mb-2">引用</p>
+                              <ul className="space-y-1">
+                                {suggestion.evidence.map((citation) => (
+                                  <li key={citation.sourceId} className="text-xs text-muted-foreground">
+                                    <span className="font-medium">{citation.title}</span>
+                                    {citation.year ? ` (${citation.year})` : ''}
+                                    {citation.venue ? ` / ${citation.venue}` : ''}
+                                    {citation.url && (
+                                      <>
+                                        {' '}
+                                        <a
+                                          href={citation.url}
+                                          target="_blank"
+                                          rel="noreferrer"
+                                          className="underline"
+                                        >
+                                          出典
+                                        </a>
+                                      </>
+                                    )}
+                                  </li>
+                                ))}
+                              </ul>
+                            </div>
+                          </div>
+                        ))}
                       </div>
                     )}
                   </div>
