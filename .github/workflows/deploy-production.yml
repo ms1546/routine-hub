@@ -115,11 +115,9 @@ jobs:
                   DYNAMODB_AI_EXECUTION_LOGS_TABLE=${DYNAMODB_AI_EXECUTION_LOGS_TABLE:-routune-hub-production-ai-execution-logs}
                   ENV_VARS="CALENDAR_CLIENT='google'"
                   ENV_VARS+=",DYNAMODB_USER_SETTINGS_TABLE='${DYNAMODB_USER_SETTINGS_TABLE}',DYNAMODB_ROUTINES_TABLE='${DYNAMODB_ROUTINES_TABLE}',DYNAMODB_AI_EXECUTION_LOGS_TABLE='${DYNAMODB_AI_EXECUTION_LOGS_TABLE}',NODE_ENV='production'"
+                  ENV_VARS+=",LANGFUSE_BASE_URL='https://us.cloud.langfuse.com'"
                   if [ -n "$LANGFUSE_PUBLIC_KEY" ] && [ -n "$LANGFUSE_SECRET_KEY" ]; then
                     ENV_VARS+=" ,LANGFUSE_PUBLIC_KEY='${LANGFUSE_PUBLIC_KEY}',LANGFUSE_SECRET_KEY='${LANGFUSE_SECRET_KEY}'"
-                  fi
-                  if [ -n "$LANGFUSE_BASE_URL" ]; then
-                    ENV_VARS+=" ,LANGFUSE_BASE_URL='${LANGFUSE_BASE_URL}'"
                   fi
                   if [ -n "$OPENALEX_API_KEY" ]; then
                     ENV_VARS+=" ,OPENALEX_API_KEY='${OPENALEX_API_KEY}'"
