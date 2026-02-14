@@ -19,7 +19,8 @@ import type {
 import { getAccessTokenForUser } from '@/infrastructure/auth/oauth-boundary';
 
 const CALENDAR_ID = 'primary';
-const PRIVATE_PROP_KEY = 'routunehubProposalId';
+const PRIVATE_PROP_KEY = 'routinehubProposalId';
+const LEGACY_PRIVATE_PROP_KEY = 'routunehubProposalId';
 
 /**
  * RecurrencePatternからGoogle CalendarのRRULE文字列を生成
@@ -51,17 +52,21 @@ function buildRRULE(
 }
 
 export function mapGoogleEvent(event: calendar_v3.Schema$Event): CalendarEvent {
+  const privateProps = event.extendedProperties?.private;
+  const proposalId = privateProps
+    ? privateProps[PRIVATE_PROP_KEY] ?? privateProps[LEGACY_PRIVATE_PROP_KEY]
+    : undefined;
   return {
     id: event.id ?? '',
     title: event.summary ?? 'Untitled event',
     description: event.description ?? undefined,
     start: event.start?.dateTime ?? event.start?.date ?? '',
     end: event.end?.dateTime ?? event.end?.date ?? '',
-    source: event.extendedProperties?.private
+    source: privateProps
       ? {
-          routineId: event.extendedProperties.private.routineId,
-          blockId: event.extendedProperties.private.blockId,
-          proposalId: event.extendedProperties.private[PRIVATE_PROP_KEY]
+          routineId: privateProps.routineId,
+          blockId: privateProps.blockId,
+          proposalId
         }
       : undefined
   };
@@ -202,6 +207,17 @@ export class GoogleCalendarClient implements CalendarClient {
       maxResults: 1
     });
 
-    return response.data.items?.[0];
+    const found = response.data.items?.[0];
+    if (found) {
+      return found;
+    }
+
+    const legacyResponse = await calendar.events.list({
+      calendarId: CALENDAR_ID,
+      privateExtendedProperty: [`${LEGACY_PRIVATE_PROP_KEY}=${proposalId}`],
+      maxResults: 1
+    });
+
+    return legacyResponse.data.items?.[0];
   }
 }

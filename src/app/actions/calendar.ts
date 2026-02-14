@@ -5,7 +5,13 @@ import { buildProposedEvents } from '@/features/calendar/domain/proposals';
 import { getCalendarClient } from '@/infrastructure/calendar/calendar-client-factory';
 import { hasStoredRefreshToken } from '@/infrastructure/auth/oauth-boundary';
 import { createDefaultCalendarWindow } from '@/features/calendar/domain/window';
-import type { CalendarEvent, CalendarInsertFailure, RecurrencePattern, CalendarTimeRange } from '@/features/calendar/domain/types';
+import type {
+  CalendarEvent,
+  CalendarInsertFailure,
+  RecurrencePattern,
+  CalendarTimeRange,
+  ProposedCalendarEvent
+} from '@/features/calendar/domain/types';
 
 export type CalendarConfirmationResult = {
   successCount: number;
@@ -24,7 +30,7 @@ export async function getCalendarPreviewAction({
   startDate: string;
   endDate: string;
   recurrence?: RecurrencePattern;
-}): Promise<{ proposedEvents: any[]; existingEvents: CalendarEvent[] }> {
+}): Promise<{ proposedEvents: ProposedCalendarEvent[]; existingEvents: CalendarEvent[]; isCalendarConnected: boolean }> {
   const { getCurrentUser } = await import('@/infrastructure/auth/session');
   const currentUser = await getCurrentUser();
   const routine = await routinesRepository.get(routineId, currentUser.id, currentUser.email);

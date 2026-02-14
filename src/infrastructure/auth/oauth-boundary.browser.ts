@@ -65,3 +65,12 @@ export async function getAccessTokenForUser(_userId: string): Promise<OAuthSessi
 export async function hasStoredRefreshToken(_userId: string): Promise<boolean> {
   return false;
 }
+
+/**
+ * Store access token for user (browser implementation)
+ *
+ * In Storybook, this is a no-op.
+ */
+export function storeAccessTokenForUser(_userId: string, _accessToken: string, _expiresAt?: string) {
+  return;
+}

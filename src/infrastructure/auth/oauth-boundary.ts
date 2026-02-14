@@ -17,4 +17,10 @@
  */
 
 export type { OAuthSession, TokenExchangeResult } from '@/infrastructure/auth/oauth-boundary.next';
-export { buildGoogleOAuthUrl, exchangeCodeForTokens, getAccessTokenForUser, hasStoredRefreshToken } from '@/infrastructure/auth/oauth-boundary.next';
+export {
+  buildGoogleOAuthUrl,
+  exchangeCodeForTokens,
+  getAccessTokenForUser,
+  hasStoredRefreshToken,
+  storeAccessTokenForUser
+} from '@/infrastructure/auth/oauth-boundary.next';

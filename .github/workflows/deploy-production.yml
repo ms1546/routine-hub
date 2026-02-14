@@ -79,10 +79,6 @@ jobs:
                   HOSTED_ZONE_ID: ${{ secrets.HOSTED_ZONE_ID }}
                   ACM_CERTIFICATE_ARN: ${{ secrets.ACM_CERTIFICATE_ARN }}
                   ECS_ASSIGN_PUBLIC_IP: "true"
-                  GOOGLE_OAUTH_CLIENT_ID: ${{ secrets.GOOGLE_OAUTH_CLIENT_ID }}
-                  GOOGLE_OAUTH_CLIENT_SECRET: ${{ secrets.GOOGLE_OAUTH_CLIENT_SECRET }}
-                  GOOGLE_OAUTH_REDIRECT_URI: ${{ secrets.GOOGLE_OAUTH_REDIRECT_URI }}
-                  AUTH_SECRET: ${{ secrets.AUTH_SECRET }}
                   SECRETS_MANAGER_ENV_VARS: ${{ secrets.SECRETS_MANAGER_ENV_VARS }}
                   LANGFUSE_PUBLIC_KEY: ${{ secrets.LANGFUSE_PUBLIC_KEY }}
                   LANGFUSE_SECRET_KEY: ${{ secrets.LANGFUSE_SECRET_KEY }}
@@ -98,38 +94,26 @@ jobs:
                     echo "$NORMALIZED_SECRETS_MANAGER_ENV_VARS" | grep -q "${1}="
                   }
                   missing=false
-                  if [ -z "$GOOGLE_OAUTH_CLIENT_ID" ] && ! has_secret "GOOGLE_OAUTH_CLIENT_ID"; then
+                  if ! has_secret "GOOGLE_OAUTH_CLIENT_ID"; then
                     missing=true
                   fi
-                  if [ -z "$GOOGLE_OAUTH_CLIENT_SECRET" ] && ! has_secret "GOOGLE_OAUTH_CLIENT_SECRET"; then
+                  if ! has_secret "GOOGLE_OAUTH_CLIENT_SECRET"; then
                     missing=true
                   fi
-                  if [ -z "$GOOGLE_OAUTH_REDIRECT_URI" ] && ! has_secret "GOOGLE_OAUTH_REDIRECT_URI"; then
+                  if ! has_secret "GOOGLE_OAUTH_REDIRECT_URI"; then
                     missing=true
                   fi
-                  if [ -z "$AUTH_SECRET" ] && ! has_secret "AUTH_SECRET"; then
+                  if ! has_secret "AUTH_SECRET"; then
                     missing=true
                   fi
                   if [ "$missing" = true ]; then
-                    echo "Required OAuth secrets are not set in GitHub Secrets or Secrets Manager."
+                    echo "Required OAuth secrets are not set in Secrets Manager."
                     exit 1
                   fi
                   DYNAMODB_USER_SETTINGS_TABLE=${DYNAMODB_USER_SETTINGS_TABLE:-routune-hub-production-user-settings}
                   DYNAMODB_ROUTINES_TABLE=${DYNAMODB_ROUTINES_TABLE:-routune-hub-production-routines}
                   DYNAMODB_AI_EXECUTION_LOGS_TABLE=${DYNAMODB_AI_EXECUTION_LOGS_TABLE:-routune-hub-production-ai-execution-logs}
                   ENV_VARS="CALENDAR_CLIENT='google'"
-                  if ! has_secret "GOOGLE_OAUTH_CLIENT_ID"; then
-                    ENV_VARS+=",GOOGLE_OAUTH_CLIENT_ID='${GOOGLE_OAUTH_CLIENT_ID}'"
-                  fi
-                  if ! has_secret "GOOGLE_OAUTH_CLIENT_SECRET"; then
-                    ENV_VARS+=",GOOGLE_OAUTH_CLIENT_SECRET='${GOOGLE_OAUTH_CLIENT_SECRET}'"
-                  fi
-                  if ! has_secret "GOOGLE_OAUTH_REDIRECT_URI"; then
-                    ENV_VARS+=",GOOGLE_OAUTH_REDIRECT_URI='${GOOGLE_OAUTH_REDIRECT_URI}'"
-                  fi
-                  if ! has_secret "AUTH_SECRET"; then
-                    ENV_VARS+=",AUTH_SECRET='${AUTH_SECRET}'"
-                  fi
                   ENV_VARS+=",DYNAMODB_USER_SETTINGS_TABLE='${DYNAMODB_USER_SETTINGS_TABLE}',DYNAMODB_ROUTINES_TABLE='${DYNAMODB_ROUTINES_TABLE}',DYNAMODB_AI_EXECUTION_LOGS_TABLE='${DYNAMODB_AI_EXECUTION_LOGS_TABLE}',NODE_ENV='production'"
                   if [ -n "$LANGFUSE_PUBLIC_KEY" ] && [ -n "$LANGFUSE_SECRET_KEY" ]; then
                     ENV_VARS+=" ,LANGFUSE_PUBLIC_KEY='${LANGFUSE_PUBLIC_KEY}',LANGFUSE_SECRET_KEY='${LANGFUSE_SECRET_KEY}'"
