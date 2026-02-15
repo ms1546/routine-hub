@@ -111,16 +111,16 @@ jobs:
                   DYNAMODB_USER_SETTINGS_TABLE=${DYNAMODB_USER_SETTINGS_TABLE:-routune-hub-production-user-settings}
                   DYNAMODB_ROUTINES_TABLE=${DYNAMODB_ROUTINES_TABLE:-routune-hub-production-routines}
                   DYNAMODB_AI_EXECUTION_LOGS_TABLE=${DYNAMODB_AI_EXECUTION_LOGS_TABLE:-routune-hub-production-ai-execution-logs}
-                  ENV_VARS="CALENDAR_CLIENT='google'"
-                  ENV_VARS+=",DYNAMODB_USER_SETTINGS_TABLE='${DYNAMODB_USER_SETTINGS_TABLE}',DYNAMODB_ROUTINES_TABLE='${DYNAMODB_ROUTINES_TABLE}',DYNAMODB_AI_EXECUTION_LOGS_TABLE='${DYNAMODB_AI_EXECUTION_LOGS_TABLE}',NODE_ENV='production'"
-                  ENV_VARS+=",LANGFUSE_BASE_URL='https://us.cloud.langfuse.com'"
+                  ENV_VARS="CALENDAR_CLIENT=\"google\""
+                  ENV_VARS+=",DYNAMODB_USER_SETTINGS_TABLE=\"${DYNAMODB_USER_SETTINGS_TABLE}\",DYNAMODB_ROUTINES_TABLE=\"${DYNAMODB_ROUTINES_TABLE}\",DYNAMODB_AI_EXECUTION_LOGS_TABLE=\"${DYNAMODB_AI_EXECUTION_LOGS_TABLE}\",NODE_ENV=\"production\""
+                  ENV_VARS+=",LANGFUSE_BASE_URL=\"https://us.cloud.langfuse.com\""
                   SECRETS_MANAGER_ENV_VARS=""
                   add_secret() {
                     if [ -n "$2" ]; then
                       if [ -n "$SECRETS_MANAGER_ENV_VARS" ]; then
                         SECRETS_MANAGER_ENV_VARS+=",";
                       fi
-                      SECRETS_MANAGER_ENV_VARS+="${1}='${2}'"
+                      SECRETS_MANAGER_ENV_VARS+="${1}=\"${2}\""
                     fi
                   }
                   add_secret "GOOGLE_OAUTH_CLIENT_ID" "$SM_GOOGLE_OAUTH_CLIENT_ID_ARN"
@@ -131,7 +131,11 @@ jobs:
                   add_secret "LANGFUSE_SECRET_KEY" "$SM_LANGFUSE_SECRET_KEY_ARN"
                   add_secret "OPENALEX_API_KEY" "$SM_OPENALEX_API_KEY_ARN"
                   add_secret "OPENALEX_MAILTO" "$SM_OPENALEX_MAILTO_ARN"
-                  SECRET_ENV_VARS="{${SECRETS_MANAGER_ENV_VARS}}"
+                  if [ -n "$SECRETS_MANAGER_ENV_VARS" ]; then
+                    SECRET_ENV_VARS="{${SECRETS_MANAGER_ENV_VARS}}"
+                  else
+                    SECRET_ENV_VARS="{}"
+                  fi
                   terraform plan \
                     -var="environment=production" \
                     -var="vpc_id=${{ secrets.AWS_VPC_ID }}" \
