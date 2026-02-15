@@ -82,8 +82,8 @@ const config: StorybookConfig = {
       { find: '@/features/routines/repository', replacement: path.resolve(__dirname, '../src/features/routines/repository.browser.ts') },
 
       // Routines index: Use browser-safe index that exports browser-safe repository
-      { find: '@/features/routines', replacement: path.resolve(__dirname, '../src/features/routines/index.browser.ts') },
-      { find: '@/features/routines/index', replacement: path.resolve(__dirname, '../src/features/routines/index.browser.ts') },
+      { find: /^@\/features\/routines$/, replacement: path.resolve(__dirname, '../src/features/routines/index.browser.ts') },
+      { find: /^@\/features\/routines\/index$/, replacement: path.resolve(__dirname, '../src/features/routines/index.browser.ts') },
 
       // Navigation: Use browser-safe Link instead of next/link
       { find: '@/shared/components/app-link.next', replacement: path.resolve(__dirname, '../src/shared/components/app-link.browser.tsx') },
@@ -138,8 +138,8 @@ const config: StorybookConfig = {
       { find: 'google-logging-utils', replacement: path.resolve(__dirname, '../stories/google-logging-utils-stub.ts') },
       { find: 'gcp-metadata', replacement: path.resolve(__dirname, '../stories/gcp-metadata-stub.ts') },
 
-      // General '@' alias must come LAST to avoid overriding specific aliases
-      { find: '@', replacement: path.resolve(__dirname, '../src') },
+      // General '@/' alias must come LAST to avoid overriding specific aliases
+      { find: /^@\//, replacement: `${path.resolve(__dirname, '../src')}/` },
     ];
 
     const absoluteAlias = new Map([
