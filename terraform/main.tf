@@ -55,7 +55,7 @@ locals {
 
   secret_env_var_arns = [
     for value in values(var.secret_env_vars) :
-    startswith(value, "arn:") ? value : "arn:aws:secretsmanager:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:secret:${value}*"
+    can(regex("^arn:", value)) ? value : "arn:aws:secretsmanager:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:secret:${value}*"
   ]
 
   secrets_manager_arns = compact(distinct(concat(
