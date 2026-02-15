@@ -37,7 +37,7 @@ variable "public_subnet_cidrs" {
   default     = ["10.0.1.0/24", "10.0.2.0/24"]
   validation {
     condition     = length(var.public_subnet_cidrs) >= 2
-    error_message = "public_subnet_cidrs must include at least 2 CIDR blocks."
+    error_message = "Public subnet CIDR blocks must include at least two entries."
   }
 }
 
@@ -46,8 +46,8 @@ variable "vpc_id" {
   type        = string
   default     = ""
   validation {
-    condition     = var.create_vpc || var.vpc_id != ""
-    error_message = "When create_vpc is false, vpc_id must be provided."
+    condition     = var.vpc_id == "" || can(regex("^vpc-", var.vpc_id))
+    error_message = "VPC ID must start with 'vpc-' when provided."
   }
 }
 
@@ -56,8 +56,8 @@ variable "subnet_ids" {
   type        = list(string)
   default     = []
   validation {
-    condition     = var.create_vpc || length(var.subnet_ids) >= 2
-    error_message = "When create_vpc is false, subnet_ids must contain at least 2 subnet IDs."
+    condition     = length(var.subnet_ids) == 0 || alltrue([for subnet_id in var.subnet_ids : can(regex("^subnet-", subnet_id))])
+    error_message = "Subnet IDs must start with 'subnet-' when provided."
   }
 }
 
@@ -66,8 +66,8 @@ variable "domain_name" {
   type        = string
   default     = ""
   validation {
-    condition     = var.domain_name == "" || var.acm_certificate_arn != "" || var.hosted_zone_id != ""
-    error_message = "When domain_name is set, provide hosted_zone_id or acm_certificate_arn."
+    condition     = var.domain_name == "" || can(regex("\\.", var.domain_name))
+    error_message = "Domain name must contain a dot when provided."
   }
 }
 
