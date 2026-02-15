@@ -59,6 +59,7 @@ AI の補助を受けながら **自分の生活制約に合わせて Google カ
 - Next.js（App Router）
 - TypeScript
 - Server Actions 中心
+- shadcn/ui
 
 ### AI / LLM
 - AWS Bedrock
@@ -66,10 +67,20 @@ AI の補助を受けながら **自分の生活制約に合わせて Google カ
 - Langfuse（LLMOps / 可視化 / 判断支援）
 
 ### インフラ
-- AWS ECS on Fargate Spot
+- AWS ECS on Fargate
 - EventBridge（夜間停止・起動）
 - DynamoDB
 - CloudWatch
+
+#### Google Cloud Platform（限定利用）
+
+- Google OAuth 2.0 クライアント管理
+- Google Calendar API 利用
+
+※ Google Cloud Platform は、Google カレンダー連携に必須な
+  OAuth 2.0 および Calendar API の提供元としてのみ利用する
+※ アプリケーションの実行、AI 処理、データ永続化、運用制御は
+  すべて AWS 上で完結する
 
 ### 認証
 - Google OAuth（Cognito 経由）
@@ -103,7 +114,7 @@ AI の補助を受けながら **自分の生活制約に合わせて Google カ
 
 ## 1.7 非機能要件
 
-- 可用性：Fargate Spot 前提で許容
+- 可用性：Fargate 前提で許容
 - セキュリティ：OAuth + 最小権限
 - 拡張性：Agent / Workflow 追加可能
 - 運用性：夜間停止・再起動前提
@@ -148,6 +159,14 @@ AI の補助を受けながら **自分の生活制約に合わせて Google カ
 - Routine を期間指定で展開
 - 繰り返し設定対応
 - 冪等な予定反映（再実行可能）
+
+### 補足：GCP 利用範囲について
+
+Routine Hub は Google カレンダーと連携するため、
+Google Cloud Platform を OAuth 2.0 および Calendar API 管理用途に限定して利用する。
+
+GCP 上でアプリケーションを稼働させることはなく、
+AWS 上のアプリケーションが外部 API として Google サービスを呼び出す構成とする。
 
 ---
 
@@ -249,13 +268,12 @@ AI の補助を受けながら **自分の生活制約に合わせて Google カ
 
 ## 2.8 インフラ・運用設計
 
-### Fargate Spot 運用
+### Fargate 運用
 - 常時稼働しない
 - 夜間は ECS / ALB を停止
 - EventBridge による自動起動・停止
 
 ### 障害時
-- Spot 割り込みは前提
 - AI 処理は短時間・再実行可能
 - Google カレンダー反映は冪等設計
 

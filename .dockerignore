@@ -1,0 +1,16 @@
+.git
+.github
+.storybook
+.storybook-static
+.next
+coverage
+node_modules
+storybook-static
+tests
+terraform
+.vscode
+.DS_Store
+*.log
+npm-debug.log*
+yarn-error.log*
+.pnpm-debug.log*

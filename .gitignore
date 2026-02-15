@@ -1,0 +1,15 @@
+node_modules
+.next
+out
+storybook-static
+coverage
+.env.local
+.env.development
+.env.test
+.env.production
+.DS_Store
+npm-debug.log*
+tsconfig.tsbuildinfo
+# Storybook用のnext/configスタブ（自動生成される）
+node_modules/next/config.js
+*storybook.log

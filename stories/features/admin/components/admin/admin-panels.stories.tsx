@@ -1,0 +1,74 @@
+import type { Meta, StoryObj } from '@storybook/nextjs-vite';
+import { ExecutionHistoryCard } from '@/features/admin/components/admin/execution-history-card';
+import { MaintenanceCard } from '@/features/admin/components/admin/maintenance-card';
+import type { ExecutionRecord } from '@/features/ai/execution-log-types';
+import type { MaintenanceState } from '@/infrastructure/system/maintenance';
+
+const mockRecords: ExecutionRecord[] = [
+  {
+    id: 'exec-1',
+    workflowName: 'routine-ai-workflow',
+    routineId: 'routine-1',
+    routineName: 'Deep Focus Reset',
+    triggeredBy: 'Ops Team',
+    triggeredByEmail: 'ops@routunehub.dev',
+    userId: 'user-ops',
+    status: 'success',
+    executedAt: new Date().toISOString(),
+    judgeScore: 4.3,
+    judgeVerdict: 'approve',
+    hasHumanEvaluation: true,
+    humanEvaluations: [
+      {
+        id: 'evaluation-1',
+        executionId: 'exec-1',
+        reviewerId: 'account-ops',
+        reviewerName: 'Ops Team',
+        score: 4,
+        comment: 'Aligned with design brief.',
+        createdAt: new Date().toISOString()
+      }
+    ]
+  },
+  {
+    id: 'exec-2',
+    workflowName: 'routine-ai-workflow',
+    routineId: 'routine-2',
+    routineName: 'Product Lead Syncopation',
+    triggeredBy: 'Ops Team',
+    triggeredByEmail: 'ops@routunehub.dev',
+    userId: 'user-ops',
+    status: 'success',
+    executedAt: new Date(Date.now() - 3600_000).toISOString(),
+    judgeScore: 3.1,
+    judgeVerdict: 'revise',
+    hasHumanEvaluation: false,
+    humanEvaluations: []
+  }
+];
+
+const meta = {
+  title: 'Admin/AdminPanels',
+  component: ExecutionHistoryCard
+} satisfies Meta<typeof ExecutionHistoryCard>;
+
+export default meta;
+
+export const HistoryCard: StoryObj<typeof ExecutionHistoryCard> = {
+  args: {
+    records: mockRecords
+  }
+};
+
+// HumanEvaluationFormは削除されました。人間評価はLangfuse UIで行います。
+// 詳細: docs/langfuse-evaluation-integration.md
+
+const maintenanceState: MaintenanceState = {
+  enabled: true,
+  message: 'Deploying Langfuse instrumentation. Back soon.',
+  updatedAt: new Date().toISOString()
+};
+
+export const MaintenancePanel: StoryObj = {
+  render: () => <MaintenanceCard state={maintenanceState} action={async () => maintenanceState} />
+};

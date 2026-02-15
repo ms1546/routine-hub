@@ -1,0 +1,141 @@
+name: CI
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+    branches: ["**"]
+
+env:
+  MASTRA_USE_MOCK: "true"
+  LANGFUSE_PUBLIC_KEY: "test"
+  LANGFUSE_SECRET_KEY: "test"
+  LANGFUSE_BASEURL: "http://localhost"
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - run: npm ci
+      - run: npm run lint
+
+  typecheck:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - run: npm ci
+      - run: npm run typecheck
+
+  test-unit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - run: npm ci
+      - run: npm run test:unit
+
+  test-integration:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - run: npm ci
+      - run: npm run test:integration
+
+  test-storybook:
+    runs-on: ubuntu-latest
+    needs:
+      - lint
+      - typecheck
+      - test-unit
+      - test-integration
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - run: npm ci
+
+      - name: Install Playwright browsers
+        run: npx playwright install chromium --with-deps
+
+      - name: Run Storybook tests
+        run: npm run test:storybook
+
+  chromatic:
+    name: Chromatic Visual Review
+    runs-on: ubuntu-latest
+    needs:
+      - lint
+      - typecheck
+      - test-unit
+      - test-integration
+    if: |
+      github.event_name == 'pull_request' &&
+      github.event.pull_request.head.repo.full_name == github.repository
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Detect UI changes
+        id: ui_changes
+        uses: dorny/paths-filter@v3
+        with:
+          filters: |
+            ui:
+              - 'src/**'
+              - 'stories/**'
+              - 'public/**'
+              - 'components.json'
+              - 'tailwind.config.ts'
+              - 'postcss.config.mjs'
+
+      - name: Skip Chromatic (no UI changes)
+        if: steps.ui_changes.outputs.ui != 'true'
+        run: echo "No UI changes detected. Skipping Chromatic."
+
+      - uses: actions/setup-node@v4
+        if: steps.ui_changes.outputs.ui == 'true'
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - run: npm ci
+        if: steps.ui_changes.outputs.ui == 'true'
+
+      - name: Publish to Chromatic
+        if: steps.ui_changes.outputs.ui == 'true'
+        uses: chromaui/action@latest
+        with:
+          projectToken: ${{ secrets.CHROMATIC_PROJECT_TOKEN }}
+          onlyChanged: true
+          exitZeroOnChanges: true
+          autoAcceptChanges: main
