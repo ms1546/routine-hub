@@ -53,6 +53,15 @@ locals {
   public_subnet_azs = slice(data.aws_availability_zones.available.names, 0, length(var.public_subnet_cidrs))
   subnet_ids        = var.create_vpc ? aws_subnet.public[*].id : var.subnet_ids
 
+  app_url = var.domain_name != "" ? "https://${var.domain_name}" : "http://${aws_lb.main.dns_name}"
+  effective_env_vars = merge(
+    {
+      AUTH_URL     = local.app_url
+      NEXTAUTH_URL = local.app_url
+    },
+    var.env_vars
+  )
+
   secret_env_var_arns = [
     for value in values(var.secret_env_vars) :
     can(regex("^arn:", value)) ? "${value}*" : "arn:aws:secretsmanager:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:secret:${value}*"
@@ -558,7 +567,7 @@ resource "aws_ecs_task_definition" "main" {
       ]
 
       environment = [
-        for key, value in var.env_vars : {
+        for key, value in local.effective_env_vars : {
           name  = key
           value = value
         }
