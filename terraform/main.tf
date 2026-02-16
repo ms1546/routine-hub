@@ -59,7 +59,10 @@ locals {
   ]
 
   secrets_manager_arns = compact(distinct(concat(
-    ["arn:aws:secretsmanager:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:secret:${var.project_name}/*"],
+    [
+      "arn:aws:secretsmanager:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:secret:${var.project_name}/*",
+      "arn:aws:secretsmanager:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:secret:${replace(var.project_name, "-", "")}/*"
+    ],
     local.secret_env_var_arns
   )))
 }
