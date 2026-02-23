@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useTransition, useEffect } from 'react';
+import { useState, useTransition, useEffect, useMemo } from 'react';
 import type { FormEvent } from 'react';
 import { usePathname } from 'next/navigation';
 import { Button } from '@/shared/ui/button';
@@ -26,6 +26,23 @@ const formatDateInput = (date: Date) => {
   const day = String(date.getDate()).padStart(2, '0');
   return `${year}-${month}-${day}`;
 };
+
+/** 日付文字列（YYYY-MM-DD）をパース。無効な場合は null を返す */
+const parseLocalDateInput = (value: string): Date | null => {
+  const [yearPart = '', monthPart = '', dayPart = ''] = value.split('-');
+  const year = Number(yearPart);
+  const month = Number(monthPart);
+  const day = Number(dayPart);
+  if (!yearPart || !monthPart || !dayPart || Number.isNaN(year) || Number.isNaN(month) || Number.isNaN(day)) {
+    return null;
+  }
+  const date = new Date(year, month - 1, day);
+  if (Number.isNaN(date.getTime())) return null;
+  return date;
+};
+
+const normalizeLocalDate = (date: Date) =>
+  new Date(date.getFullYear(), date.getMonth(), date.getDate());
 
 const today = () => formatDateInput(new Date());
 const plusDays = (days: number) => {
@@ -69,7 +86,6 @@ function EventEditModal({ event, onSave, onCancel }: EventEditModalProps) {
   /* eslint-enable react-hooks/set-state-in-effect */
 
   const handleSave = () => {
-    // 日付と時刻をISO文字列に変換
     const startParts = startTime.split(':');
     const endParts = endTime.split(':');
     const startHour = startParts[0] ? Number(startParts[0]) : 0;
@@ -77,13 +93,11 @@ function EventEditModal({ event, onSave, onCancel }: EventEditModalProps) {
     const endHour = endParts[0] ? Number(endParts[0]) : 0;
     const endMinute = endParts[1] ? Number(endParts[1]) : 0;
 
-    const startDateTime = new Date(date);
-    startDateTime.setHours(startHour, startMinute, 0, 0);
+    // YYYY-MM-DD をローカル日付として解釈（new Date(date) は UTC になるため）
+    const baseDate = parseLocalDateInput(date) ?? new Date();
+    const startDateTime = new Date(baseDate.getFullYear(), baseDate.getMonth(), baseDate.getDate(), startHour, startMinute, 0, 0);
+    let endDateTime = new Date(baseDate.getFullYear(), baseDate.getMonth(), baseDate.getDate(), endHour, endMinute, 0, 0);
 
-    const endDateTime = new Date(date);
-    endDateTime.setHours(endHour, endMinute, 0, 0);
-
-    // 終了時刻が開始時刻より前の場合は翌日として扱う
     if (endDateTime <= startDateTime) {
       endDateTime.setDate(endDateTime.getDate() + 1);
     }
@@ -97,6 +111,14 @@ function EventEditModal({ event, onSave, onCancel }: EventEditModalProps) {
 
     onSave(edited);
   };
+
+  const startParts = startTime.split(':');
+  const endParts = endTime.split(':');
+  const startD = new Date(date);
+  startD.setHours(Number(startParts[0]) || 0, Number(startParts[1]) || 0, 0, 0);
+  const endD = new Date(date);
+  endD.setHours(Number(endParts[0]) || 0, Number(endParts[1]) || 0, 0, 0);
+  const endWouldBeNextDay = endD <= startD;
 
   return (
     <Modal
@@ -149,6 +171,11 @@ function EventEditModal({ event, onSave, onCancel }: EventEditModalProps) {
           />
         </div>
 
+        {endWouldBeNextDay && (
+          <p className="text-xs text-muted-foreground">
+            終了時刻が開始より前のため、保存すると終了は翌日に設定されます。
+          </p>
+        )}
         <div className="grid grid-cols-2 gap-4">
           <div className="space-y-2">
             <Label htmlFor="edit-event-start-time">開始時刻</Label>
@@ -237,14 +264,55 @@ export function ApplyRoutineForm({
     }
   }, [startDate, weekCount, durationType]);
 
+  /** プレビュー＋編集＋AIカスタマイズを反映した適用対象イベント（確認して適用でサーバーに渡す） */
+  const displayEventsToApply = useMemo((): ProposedCalendarEvent[] => {
+    if (!previewData) return [];
+    let base = previewData.proposedEvents;
+    if (useCustomized && customizationResult) {
+      const normalizedMap = new Map(
+        customizationResult.customizedEvents.map((c) => [c.proposalId, c])
+      );
+      base = base.map((event) => {
+        const n = normalizedMap.get(event.proposalId);
+        if (!n) return event;
+        return {
+          ...event,
+          title: n.title ?? event.title,
+          description: n.description ?? event.description,
+          start: n.start ?? event.start,
+          end: n.end ?? event.end
+        };
+      });
+    }
+    return base.map((event) => {
+      const edited = editedEvents.get(event.proposalId);
+      if (!edited) return event;
+      return { ...event, ...edited } as ProposedCalendarEvent;
+    });
+  }, [previewData, useCustomized, customizationResult, editedEvents]);
+
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const formData = new FormData(event.currentTarget);
     const startDateValue = String(formData.get('startDate'));
-
-    // 検証済みの日付を使用
-    const validatedStartDate = startDateValue;
     const validatedEndDate = durationType === 'weekly' ? calculatedEndDate : endDate;
+
+    // 日付の妥当性チェック（プレビュー取得前に実施）
+    const startParsed = parseLocalDateInput(startDateValue);
+    if (!startParsed) {
+      setStatus('開始日が正しくありません。YYYY-MM-DD 形式で入力してください。');
+      return;
+    }
+    const endParsed = parseLocalDateInput(validatedEndDate);
+    if (!endParsed) {
+      setStatus('終了日が正しくありません。YYYY-MM-DD 形式で入力してください。');
+      return;
+    }
+    if (startParsed > endParsed) {
+      setStatus('終了日は開始日以降を指定してください。');
+      return;
+    }
+    const validatedStartDate = startDateValue;
 
     // 繰り返し設定
     const recurrence: RecurrencePattern =
@@ -334,7 +402,6 @@ export function ApplyRoutineForm({
   const handleConfirmApply = async () => {
     if (!previewData) return;
 
-    // すべての提案イベントを自動的に適用
     const allProposalIds = previewData.proposedEvents.map((e) => e.proposalId);
 
     setConfirming(true);
@@ -342,7 +409,10 @@ export function ApplyRoutineForm({
       const result = await confirmProposedEventsAction({
         routineId,
         proposalIds: allProposalIds,
-        recurrence: previewData.recurrence
+        recurrence: previewData.recurrence,
+        startDate: previewData.startDate,
+        endDate: previewData.endDate,
+        events: displayEventsToApply.length > 0 ? displayEventsToApply : undefined
       });
       setStatus(`${result.successCount}件のイベントを適用しました`);
       setShowPreviewModal(false);
@@ -424,9 +494,10 @@ export function ApplyRoutineForm({
 
         {/* 繰り返し設定 */}
         <div className="space-y-2">
-          <Label>繰り返し設定</Label>
-          <div className="flex gap-2">
+          <Label htmlFor="recurrenceType">繰り返し設定</Label>
+          <div className="flex gap-2 items-center">
             <select
+              id="recurrenceType"
               value={recurrenceType}
               onChange={(e) => setRecurrenceType(e.target.value as 'none' | 'weekly' | 'monthly')}
               className="h-11 flex-1 rounded-lg border border-input bg-background px-4 py-2.5 text-sm text-foreground transition-all duration-300 hover:border-primary/40 hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:border-ring/50"
@@ -436,17 +507,24 @@ export function ApplyRoutineForm({
               <option value="monthly">毎月</option>
             </select>
             {recurrenceType !== 'none' && (
-              <select
-                value={recurrenceInterval}
-                onChange={(e) => setRecurrenceInterval(Number(e.target.value))}
-                className="h-11 w-24 rounded-lg border border-input bg-background px-4 py-2.5 text-sm text-foreground transition-all duration-300 hover:border-primary/40 hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:border-ring/50"
-              >
+              <>
+                <Label htmlFor="recurrenceInterval" className="text-muted-foreground text-xs shrink-0">
+                  間隔
+                </Label>
+                <select
+                  id="recurrenceInterval"
+                  value={recurrenceInterval}
+                  onChange={(e) => setRecurrenceInterval(Number(e.target.value))}
+                  aria-label="繰り返しの間隔（週または月の単位）"
+                  className="h-11 w-24 rounded-lg border border-input bg-background px-4 py-2.5 text-sm text-foreground transition-all duration-300 hover:border-primary/40 hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:border-ring/50"
+                >
                 {Array.from({ length: 12 }, (_, i) => i + 1).map((n) => (
                   <option key={n} value={n}>
                     {n}
                   </option>
                 ))}
-              </select>
+                </select>
+              </>
             )}
           </div>
           {recurrenceType !== 'none' && (
@@ -462,7 +540,13 @@ export function ApplyRoutineForm({
           {pending || previewLoading ? 'プレビューを取得中…' : '適用'}
         </Button>
       </form>
-      {status && <p className="text-sm text-muted-foreground mt-2">{status}</p>}
+      {status && (
+        <p
+          className={`text-sm mt-2 ${status.includes('失敗') || status.includes('正しくありません') || status.includes('指定してください') ? 'text-destructive font-medium' : 'text-muted-foreground'}`}
+        >
+          {status}
+        </p>
+      )}
 
       {/* 確認モーダル */}
       <Modal
@@ -485,39 +569,7 @@ export function ApplyRoutineForm({
         }
       >
       {previewData && (() => {
-          // 表示用のイベントを決定（優先順位: 手動編集 > AIカスタマイズ > 元のイベント）
-          const displayEvents = (() => {
-            // まず、カスタマイズ結果または元のイベントを取得
-            let baseEvents = previewData.proposedEvents;
-            if (useCustomized && customizationResult) {
-              const normaldMap = new Map(
-                customizationResult.customizedEvents.map((c) => [c.proposalId, c])
-              );
-              baseEvents = previewData.proposedEvents.map((event) => {
-                const normald = normaldMap.get(event.proposalId);
-                if (!normald) return event;
-
-                return {
-                  ...event,
-                  title: normald.title ?? event.title,
-                  description: normald.description ?? event.description,
-                  start: normald.start ?? event.start,
-                  end: normald.end ?? event.end
-                };
-              });
-            }
-
-            // 手動編集を適用（最優先）
-            return baseEvents.map((event) => {
-              const edited = editedEvents.get(event.proposalId);
-              if (!edited) return event;
-
-              return {
-                ...event,
-                ...edited
-              };
-            });
-          })();
+          const displayEvents = displayEventsToApply;
 
           return (
             <div className="space-y-6">
@@ -694,11 +746,12 @@ export function ApplyRoutineForm({
             {displayEvents.length > 0 && (() => {
               // イベントを週ごとにグループ化
               const eventsByWeek = new Map<number, ProposedCalendarEvent[]>();
-              const startDateObj = new Date(previewData.startDate);
+              const startDateObj = parseLocalDateInput(previewData.startDate) ?? new Date(previewData.startDate);
+              const startOfPreview = normalizeLocalDate(startDateObj);
 
               displayEvents.forEach((event) => {
-                const eventDate = new Date(event.start);
-                const diffTime = eventDate.getTime() - startDateObj.getTime();
+                const eventDate = normalizeLocalDate(new Date(event.start));
+                const diffTime = eventDate.getTime() - startOfPreview.getTime();
                 const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
                 const weekIndex = Math.floor(diffDays / 7);
 
@@ -740,7 +793,7 @@ export function ApplyRoutineForm({
                   <div className="space-y-2">
                     {weeks.map((weekIndex) => {
                       const weekEvents = eventsByWeek.get(weekIndex) ?? [];
-                      const weekStartDate = new Date(startDateObj);
+                      const weekStartDate = new Date(startOfPreview);
                       weekStartDate.setDate(weekStartDate.getDate() + (weekIndex * 7));
                       const weekEndDate = new Date(weekStartDate);
                       weekEndDate.setDate(weekEndDate.getDate() + 6);
@@ -876,18 +929,18 @@ export function ApplyRoutineForm({
         const calculatedDisplayEvents = (() => {
           let baseEvents = previewData.proposedEvents;
           if (useCustomized && customizationResult) {
-            const normaldMap = new Map(
+            const normalizedMap = new Map(
               customizationResult.customizedEvents.map((c) => [c.proposalId, c])
             );
             baseEvents = previewData.proposedEvents.map((event) => {
-              const normald = normaldMap.get(event.proposalId);
-              if (!normald) return event;
+              const normalized = normalizedMap.get(event.proposalId);
+              if (!normalized) return event;
               return {
                 ...event,
-                title: normald.title ?? event.title,
-                description: normald.description ?? event.description,
-                start: normald.start ?? event.start,
-                end: normald.end ?? event.end
+                title: normalized.title ?? event.title,
+                description: normalized.description ?? event.description,
+                start: normalized.start ?? event.start,
+                end: normalized.end ?? event.end
               };
             });
           }

@@ -57,6 +57,8 @@ export function RoutineComposer({ action, asModal = false, open = false, onClose
   // normalタイプの場合の時間範囲（デフォルト: 0:00-24:00 = 24時間）
   const [normalStartHour, setNormalStartHour] = useState<number>(0);
   const [normalEndHour, setNormalEndHour] = useState<number>(24);
+  /** 時間範囲変更で範囲外ブロックが削除されたときの通知（ユーザー向け） */
+  const [rangeTrimmedMessage, setRangeTrimmedMessage] = useState<string | null>(null);
   const router = useRouter();
 
   // 時間範囲が変更された時に、範囲外のBlockを自動削除
@@ -117,24 +119,29 @@ export function RoutineComposer({ action, asModal = false, open = false, onClose
             const hasTimeOverlap = otherBlock.startHour < adjustedBlock.endHour && otherBlock.endHour > adjustedBlock.startHour;
             return isSameTimeRange || hasTimeOverlap;
           });
-        })
-      // 変更があった場合のみ更新
-      const hasChanges = adjustedBlocks.length !== blocks.length ||
-        adjustedBlocks.some((adjusted, index) => {
-          const original = blocks[index];
-          if (!original) return false;
-          return adjusted.startHour !== original.startHour ||
-                 adjusted.endHour !== original.endHour;
         });
 
+      // 変更検知: 長さが変わった or 同一IDのブロックで時刻が変わった
+      const idToOriginal = new Map(blocks.map((b) => [b.id, b]));
+      const lengthChanged = adjustedBlocks.length !== blocks.length;
+      const anyTimeChanged = adjustedBlocks.some((adj) => {
+        const orig = adj.id != null ? idToOriginal.get(adj.id) : undefined;
+        if (!orig) return true; // 新規 or 不明なら変更ありとみなす
+        return adj.startHour !== orig.startHour || adj.endHour !== orig.endHour;
+      });
+      const hasChanges = lengthChanged || anyTimeChanged;
+
       if (hasChanges) {
-        // 範囲外のBlockが削除された場合は警告を表示
         if (blocksBeforeFilter > adjustedBlocks.length) {
           const deletedCount = blocksBeforeFilter - adjustedBlocks.length;
-          console.warn(`時間範囲外のBlock ${deletedCount}個が削除されました。`);
+          setRangeTrimmedMessage(`時間範囲を変更したため、範囲外の時間ブロック ${deletedCount} 個を削除しました。`);
+        } else {
+          setRangeTrimmedMessage(null);
         }
         setBlocks(adjustedBlocks);
       }
+    } else {
+      setRangeTrimmedMessage(null);
     }
   }, [normalStartHour, normalEndHour, durationType, blocks]);
   /* eslint-enable react-hooks/set-state-in-effect */
@@ -180,6 +187,7 @@ export function RoutineComposer({ action, asModal = false, open = false, onClose
     startTransition(async () => {
       const result = await action(formData);
       if (result.ok) {
+        setError(null);
         setMessage(`Routine「${result.data?.name ?? ''}」を作成しました`);
         formElement.reset();
 
@@ -188,6 +196,7 @@ export function RoutineComposer({ action, asModal = false, open = false, onClose
         setDurationType('normal');
         setNormalStartHour(0);
         setNormalEndHour(24);
+        setRangeTrimmedMessage(null);
 
         // モーダルの場合は少し待ってから閉じる
         if (asModal && onClose) {
@@ -200,7 +209,8 @@ export function RoutineComposer({ action, asModal = false, open = false, onClose
           router.refresh();
         }
       } else {
-        setMessage(result.error ?? 'Routineの作成に失敗しました');
+        setMessage('');
+        setError(result.error ?? 'Routineの作成に失敗しました');
       }
     });
   };
@@ -349,6 +359,12 @@ export function RoutineComposer({ action, asModal = false, open = false, onClose
         </div>
       )}
 
+      {rangeTrimmedMessage && (
+        <p className="text-sm text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 rounded-lg px-3 py-2" role="status">
+          {rangeTrimmedMessage}
+        </p>
+      )}
+
       {/* ビジュアルタイムライン編集 */}
       <RoutineBlockTimelineEditor
         blocks={blocks}
@@ -366,8 +382,8 @@ export function RoutineComposer({ action, asModal = false, open = false, onClose
         </Card>
       )}
 
-      {/* 成功メッセージ */}
-      {message && (
+      {/* 成功メッセージ（エラー時は上記のエラー表示のみ） */}
+      {message && !error && (
         <Card className="border-primary/50 bg-primary/10">
           <CardContent className="pt-6">
             <p className="text-sm text-primary">{message}</p>

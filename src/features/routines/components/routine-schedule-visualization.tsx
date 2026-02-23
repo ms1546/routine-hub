@@ -49,36 +49,46 @@ export function RoutineScheduleVisualization({
     // normal: 時間軸を表示し、Blockを1行に並べて表示
     // 時間順にソート
     const sortedBlocks = [...timeBlocks].sort((a, b) => a.startHour - b.startHour);
+    const rangeStart = Math.min(...sortedBlocks.map((block) => block.startHour));
+    const rangeEnd = Math.max(...sortedBlocks.map((block) => block.endHour));
+    const rangeHours = Math.max(1, rangeEnd - rangeStart);
+    const axisStart = Math.floor(rangeStart);
+    const axisEnd = Math.ceil(rangeEnd);
+    const axisRange = Math.max(1, axisEnd - axisStart);
+    const axisInterval = axisRange <= 6 ? 1 : axisRange <= 12 ? 2 : 3;
 
     return (
-      <div className={`${className} overflow-visible`}>
-        <div className="space-y-4 overflow-visible">
-          <div className="space-y-1.5 overflow-visible">
+      <div className={`${className} w-full min-w-0 overflow-visible`}>
+        <div className="space-y-4 overflow-visible w-full">
+          <div className="space-y-1.5 overflow-visible w-full min-w-0">
             {/* 時間軸 - 3時間ごとに表示 */}
-            <div className="relative h-5">
-              {Array.from({ length: 9 }, (_, i) => {
-                const hour = i * 3;
+            <div className="relative w-full h-5">
+              {Array.from({ length: Math.floor(axisRange / axisInterval) + 1 }, (_, i) => {
+                const hour = axisStart + i * axisInterval;
                 return (
                   <div
                     key={hour}
                     className="absolute text-xs text-muted-foreground font-medium"
-                    style={{ left: `${(hour / 24) * 100}%`, transform: 'translateX(-50%)' }}
+                    style={{
+                      left: `${((hour - axisStart) / axisRange) * 100}%`,
+                      transform: 'translateX(-50%)'
+                    }}
                   >
                     {hour}
                   </div>
                 );
               })}
             </div>
-            {/* タイムライン */}
-            <div className={`relative bg-muted/30 rounded-md ${compact ? 'h-16 overflow-hidden' : 'h-24'} overflow-visible`}>
+            {/* タイムライン（w-full で幅を明示し、ブロックを横一列に表示） */}
+            <div className={`relative w-full min-w-0 bg-muted/30 rounded-md ${compact ? 'h-16 overflow-hidden' : 'h-24'} overflow-visible`}>
               {sortedBlocks.map((block) => {
-                const leftPercent = (block.startHour / 24) * 100;
-                const widthPercent = ((block.endHour - block.startHour) / 24) * 100;
+                const leftPercent = ((block.startHour - rangeStart) / rangeHours) * 100;
+                const widthPercent = ((block.endHour - block.startHour) / rangeHours) * 100;
                 const isHovered = hoveredBlockId === block.id;
                 return (
                   <div
                     key={block.id}
-                    className={`absolute top-0 h-full border-2 ${energyLevelColors[block.energyLevel] || energyLevelColors.low} rounded-sm transition-all hover:z-30 relative flex flex-col justify-center items-center ${compact ? 'p-1.5' : 'p-2.5'}`}
+                    className={`absolute top-0 h-full border-2 ${energyLevelColors[block.energyLevel] || energyLevelColors.low} rounded-sm transition-all hover:z-30 flex flex-col justify-center items-center ${compact ? 'p-1.5' : 'p-2.5'}`}
                     style={{
                       left: `${leftPercent}%`,
                       width: `${widthPercent}%`
@@ -188,8 +198,8 @@ export function RoutineScheduleVisualization({
                         );
                       })}
                     </div>
-                    {/* タイムライン */}
-                    <div className={`relative bg-muted/30 rounded-md ${compact ? 'h-16 overflow-hidden' : 'h-24'} overflow-visible`}>
+                    {/* タイムライン（w-full で幅を明示し、ブロックを横一列に表示） */}
+                    <div className={`relative w-full min-w-0 bg-muted/30 rounded-md ${compact ? 'h-16 overflow-hidden' : 'h-24'} overflow-visible`}>
                       {dayBlocks.map((block) => {
                         const leftPercent = (block.startHour / 24) * 100;
                         const widthPercent = ((block.endHour - block.startHour) / 24) * 100;

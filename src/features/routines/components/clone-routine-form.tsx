@@ -35,6 +35,8 @@ export function CloneRoutineForm({ routineId, defaultName, action }: CloneRoutin
   const [status, setStatus] = useState('Clone to personalize privately.');
   const [pending, startTransition] = useTransition();
 
+  const [isError, setIsError] = useState(false);
+
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const formData = new FormData(event.currentTarget);
@@ -43,8 +45,10 @@ export function CloneRoutineForm({ routineId, defaultName, action }: CloneRoutin
     startTransition(async () => {
       const result = await action({ routineId, overrides: { name } });
       if (result.ok) {
+        setIsError(false);
         setStatus(`Cloned as ${result.data?.name ?? 'routine'} (private)`);
       } else {
+        setIsError(true);
         setStatus(result.error ?? 'Unable to clone.');
       }
     });
@@ -68,7 +72,11 @@ export function CloneRoutineForm({ routineId, defaultName, action }: CloneRoutin
           {pending ? 'Cloning…' : 'Clone'}
         </Button>
       </form>
-      {status && <p className="text-sm text-muted-foreground mt-2">{status}</p>}
+      {status && (
+        <p className={`text-sm mt-2 ${isError ? 'text-destructive font-medium' : 'text-muted-foreground'}`} role={isError ? 'alert' : undefined}>
+          {status}
+        </p>
+      )}
     </Card>
   );
 }

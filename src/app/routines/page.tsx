@@ -44,13 +44,15 @@ export default async function RoutinesPage({
   const uniqueTags = Array.from(new Set(allRoutines.flatMap((routine) => routine.tags))).sort();
   const listItems = filteredRoutines.map(toRoutineListItem);
 
+  const filterActive = !!parseFilters(resolvedSearchParams);
+
   return (
     <AppShell
       title="Routineライブラリ"
       description="再利用可能な、人間がレビューしたRoutineを閲覧できます。複製、適応、適用を意図的に制御できます。"
     >
       <RoutineFilters availableTags={uniqueTags} />
-      <RoutineList routines={listItems} userEmail={currentUser.email} />
+      <RoutineList routines={listItems} userEmail={currentUser.email} filterActive={filterActive} />
     </AppShell>
   );
 }

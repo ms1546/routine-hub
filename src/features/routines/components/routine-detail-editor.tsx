@@ -16,13 +16,15 @@ import {
 } from '@/shared/ui/card';
 import { RoutineBlockTimelineEditor } from './routine-block-timeline-editor';
 import type { RoutineDetailView, RoutineBlockInput, Routine } from '@/features/routines';
-import type { UpdateRoutineInfoPayload, UpdateBlockPayload } from '@/features/routines/actions/routines';
+import type { UpdateRoutineInfoPayload, UpdateBlockPayload, AddBlockPayload, DeleteBlockPayload } from '@/features/routines/actions/routines';
 import type { ActionResult } from '@/shared/types/actionResult';
 
 type RoutineDetailEditorProps = {
   routine: RoutineDetailView;
   onUpdateRoutineInfo: (payload: UpdateRoutineInfoPayload) => Promise<ActionResult<Routine>>;
   onUpdateBlock: (payload: UpdateBlockPayload) => Promise<ActionResult<Routine>>;
+  onAddBlock?: (payload: AddBlockPayload) => Promise<ActionResult<import('@/features/routines').RoutineBlock>>;
+  onDeleteBlock?: (payload: DeleteBlockPayload) => Promise<ActionResult<Routine>>;
   onCancel: () => void;
 };
 
@@ -30,6 +32,8 @@ export function RoutineDetailEditor({
   routine,
   onUpdateRoutineInfo,
   onUpdateBlock,
+  onAddBlock,
+  onDeleteBlock,
   onCancel
 }: RoutineDetailEditorProps) {
   const [name, setName] = useState(routine.name);
@@ -83,8 +87,19 @@ export function RoutineDetailEditor({
     setError(null);
     setMessage(null);
 
+    // 合計時間が3時間未満の場合は保存前にバリデーション
+    const totalMinutes = blocks.reduce((acc, b) => acc + (b.endHour - b.startHour) * 60, 0);
+    if (totalMinutes < 180) {
+      setError('Routine全体の合計時間は最低3時間必要です。');
+      return;
+    }
+
+    const originalBlockIds = new Set(routine.timeBlocks.map((b) => b.id));
+    const toAdd = blocks.filter((b) => !b.id || !originalBlockIds.has(b.id));
+    const toUpdate = blocks.filter((b) => b.id && originalBlockIds.has(b.id));
+    const toDelete = routine.timeBlocks.filter((b) => !blocks.some((c) => c.id === b.id));
+
     startTransition(async () => {
-      // Routine情報を更新（変更がある場合のみ）
       const infoPatch: { routineId: string; name?: string; description?: string; purpose?: string } = {
         routineId: routine.id
       };
@@ -92,23 +107,40 @@ export function RoutineDetailEditor({
       if (description !== routine.description) infoPatch.description = description;
       if (purpose !== routine.purpose) infoPatch.purpose = purpose;
 
-      // 変更がある場合のみ更新
       if (infoPatch.name !== undefined || infoPatch.description !== undefined || infoPatch.purpose !== undefined) {
         const infoResult = await onUpdateRoutineInfo(infoPatch);
-
         if (!infoResult.ok) {
           setError(infoResult.error ?? 'Routine情報の更新に失敗しました');
           return;
         }
       }
 
-      // Time Blocksを更新（各ブロックを個別に更新）
-      // TODO: より効率的な更新方法を検討
-      for (const block of blocks) {
+      // 1) 新規ブロックを追加（サーバー採番の ID は router.refresh() で再取得するまでローカルに反映されない）
+      if (onAddBlock && toAdd.length > 0) {
+        for (const block of toAdd) {
+          const addResult = await onAddBlock({
+            routineId: routine.id,
+            block: {
+              day: block.day,
+              startHour: block.startHour,
+              endHour: block.endHour,
+              label: block.label,
+              objective: block.objective,
+              energyLevel: block.energyLevel as 'low' | 'medium' | 'high'
+            }
+          });
+          if (!addResult.ok) {
+            setError(addResult.error ?? '時間ブロックの追加に失敗しました');
+            return;
+          }
+        }
+      }
+
+      // 2) 既存ブロックの変更を更新
+      for (const block of toUpdate) {
         if (!block.id) continue;
         const originalBlock = routine.timeBlocks.find((b) => b.id === block.id);
         if (!originalBlock) continue;
-
         const hasChanges =
           block.day !== originalBlock.day ||
           block.startHour !== originalBlock.startHour ||
@@ -116,9 +148,7 @@ export function RoutineDetailEditor({
           block.label !== originalBlock.label ||
           block.objective !== originalBlock.objective ||
           block.energyLevel !== originalBlock.energyLevel;
-
         if (!hasChanges) continue;
-
         const blockResult = await onUpdateBlock({
           routineId: routine.id,
           blockId: block.id,
@@ -131,17 +161,27 @@ export function RoutineDetailEditor({
             energyLevel: block.energyLevel as 'low' | 'medium' | 'high'
           }
         });
-
         if (!blockResult.ok) {
           setError(blockResult.error ?? 'Time Blockの更新に失敗しました');
           return;
         }
       }
 
+      // 3) 削除されたブロックを削除
+      if (onDeleteBlock && toDelete.length > 0) {
+        for (const block of toDelete) {
+          const deleteResult = await onDeleteBlock({ routineId: routine.id, blockId: block.id });
+          if (!deleteResult.ok) {
+            setError(deleteResult.error ?? '時間ブロックの削除に失敗しました');
+            return;
+          }
+        }
+      }
+
       setMessage('Routineを更新しました');
       setTimeout(() => {
-        onCancel(); // 編集モードを終了
-        router.refresh(); // ページを再取得して最新のデータを表示
+        onCancel();
+        router.refresh();
       }, 1000);
     });
   };
@@ -229,11 +269,26 @@ export function RoutineDetailEditor({
           </div>
           <Badge variant="secondary">{blocks.length} blocks</Badge>
         </div>
+        {(() => {
+          const totalMinutes = blocks.reduce((acc, b) => acc + (b.endHour - b.startHour) * 60, 0);
+          return totalMinutes < 180 ? (
+            <p className="text-sm text-destructive" role="alert">
+              Routine全体の合計時間は最低3時間必要です。（現在: {(totalMinutes / 60).toFixed(1)}時間）
+            </p>
+          ) : null;
+        })()}
         <Card className="p-6 overflow-visible">
           <RoutineBlockTimelineEditor
             blocks={blocks}
             onChange={handleBlocksChange}
             durationType={routine.durationType}
+            normalTimeRange={
+              routine.durationType === 'normal' &&
+              routine.normalStartHour != null &&
+              routine.normalEndHour != null
+                ? { startHour: routine.normalStartHour, endHour: routine.normalEndHour }
+                : undefined
+            }
           />
         </Card>
       </section>
@@ -242,7 +297,10 @@ export function RoutineDetailEditor({
         <Button variant="outline" onClick={onCancel} disabled={pending}>
           キャンセル
         </Button>
-        <Button onClick={handleSaveAll} disabled={pending}>
+        <Button
+          onClick={handleSaveAll}
+          disabled={pending || blocks.reduce((acc, b) => acc + (b.endHour - b.startHour) * 60, 0) < 180}
+        >
           {pending ? '保存中...' : '保存'}
         </Button>
       </div>

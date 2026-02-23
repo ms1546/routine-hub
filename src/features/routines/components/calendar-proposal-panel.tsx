@@ -6,6 +6,10 @@ import { Button } from '@/shared/ui/button';
 import { Card } from '@/shared/ui/card';
 import { confirmProposedEventsAction, type CalendarConfirmationResult } from '@/app/actions/calendar';
 
+/**
+ * カレンダー提案パネル。日付範囲や編集済みイベントを反映して適用する場合は、
+ * startDate / endDate / eventsToInsert を渡すこと（未指定の場合はサーバー側のデフォルト窓で再構築される）。
+ */
 type AiAccessInfo = {
   allowed: boolean;
   remaining: number | null;
@@ -21,7 +25,10 @@ export function CalendarProposalPanel({
   connectUrl,
   initialResult,
   initialError,
-  aiAccess
+  aiAccess,
+  startDate,
+  endDate,
+  eventsToInsert
 }: {
   routineId: string;
   proposedEvents: ProposedCalendarEvent[];
@@ -31,6 +38,11 @@ export function CalendarProposalPanel({
   initialResult?: CalendarConfirmationResult | null;
   initialError?: string | null;
   aiAccess?: AiAccessInfo;
+  /** 適用する日付範囲（YYYY-MM-DD）。渡すとサーバーがこの範囲で提案を再構築する */
+  startDate?: string;
+  endDate?: string;
+  /** 編集・カスタマイズ済みのイベントをそのまま挿入する場合に渡す */
+  eventsToInsert?: ProposedCalendarEvent[];
 }) {
   const [selectedIds, setSelectedIds] = useState(() => proposedEvents.map((event) => event.proposalId));
   const [status, setStatus] = useState<string | null>(null);
@@ -54,12 +66,13 @@ export function CalendarProposalPanel({
 
     startTransition(async () => {
       try {
-        // proposedEventsから繰り返し情報を取得（最初のイベントから）
         const recurrence = proposedEvents[0]?.recurrence;
         const confirmation = await confirmProposedEventsAction({
           routineId,
           proposalIds: selectedIds,
-          recurrence
+          recurrence,
+          ...(startDate && endDate ? { startDate, endDate } : {}),
+          ...(eventsToInsert != null && eventsToInsert.length > 0 ? { events: eventsToInsert } : {})
         });
         setResult(confirmation);
         setStatus(`Inserted ${confirmation.successCount} event(s).`);

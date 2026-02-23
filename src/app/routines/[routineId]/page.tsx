@@ -10,6 +10,7 @@ import {
   cloneRoutineAction,
   updateRoutineVisibilityAction,
   updateRoutineBlockAction,
+  addRoutineBlockAction,
   deleteRoutineBlockAction,
   reorderRoutineBlocksAction,
   toggleRoutineLikeAction,
@@ -87,6 +88,7 @@ async function RoutineDetailContent({ routine, detail, currentUser }: RoutineDet
       onCloneRoutine={cloneRoutineAction}
       onUpdateRoutineInfo={canEdit ? updateRoutineInfoAction : undefined}
       onUpdateBlock={canEdit ? updateRoutineBlockAction : undefined}
+      onAddBlock={canEdit ? addRoutineBlockAction : undefined}
       onDeleteBlock={canEdit ? deleteRoutineBlockAction : undefined}
       onReorderBlocks={canEdit ? reorderRoutineBlocksAction : undefined}
       onToggleLike={toggleRoutineLikeAction}

@@ -36,6 +36,9 @@ export type RoutineDetailView = RoutineListItem & {
   updatedAt: string;
   owner: string;
   timeBlocks: RoutineBlockView[];
+  /** normal タイプの場合の時間範囲。編集時のタイムライン表示に使用 */
+  normalStartHour?: number;
+  normalEndHour?: number;
 };
 
 const dayLabels = {
@@ -103,6 +106,8 @@ export const toRoutineDetail = (routine: Routine): RoutineDetailView => {
     createdAt: routine.createdAt.toISOString(),
     updatedAt: routine.updatedAt.toISOString(),
     owner: routine.owner,
+    normalStartHour: routine.normalStartHour,
+    normalEndHour: routine.normalEndHour,
     timeBlocks: routine.timeBlocks.map((block) => ({
       id: block.id,
       label: block.label,

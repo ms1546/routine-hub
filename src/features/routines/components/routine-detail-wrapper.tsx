@@ -11,6 +11,7 @@ import type {
   VisibilityTogglePayload,
   UpdateRoutineInfoPayload,
   UpdateBlockPayload,
+  AddBlockPayload,
   DeleteBlockPayload,
   ReorderBlocksPayload,
   ToggleLikePayload
@@ -43,6 +44,7 @@ type RoutineDetailWrapperProps = {
   onCloneRoutine: (payload: CloneRoutinePayload) => Promise<ActionResult<Routine>>;
   onUpdateRoutineInfo?: (payload: UpdateRoutineInfoPayload) => Promise<ActionResult<Routine>>;
   onUpdateBlock?: (payload: UpdateBlockPayload) => Promise<ActionResult<Routine>>;
+  onAddBlock?: (payload: AddBlockPayload) => Promise<ActionResult<import('@/features/routines').RoutineBlock>>;
   onDeleteBlock?: (payload: DeleteBlockPayload) => Promise<ActionResult<Routine>>;
   onReorderBlocks?: (payload: ReorderBlocksPayload) => Promise<ActionResult<Routine>>;
   onToggleLike?: (payload: ToggleLikePayload) => Promise<ActionResult<{ liked: boolean; likes: number }>>;
@@ -62,6 +64,8 @@ export function RoutineDetailWrapper(props: RoutineDetailWrapperProps) {
         routine={props.routine}
         onUpdateRoutineInfo={props.onUpdateRoutineInfo}
         onUpdateBlock={props.onUpdateBlock}
+        onAddBlock={props.onAddBlock}
+        onDeleteBlock={props.onDeleteBlock}
         onCancel={() => setIsEditing(false)}
       />
     );

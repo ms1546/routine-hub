@@ -25,6 +25,7 @@ export function UserSettingsForm({ userId, initialSettings, action }: UserSettin
   const [constraints, setConstraints] = useState(initialSettings.constraints.join('\n'));
   const [energyLevel, setEnergyLevel] = useState(initialSettings.energyLevel);
   const [status, setStatus] = useState<string | null>(null);
+  const [statusIsError, setStatusIsError] = useState(false);
   const [pending, startTransition] = useTransition();
   const { update: updateSession } = useSession();
 
@@ -47,15 +48,17 @@ export function UserSettingsForm({ userId, initialSettings, action }: UserSettin
           energyLevel
         });
         if (result.ok) {
-          // displayNameが変更された場合はセッションを更新
           if (displayName && displayName !== initialSettings.displayName) {
             await updateSession();
           }
+          setStatusIsError(false);
           setStatus('設定を保存しました');
         } else {
-          setStatus(`エラー: ${result.error}`);
+          setStatusIsError(true);
+          setStatus(result.error ?? '設定の保存に失敗しました');
         }
       } catch (error) {
+        setStatusIsError(true);
         setStatus(error instanceof Error ? error.message : '設定の保存に失敗しました');
       }
     });
@@ -155,7 +158,7 @@ export function UserSettingsForm({ userId, initialSettings, action }: UserSettin
               {pending ? '保存中...' : '設定を保存'}
             </Button>
             {status && (
-              <p className={`text-sm ${status.includes('エラー') ? 'text-destructive' : 'text-success'}`}>
+              <p className={`text-sm ${statusIsError ? 'text-destructive font-medium' : 'text-muted-foreground'}`} role={statusIsError ? 'alert' : undefined}>
                 {status}
               </p>
             )}

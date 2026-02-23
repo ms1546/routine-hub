@@ -74,43 +74,33 @@ export async function getCalendarPreviewAction({
   return { proposedEvents, existingEvents, isCalendarConnected: isConnected };
 }
 
+/** クライアントから渡す「適用するイベント」の形（編集・AIカスタマイズ反映済み） */
+export type ConfirmProposedEventsInput = {
+  routineId: string;
+  /** 適用するイベントの一覧。渡す場合は日付・編集・カスタマイズをそのまま挿入する。未指定の場合は proposalIds + startDate/endDate でサーバー側で再構築する。 */
+  events?: ProposedCalendarEvent[];
+  /** events を渡さない場合に使用。この日付範囲でサーバーが提案を再構築する。 */
+  startDate?: string;
+  endDate?: string;
+  proposalIds: string[];
+  recurrence?: RecurrencePattern;
+};
+
 /**
  * Confirm Proposed Events Action (Calendar Write)
  *
- * PORTFOLIO MODE RESTRICTION:
- * - Calendar writes are ADMIN-ONLY in portfolio mode
- * - This is intentional to avoid requiring reviewers to grant sensitive calendar scopes
- * - Reduces operational and security complexity
- * - Keeps the demo focused on design, not automation
+ * - events を渡した場合: その内容をそのままカレンダーに挿入（ユーザーが選んだ日付・編集・AIカスタマイズを反映）。
+ * - events を渡さない場合: startDate/endDate またはデフォルト窓で buildProposedEvents し、proposalIds でフィルタして挿入。
  *
- * Authorization:
- * - Server-side check: Only admin users can write to Google Calendar
- * - Regular users receive a clear error message
- *
- * OAuth Design:
- * - Each calendar write must be explicitly initiated by the user
- * - OAuth consent with calendar.events scope is requested EACH TIME
- * - No refresh tokens are stored (portfolio security tradeoff)
- * - Short-lived access tokens are obtained and discarded immediately
- * - prompt=consent is used to ensure explicit user intent per write
+ * PORTFOLIO MODE RESTRICTION: Calendar writes are ADMIN-ONLY.
  */
-export async function confirmProposedEventsAction({
-  routineId,
-  proposalIds,
-  recurrence
-}: {
-  routineId: string;
-  proposalIds: string[];
-  recurrence?: RecurrencePattern;
-}): Promise<CalendarConfirmationResult> {
+export async function confirmProposedEventsAction(
+  input: ConfirmProposedEventsInput
+): Promise<CalendarConfirmationResult> {
+  const { routineId, events: eventsToInsert, startDate, endDate, proposalIds, recurrence } = input;
   const { getCurrentUser } = await import('@/infrastructure/auth/session');
   const currentUser = await getCurrentUser();
 
-  // PORTFOLIO MODE: Calendar writes are admin-only
-  // This restriction is intentional for portfolio context:
-  // - Avoids requiring reviewers to grant sensitive calendar scopes
-  // - Reduces operational complexity
-  // - Keeps demo focused on design rather than automation
   if (currentUser.role !== 'admin') {
     throw new Error(
       'Calendar export is currently limited to admin users in portfolio mode. ' +
@@ -128,10 +118,44 @@ export async function confirmProposedEventsAction({
     throw new Error('Routine not found');
   }
 
-  const calendarWindow = createDefaultCalendarWindow();
-  const proposals = buildProposedEvents(routine, calendarWindow, recurrence).filter((proposal) =>
-    proposalIds.includes(proposal.proposalId)
-  );
+  let proposals: ProposedCalendarEvent[];
+
+  if (eventsToInsert != null && eventsToInsert.length > 0) {
+    const valid = eventsToInsert.every(
+      (e) => e.routineId === routineId && proposalIds.includes(e.proposalId)
+    );
+    if (!valid) {
+      throw new Error('Invalid events: routineId or proposalIds do not match.');
+    }
+    proposals = eventsToInsert;
+  } else {
+    const timeZone = 'Asia/Tokyo';
+    let calendarWindow: CalendarTimeRange;
+    if (startDate && endDate) {
+      const parseDateParts = (value: string) => {
+        const [yearPart = '', monthPart = '', dayPart = ''] = value.split('-');
+        const year = Number(yearPart);
+        const month = Number(monthPart);
+        const day = Number(dayPart);
+        if (!yearPart || !monthPart || !dayPart || Number.isNaN(year) || Number.isNaN(month) || Number.isNaN(day)) {
+          throw new Error('Invalid date format. Expected YYYY-MM-DD.');
+        }
+        return { year, month, day };
+      };
+      const start = parseDateParts(startDate);
+      const end = parseDateParts(endDate);
+      calendarWindow = {
+        start: makeZonedDate({ year: start.year, month: start.month, day: start.day }, timeZone).toISOString(),
+        end: makeZonedDate({ year: end.year, month: end.month, day: end.day }, timeZone).toISOString(),
+        timezone: timeZone
+      };
+    } else {
+      calendarWindow = createDefaultCalendarWindow();
+    }
+    proposals = buildProposedEvents(routine, calendarWindow, recurrence).filter((p) =>
+      proposalIds.includes(p.proposalId)
+    );
+  }
 
   const isConnected = await hasStoredRefreshToken(routine.owner);
   if (!isConnected) {

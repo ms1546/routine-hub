@@ -134,6 +134,7 @@ export function RoutineBlockTimelineEditor({
   normalTimeRange
 }: RoutineBlockTimelineEditorProps) {
   const [editingBlock, setEditingBlock] = useState<RoutineBlockInput | null>(null);
+  const [overlapError, setOverlapError] = useState<string | null>(null);
   const [draggingBlockId, setDraggingBlockId] = useState<string | null>(null);
   const [draggingBlock, setDraggingBlock] = useState<RoutineBlockInput | null>(null);
   const [dragStartDay, setDragStartDay] = useState<string | null>(null);
@@ -145,6 +146,8 @@ export function RoutineBlockTimelineEditor({
   const timelineRef = useRef<HTMLDivElement>(null);
   const timelineRefsByDay = useRef<Record<string, HTMLDivElement | null>>({});
   const nextBlockIdRef = useRef(0);
+  /** ドラッグ開始時のブロック位置（マウスアップで重複していた場合に復元するため） */
+  const dragStartBlockSnapshot = useRef<RoutineBlockInput | null>(null);
 
   const isDayBased = durationType === 'normal';
 
@@ -271,8 +274,10 @@ export function RoutineBlockTimelineEditor({
     e.preventDefault();
     e.stopPropagation();
     if (!block.id) return;
+    setOverlapError(null);
     setDraggingBlockId(block.id);
     setDraggingBlock(block);
+    dragStartBlockSnapshot.current = { ...block };
     const targetDay = day || block.day;
     setDragStartDay(targetDay || null);
     setDragStartX(e.clientX);
@@ -583,23 +588,32 @@ export function RoutineBlockTimelineEditor({
 
   // マウスアップ（ドラッグ/リサイズ終了）
   const handleMouseUp = useCallback(() => {
-    // 少し遅延させてからhasDraggedをリセット（クリックイベントが発火する前に）
     const wasDragging = draggingBlockId !== null || resizingBlockId !== null;
+    const snapshot = dragStartBlockSnapshot.current;
+
+    if (wasDragging && draggingBlockId && snapshot) {
+      const currentBlock = blocks.find((b) => b.id === draggingBlockId);
+      if (currentBlock && checkBlockOverlap(currentBlock, draggingBlockId)) {
+        setOverlapError('この時間帯には既にブロックが存在します。');
+        onChange(
+          blocks.map((b) => (b.id === draggingBlockId ? snapshot : b))
+        );
+      }
+    }
+
     setDraggingBlockId(null);
     setDraggingBlock(null);
     setDragStartDay(null);
+    dragStartBlockSnapshot.current = null;
     setResizingBlockId(null);
     setResizeSide(null);
 
-    // ドラッグ/リサイズが発生していた場合は、クリックイベントを無視するために少し待つ
     if (wasDragging) {
-      setTimeout(() => {
-        setHasDragged(false);
-      }, 100);
+      setTimeout(() => setHasDragged(false), 100);
     } else {
       setHasDragged(false);
     }
-  }, [draggingBlockId, resizingBlockId]);
+  }, [draggingBlockId, resizingBlockId, blocks, onChange, checkBlockOverlap]);
 
   // イベントリスナーの登録
   useEffect(() => {
@@ -646,11 +660,11 @@ export function RoutineBlockTimelineEditor({
 
     // 重複チェック
     if (checkBlockOverlap(validBlock)) {
-      // 重複している場合は追加しない（視覚的フィードバックは後で実装）
-      console.warn('この時間帯には既にブロックが存在します。');
+      setOverlapError('この時間帯には既にブロックが存在します。');
       return;
     }
 
+    setOverlapError(null);
     onChange([...blocks, validBlock]);
     setEditingBlock(validBlock); // 追加後すぐに編集モーダルを開く
   };
@@ -665,6 +679,15 @@ export function RoutineBlockTimelineEditor({
     onChange(blocks.filter((b) => b.id !== blockId));
   };
 
+  // モーダルを閉じる（キャンセル時）。名前が空のブロックは追加直後とみなして削除する
+  const handleCloseBlockEdit = () => {
+    setOverlapError(null);
+    if (editingBlock && (!editingBlock.label || !editingBlock.label.trim())) {
+      onChange(blocks.filter((b) => b.id !== editingBlock.id));
+    }
+    setEditingBlock(null);
+  };
+
   // Block詳細編集
   const handleSaveBlockEdit = (updated: RoutineBlockInput): void => {
     // weeklyタイプでは24時を超えた値をそのまま保持する（正規化しない）
@@ -673,11 +696,11 @@ export function RoutineBlockTimelineEditor({
 
     // 重複チェック（自分自身を除外）
     if (checkBlockOverlap(validBlock, validBlock.id)) {
-      // 重複している場合は保存しない（エラーメッセージは後で実装）
-      console.warn('この時間帯には既にブロックが存在します。');
+      setOverlapError('この時間帯には既にブロックが存在します。');
       return;
     }
 
+    setOverlapError(null);
     const newBlocks = blocks.map((b) => (b.id === validBlock.id ? validBlock : b));
     onChange(newBlocks);
     setEditingBlock(null);
@@ -692,9 +715,14 @@ export function RoutineBlockTimelineEditor({
         <div className="flex items-center justify-between">
           <h3 className="text-lg font-semibold">時間ブロック</h3>
         </div>
+        {overlapError && (
+          <p className="text-sm text-destructive" role="alert">
+            {overlapError}
+          </p>
+        )}
 
         {/* 時間軸 */}
-        <div className="relative h-6">
+        <div className="relative w-full min-w-0 h-6">
           {(() => {
             // normalタイプで時間範囲が設定されている場合、その範囲内の時間軸を表示
             if (normalTimeRange) {
@@ -744,10 +772,10 @@ export function RoutineBlockTimelineEditor({
           })()}
         </div>
 
-        {/* タイムライン */}
+        {/* タイムライン（w-full で幅を明示し、ブロックを横一列に表示） */}
         <div
           ref={timelineRef}
-          className="relative h-32 bg-muted/30 rounded-md overflow-visible cursor-pointer"
+          className="relative w-full min-w-0 h-32 bg-muted/30 rounded-md overflow-visible cursor-pointer"
           onClick={(e) => handleTimelineClick(e)}
           onDoubleClick={(e) => handleTimelineDoubleClick(e)}
         >
@@ -767,17 +795,13 @@ export function RoutineBlockTimelineEditor({
             }
             const isValid = actualDuration >= 0.25; // 15分（最短）
 
-            const minDisplayWidthPx = 60; // 最小表示幅（ピクセル）
-            const finalWidthPercent = actualWidthPercent;
-
             return (
               <div
                 key={block.id}
                 className={`absolute top-0 h-full border-2 ${energyLevelColors[block.energyLevel] || energyLevelColors.low} rounded-sm cursor-move transition-all ${!isValid ? 'border-destructive' : ''}`}
                 style={{
                   left: `${leftPercent}%`,
-                  width: `${finalWidthPercent}%`,
-                  minWidth: `${minDisplayWidthPx}px`
+                  width: `${actualWidthPercent}%`
                 }}
                 onMouseDown={(e) => handleDragStart(e, block)}
                 onClick={(e) => {
@@ -786,6 +810,7 @@ export function RoutineBlockTimelineEditor({
                     e.stopPropagation();
                     return;
                   }
+                  setOverlapError(null);
                   setEditingBlock(block);
                 }}
               >
@@ -838,7 +863,10 @@ export function RoutineBlockTimelineEditor({
                 type="button"
                 variant="ghost"
                 size="sm"
-                onClick={() => setEditingBlock(block)}
+                onClick={() => {
+                setOverlapError(null);
+                setEditingBlock(block);
+              }}
               >
                 編集
               </Button>
@@ -855,7 +883,7 @@ export function RoutineBlockTimelineEditor({
             normalTimeRange={normalTimeRange}
             onSave={handleSaveBlockEdit}
             onDelete={handleDeleteBlock}
-            onClose={() => setEditingBlock(null)}
+            onClose={handleCloseBlockEdit}
           />
         )}
       </div>
@@ -948,6 +976,11 @@ export function RoutineBlockTimelineEditor({
         <h3 className="text-lg font-semibold">時間ブロック</h3>
       </div>
 
+      {overlapError && (
+        <p className="text-sm text-destructive" role="alert">
+          {overlapError}
+        </p>
+      )}
       <div className="space-y-4">
         {weekdayOrder.map((day) => {
           const dayBlocks = blocksByDay[day] || [];
@@ -976,12 +1009,12 @@ export function RoutineBlockTimelineEditor({
                     })}
                   </div>
 
-                  {/* タイムライン */}
+                  {/* タイムライン（w-full で幅を明示し、ブロックを横一列に表示） */}
                   <div
                     ref={(el) => {
                       timelineRefsByDay.current[day] = el;
                     }}
-                    className="relative h-24 bg-muted/30 rounded-md overflow-visible cursor-pointer"
+                    className="relative w-full min-w-0 h-24 bg-muted/30 rounded-md overflow-visible cursor-pointer"
                     onClick={(e) => handleTimelineClick(e, day)}
                     onDoubleClick={(e) => handleTimelineDoubleClick(e, day)}
                   >
@@ -991,7 +1024,8 @@ export function RoutineBlockTimelineEditor({
                       const originalBlockId = isSplitBlock && block.id ? block.id.replace('-next-day', '') : block.id;
 
                       // firstPartかどうかを判定（endHour === 24 かつ 元のBlockのendHour > 24）
-                      const isFirstPart = !isSplitBlock && block.endHour === 24 && blocks.find(b => b.id === block.id)?.endHour && (blocks.find(b => b.id === block.id)!.endHour > 24);
+                      const foundInBlocks = blocks.find((b) => b.id === block.id);
+                      const isFirstPart = !isSplitBlock && block.endHour === 24 && foundInBlocks != null && (foundInBlocks.endHour > 24);
 
                       // 元のBlockを取得（splitBlockまたはfirstPartの場合は、元のBlockを探す）
                       let originalBlock = block;
@@ -1008,9 +1042,6 @@ export function RoutineBlockTimelineEditor({
                       // 分割されたBlockの場合は重複チェックをスキップ（元のBlockでチェック）
                       const hasOverlap = isSplitBlock || !block.id ? false : checkBlockOverlap(block, block.id);
 
-                      const minDisplayWidthPx = 60; // 最小表示幅（ピクセル）
-                      const finalWidthPercent = actualWidthPercent;
-
                       return (
                         <div
                           key={block.id}
@@ -1018,8 +1049,7 @@ export function RoutineBlockTimelineEditor({
                           className={`absolute top-0 h-full border-2 ${energyLevelColors[block.energyLevel] || energyLevelColors.low} rounded-sm cursor-move transition-all ${!isValid || hasOverlap ? 'border-destructive' : ''} ${isSplitBlock ? 'opacity-80' : ''}`}
                           style={{
                             left: `${leftPercent}%`,
-                            width: `${finalWidthPercent}%`,
-                            minWidth: `${minDisplayWidthPx}px`
+                            width: `${actualWidthPercent}%`
                           }}
                           onMouseDown={(e) => {
                             // リサイズハンドルがクリックされた場合はドラッグを開始しない
@@ -1035,6 +1065,7 @@ export function RoutineBlockTimelineEditor({
                             if (hasDragged) {
                               return;
                             }
+                            setOverlapError(null);
                             // 分割されたBlockの場合も、元のBlockを編集
                             setEditingBlock(originalBlock);
                           }}
@@ -1056,10 +1087,10 @@ export function RoutineBlockTimelineEditor({
                             </div>
                           </div>
 
-                          {/* リサイズハンドル（右） */}
+                          {/* リサイズハンドル（右） - 分割表示でも元のBlockを更新するため originalBlock を渡す */}
                           <div
                             className="absolute right-0 top-0 w-2 h-full bg-foreground/20 cursor-ew-resize hover:bg-foreground/40"
-                            onMouseDown={(e) => handleResizeStart(e, block, 'right')}
+                            onMouseDown={(e) => handleResizeStart(e, originalBlock, 'right')}
                           />
                         </div>
                       );
@@ -1087,7 +1118,10 @@ export function RoutineBlockTimelineEditor({
               type="button"
               variant="ghost"
               size="sm"
-              onClick={() => setEditingBlock(block)}
+              onClick={() => {
+                setOverlapError(null);
+                setEditingBlock(block);
+              }}
             >
               編集
             </Button>
@@ -1095,15 +1129,16 @@ export function RoutineBlockTimelineEditor({
         ))}
       </div>
 
-      {/* 編集モーダル */}
+      {/* 編集モーダル（key でブロック切り替え時に再マウントして state をリセット） */}
         {editingBlock && (
           <BlockEditModal
+            key={editingBlock.id}
             block={editingBlock}
             durationType={durationType}
             normalTimeRange={normalTimeRange}
             onSave={handleSaveBlockEdit}
             onDelete={handleDeleteBlock}
-            onClose={() => setEditingBlock(null)}
+            onClose={handleCloseBlockEdit}
           />
         )}
     </div>
