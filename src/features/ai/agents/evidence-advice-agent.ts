@@ -6,6 +6,7 @@ import type { EvidenceAdviceResult, EvidenceCitation, EvidenceSuggestion } from 
 import { literatureSearchTool } from '../tools/literature-search-tool';
 import { applyEvidencePolicy } from '../tools/evidence-policy-tool';
 import { invokeBedrockWithFallback, isBedrockEnabled } from '../providers/bedrock';
+import { getSystemPrompt } from '../evaluation/prompt-helper';
 
 const generateUUID = createDefaultUUIDGenerator();
 
@@ -33,8 +34,35 @@ const translationSchema = z.object({
   translation: z.string()
 });
 
+const TRANSLATION_FALLBACK_PROMPT =
+  'You translate short search queries into concise English keywords for academic literature search.';
+
+/** 表示用テキストを日本語に翻訳（論文タイトル・説明文など） */
+const translateToJapanese = async (text: string): Promise<string> => {
+  if (!text.trim()) return text;
+  if (!isBedrockEnabled()) return text;
+  try {
+    const result = await invokeBedrockWithFallback(
+      {
+        systemPrompt:
+          'Translate the following text into natural Japanese. Preserve meaning; for academic paper titles use a natural Japanese translation. Keep well-known proper nouns in original if commonly used in Japanese (e.g. product names).',
+        userPrompt: `Translate to Japanese:\n${text}`,
+        schema: translationSchema,
+        shapeExample: '{ "translation": "日本語のテキスト" }',
+        temperature: 0.2,
+        maxTokens: 500
+      },
+      () => ({ translation: text })
+    );
+    return result.translation?.trim() || text;
+  } catch {
+    return text;
+  }
+};
+
 const translateQueryToEnglish = async (
-  query: string
+  query: string,
+  systemPrompt: string = TRANSLATION_FALLBACK_PROMPT
 ): Promise<{ searchQuery: string; displayQuery: string; translationFailed: boolean }> => {
   if (!NON_ASCII_REGEX.test(query)) {
     return { searchQuery: query, displayQuery: query, translationFailed: false };
@@ -46,8 +74,7 @@ const translateQueryToEnglish = async (
 
   const result = await invokeBedrockWithFallback(
     {
-      systemPrompt:
-        'You translate short search queries into concise English keywords for academic literature search.',
+      systemPrompt,
       userPrompt:
         `Translate the following query into concise English keywords. Keep proper nouns.\nQuery: ${query}`,
       schema: translationSchema,
@@ -114,15 +141,17 @@ export async function runEvidenceAdviceAgent({
   userProfile,
   minEvidenceCount = 1
 }: EvidenceAdviceAgentInput): Promise<EvidenceAdviceResult> {
+  const translationSystemPrompt = await getSystemPrompt('evidence-advice-agent').catch(() => TRANSLATION_FALLBACK_PROMPT);
+
   const query = buildEvidenceQuery(routine, userProfile);
   const warnings: string[] = [];
 
   if (!query) {
     warnings.push('検索クエリを生成できなかったため、提案を作成できませんでした。');
-    return applyEvidencePolicy({ query, suggestions: [], warnings });
+    return applyEvidencePolicy({ query: '', suggestions: [], warnings });
   }
 
-  const { searchQuery, displayQuery, translationFailed } = await translateQueryToEnglish(query);
+  const { searchQuery, translationFailed } = await translateQueryToEnglish(query, translationSystemPrompt);
   if (translationFailed) {
     warnings.push('英語への自動翻訳が利用できないため、日本語クエリで検索しました。');
   }
@@ -137,20 +166,33 @@ export async function runEvidenceAdviceAgent({
     citations = rankCitations(searchResult.citations);
   } catch (error) {
     warnings.push('論文 API の取得に失敗しました。時間を置いて再試行してください。');
-    return applyEvidencePolicy({ query: displayQuery, suggestions: [], warnings });
+    return applyEvidencePolicy({ query, suggestions: [], warnings });
   }
 
   if (citations.length < minEvidenceCount) {
     warnings.push('根拠となる文献が不足しているため、一般的な提案を表示しています。');
-    return applyEvidencePolicy({ query: displayQuery, suggestions: [buildFallbackSuggestion(routine)], warnings });
+    const fallbackSuggestion = buildFallbackSuggestion(routine);
+    return applyEvidencePolicy({
+      query,
+      suggestions: [fallbackSuggestion],
+      warnings
+    });
   }
 
-  const suggestions: EvidenceSuggestion[] = citations.slice(0, 3).map((citation) => ({
+  const suggestionsRaw: EvidenceSuggestion[] = citations.slice(0, 3).map((citation) => ({
     id: generateUUID(),
     description: buildSuggestionText(routine, citation),
     evidence: [citation],
     confidence: toConfidence(citation)
   }));
 
-  return applyEvidencePolicy({ query: displayQuery, suggestions, warnings });
+  // 表示を日本語に統一：各提案文を日本語に翻訳
+  const suggestions: EvidenceSuggestion[] = await Promise.all(
+    suggestionsRaw.map(async (s) => ({
+      ...s,
+      description: await translateToJapanese(s.description)
+    }))
+  );
+
+  return applyEvidencePolicy({ query, suggestions, warnings });
 }

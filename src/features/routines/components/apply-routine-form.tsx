@@ -574,8 +574,8 @@ export function ApplyRoutineForm({
           return (
             <div className="space-y-6">
               {previewData.isCalendarConnected === false && (
-                <div className="rounded-lg border border-warning/50 bg-warning/10 p-3">
-                  <p className="text-sm text-warning-foreground">
+                <div className="rounded-lg border border-amber-500/50 bg-amber-50 dark:bg-amber-950/30 p-3">
+                  <p className="text-sm text-amber-900 dark:text-amber-100">
                     Google Calendarが未接続のため、既存予定は取得していません。
                     反映する場合は先に「Google Calendarを接続」を実行してください。
                   </p>
@@ -603,11 +603,11 @@ export function ApplyRoutineForm({
                 {customizationResult && (
                   <div className="rounded-lg border border-primary/50 bg-primary/10 p-4 space-y-3">
                     <div className="flex items-center justify-between">
-                      <p className="text-sm font-medium text-primary-foreground">
+                      <p className="text-sm font-medium text-foreground">
                         カスタマイズが完了しました
                       </p>
                       <div className="flex items-center gap-2">
-                        <label className="flex items-center gap-2 text-sm cursor-pointer">
+                        <label className="flex items-center gap-2 text-sm cursor-pointer text-foreground">
                           <input
                             type="checkbox"
                             checked={useCustomized}
@@ -621,10 +621,10 @@ export function ApplyRoutineForm({
 
                     {customizationResult.suggestions.length > 0 && (
                       <div className="space-y-2">
-                        <p className="text-xs font-medium text-primary-foreground">提案:</p>
+                        <p className="text-xs font-medium text-foreground">提案:</p>
                         <ul className="space-y-1">
                           {customizationResult.suggestions.map((suggestion, idx) => (
-                            <li key={idx} className="text-xs text-primary-foreground/80">
+                            <li key={idx} className="text-xs text-muted-foreground">
                               • {suggestion.description}
                             </li>
                           ))}
@@ -668,7 +668,7 @@ export function ApplyRoutineForm({
                     {evidenceAdvice.warnings.length > 0 && (
                       <ul className="space-y-1">
                         {evidenceAdvice.warnings.map((warning, index) => (
-                          <li key={index} className="text-xs text-warning-foreground">
+                          <li key={index} className="text-xs text-amber-800 dark:text-amber-200">
                             ⚠️ {warning}
                           </li>
                         ))}
@@ -687,7 +687,7 @@ export function ApplyRoutineForm({
                               <Badge variant="outline">{suggestion.confidence}</Badge>
                               <p className="text-sm font-medium">提案</p>
                             </div>
-                            <p className="text-sm text-primary-foreground/80">{suggestion.description}</p>
+                            <p className="text-sm text-foreground">{suggestion.description}</p>
                             <div className="rounded-md border border-border/60 bg-background/50 p-3">
                               <p className="text-xs font-medium mb-2">引用</p>
                               {suggestion.evidence.length === 0 ? (
@@ -783,8 +783,8 @@ export function ApplyRoutineForm({
                         );
                       })
                     ) && (
-                      <div className="rounded-lg border border-warning/50 bg-warning/10 p-3 mb-3">
-                        <p className="text-sm text-warning-foreground">
+                      <div className="rounded-lg border border-amber-500/50 bg-amber-50 dark:bg-amber-950/30 p-3 mb-3">
+                        <p className="text-sm text-amber-900 dark:text-amber-100">
                           ⚠️ 重複する予定があるイベントは適用されません。重複がある場合は事前にカレンダーを調整してください。
                         </p>
                       </div>

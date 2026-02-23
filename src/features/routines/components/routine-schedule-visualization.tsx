@@ -27,6 +27,13 @@ const energyLevelLabels: Record<string, string> = {
   high: '高'
 };
 
+/** 小数時間を時刻表記に変換（例: 17.5 → "17:30", 20.25 → "20:15"） */
+function formatHourToTime(hour: number): string {
+  const h = Math.floor(hour);
+  const minutes = Math.round((hour - h) * 60);
+  return `${h.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
+}
+
 type RoutineScheduleVisualizationProps = {
   timeBlocks: RoutineDetailView['timeBlocks'];
   durationType?: 'normal' | 'weekly';
@@ -102,7 +109,7 @@ export function RoutineScheduleVisualization({
                         {block.label}
                       </div>
                       <div className={`${compact ? 'text-[10px]' : 'text-xs'} text-muted-foreground leading-tight`}>
-                        {block.startHour}:00-{block.endHour}:00
+                        {formatHourToTime(block.startHour)}-{formatHourToTime(block.endHour)}
                       </div>
                     </div>
 
@@ -112,7 +119,7 @@ export function RoutineScheduleVisualization({
                         <div className="font-bold text-foreground text-base">{block.label}</div>
                         <div className="text-muted-foreground leading-relaxed whitespace-pre-line text-sm">{block.objective}</div>
                         <div className="text-muted-foreground pt-2 border-t border-border/50 font-semibold text-sm">
-                          {block.startHour}:00 - {block.endHour}:00
+                          {formatHourToTime(block.startHour)} - {formatHourToTime(block.endHour)}
                         </div>
                         <div className="text-muted-foreground text-sm">
                           エネルギーレベル: <span className="font-semibold">{energyLevelLabels[block.energyLevel] || block.energyLevel}</span>
@@ -221,7 +228,7 @@ export function RoutineScheduleVisualization({
                                 {block.label}
                               </div>
                               <div className={`${compact ? 'text-[10px]' : 'text-xs'} text-muted-foreground leading-tight`}>
-                                {block.startHour}:00-{block.endHour}:00
+                                {formatHourToTime(block.startHour)}-{formatHourToTime(block.endHour)}
                               </div>
                             </div>
 
@@ -231,7 +238,7 @@ export function RoutineScheduleVisualization({
                                 <div className="font-bold text-foreground text-base">{block.label}</div>
                                 <div className="text-muted-foreground leading-relaxed whitespace-pre-line text-sm">{block.objective}</div>
                                 <div className="text-muted-foreground pt-2 border-t border-border/50 font-semibold text-sm">
-                                  {block.startHour}:00 - {block.endHour}:00
+                                  {formatHourToTime(block.startHour)} - {formatHourToTime(block.endHour)}
                                 </div>
                                 <div className="text-muted-foreground text-sm">
                                   エネルギーレベル: <span className="font-semibold">{energyLevelLabels[block.energyLevel] || block.energyLevel}</span>
