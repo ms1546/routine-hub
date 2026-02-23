@@ -7,6 +7,8 @@ import { userSettingsRepository } from '@/features/users';
 import { getCurrentUser } from '@/infrastructure/auth/session';
 import { mastraRepository } from '@/features/ai/mastra/repository';
 import { routinesRepository } from '@/features/routines';
+import { recordLangfuseTrace, recordLangfuseScore } from '@/features/ai/evaluation/langfuse-boundary';
+import { getSystemPromptInfo } from '@/features/ai/evaluation/prompt-helper';
 
 const generateUUID = createDefaultUUIDGenerator();
 
@@ -70,6 +72,31 @@ export async function customizeCalendarEventsAction({
     }
   }
 
+  const traceId = generateUUID();
+  let promptVersions: Record<string, { version?: number; labels?: string[]; source: string }> = {};
+  try {
+    const promptInfo = await getSystemPromptInfo('calendar-customization-agent');
+    promptVersions['calendar-customization-agent'] = {
+      version: promptInfo.version,
+      labels: promptInfo.labels,
+      source: promptInfo.source
+    };
+  } catch {
+    // プロンプト取得に失敗してもワークフロー実行は継続
+  }
+
+  await recordLangfuseTrace({
+    workflow: 'calendar-customization-workflow',
+    payload: {
+      executionId: traceId,
+      routineId: routineId ?? undefined,
+      proposedEventCount: proposedEvents.length,
+      existingEventCount: existingEvents.length,
+      promptVersions
+    },
+    traceId
+  });
+
   try {
     const workflow = mastraRepository.getWorkflows().calendarCustomizationWorkflow;
     if (!workflow) {
@@ -77,13 +104,12 @@ export async function customizeCalendarEventsAction({
     }
 
     const run = await workflow.createRunAsync();
-    const traceId = generateUUID();
     const runResult = await run.start({
       inputData: {
         proposedEvents,
         existingEvents,
         userProfile,
-        routinePurpose // Routineの目的を追加
+        routinePurpose
       },
       tracingOptions: { traceId }
     });
@@ -92,9 +118,30 @@ export async function customizeCalendarEventsAction({
       throw new Error('Calendar customization workflow execution failed');
     }
 
-    return runResult.result;
+    const result = runResult.result;
+    await recordLangfuseScore({
+      traceId,
+      name: 'customized-events-count',
+      value: result.customizedEvents.length,
+      comment: `Calendar customization: ${result.customizedEvents.length} event(s), ${result.suggestions.length} suggestion(s)`,
+      source: 'MODEL',
+      metadata: {
+        customizedCount: result.customizedEvents.length,
+        suggestionCount: result.suggestions.length
+      }
+    });
+
+    return result;
   } catch (error) {
     console.error('[CalendarCustomization] Workflow execution failed:', error);
+    await recordLangfuseScore({
+      traceId,
+      name: 'customized-events-count',
+      value: 0,
+      comment: 'Calendar customization workflow failed',
+      source: 'MODEL',
+      metadata: { error: error instanceof Error ? error.message : String(error) }
+    }).catch(() => {});
     // フォールバック: カスタマイズなしで元のイベントを返す
     return {
       customizedEvents: proposedEvents.map((event) => ({

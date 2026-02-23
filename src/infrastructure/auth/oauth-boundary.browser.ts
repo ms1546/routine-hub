@@ -25,7 +25,7 @@ export type TokenExchangeResult = {
  * In Storybook, returns a mock URL.
  * This prevents googleapis from being imported in browser builds.
  */
-export function buildGoogleOAuthUrl(_state: string): string {
+export function buildGoogleOAuthUrl(_state: string, _redirectUri?: string): string {
   return 'https://accounts.google.com/o/oauth2/v2/auth?mock=true';
 }
 
@@ -35,7 +35,7 @@ export function buildGoogleOAuthUrl(_state: string): string {
  * In Storybook, returns mock tokens.
  * This prevents googleapis from being imported in browser builds.
  */
-export async function exchangeCodeForTokens(_code: string): Promise<TokenExchangeResult> {
+export async function exchangeCodeForTokens(_code: string, _redirectUri?: string): Promise<TokenExchangeResult> {
   return {
     accessToken: 'mock-access-token',
     expiresAt: new Date(Date.now() + 3600_000).toISOString()

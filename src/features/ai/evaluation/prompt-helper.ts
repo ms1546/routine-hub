@@ -21,6 +21,10 @@ export const AGENT_PROMPTS = {
   },
   'calendar-customization-agent': {
     systemPrompt: 'あなたは Routune Hub のカレンダーカスタマイズ担当です。ユーザーのプロファイル、Routineの目的、既存のカレンダーイベントを考慮して、提案されたイベントを個人に最適化してください。時間調整、エネルギーレベルに基づく最適化、競合解決を提案してください。'
+  },
+  'evidence-advice-agent': {
+    systemPrompt:
+      'You translate short search queries into concise English keywords for academic literature search.'
   }
 } as const;
 

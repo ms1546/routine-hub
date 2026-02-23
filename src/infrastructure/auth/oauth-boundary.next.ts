@@ -47,14 +47,18 @@ export type TokenExchangeResult = {
   expiresAt?: string;
 };
 
-function getOAuthClient() {
+function getOAuthClient(redirectUri?: string) {
   if (!process.env.GOOGLE_OAUTH_CLIENT_ID || !process.env.GOOGLE_OAUTH_CLIENT_SECRET) {
     throw new Error('Missing Google OAuth client configuration');
+  }
+  const uri = redirectUri ?? process.env.GOOGLE_OAUTH_REDIRECT_URI;
+  if (!uri) {
+    throw new Error('Missing redirect URI: set GOOGLE_OAUTH_REDIRECT_URI or pass redirectUri from request origin');
   }
   return new google.auth.OAuth2(
     process.env.GOOGLE_OAUTH_CLIENT_ID,
     process.env.GOOGLE_OAUTH_CLIENT_SECRET,
-    process.env.GOOGLE_OAUTH_REDIRECT_URI
+    uri
   );
 }
 
@@ -62,13 +66,11 @@ function getOAuthClient() {
  * Build Google OAuth URL for calendar access
  *
  * PORTFOLIO MODE: Uses prompt=consent to ensure explicit user intent.
- * Access tokens are short-lived; refresh tokens are NOT stored.
- *
- * This function is used for calendar writes, which are admin-only.
- * Each calendar write requires new OAuth consent.
+ * When redirectUri is passed (e.g. from request.nextUrl.origin + "/api/google-oauth/callback"),
+ * that is used so deployed app redirects back to the same origin, not localhost.
  */
-export function buildGoogleOAuthUrl(state: string) {
-  const oauth2Client = getOAuthClient();
+export function buildGoogleOAuthUrl(state: string, redirectUri?: string) {
+  const oauth2Client = getOAuthClient(redirectUri);
   return oauth2Client.generateAuthUrl({
     access_type: 'online', // access token only (refresh token is not stored)
     scope: scopes,
@@ -77,8 +79,8 @@ export function buildGoogleOAuthUrl(state: string) {
   });
 }
 
-export async function exchangeCodeForTokens(code: string): Promise<TokenExchangeResult> {
-  const oauth2Client = getOAuthClient();
+export async function exchangeCodeForTokens(code: string, redirectUri?: string): Promise<TokenExchangeResult> {
+  const oauth2Client = getOAuthClient(redirectUri);
   const { tokens } = await oauth2Client.getToken(code);
   return {
     accessToken: tokens.access_token ?? '',

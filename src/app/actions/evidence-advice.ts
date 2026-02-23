@@ -1,11 +1,16 @@
 'use server';
 
+import { createDefaultUUIDGenerator } from '@/shared/utils/uuid';
 import type { EvidenceAdviceResult } from '@/features/ai/evidence/types';
 import { evidenceDisclaimer } from '@/features/ai/tools/evidence-policy-tool';
 import { mastraRepository } from '@/features/ai/mastra/repository';
 import { routinesRepository } from '@/features/routines';
 import { userSettingsRepository } from '@/features/users';
 import { getCurrentUser } from '@/infrastructure/auth/session';
+import { recordLangfuseTrace, recordLangfuseScore } from '@/features/ai/evaluation/langfuse-boundary';
+import { getSystemPromptInfo } from '@/features/ai/evaluation/prompt-helper';
+
+const generateUUID = createDefaultUUIDGenerator();
 
 export async function getEvidenceAdviceAction({
   routineId
@@ -42,6 +47,29 @@ export async function getEvidenceAdviceAction({
     };
   }
 
+  const traceId = generateUUID();
+  let promptVersions: Record<string, { version?: number; labels?: string[]; source: string }> = {};
+  try {
+    const promptInfo = await getSystemPromptInfo('evidence-advice-agent');
+    promptVersions['evidence-advice-agent'] = {
+      version: promptInfo.version,
+      labels: promptInfo.labels,
+      source: promptInfo.source
+    };
+  } catch {
+    // プロンプト取得に失敗してもワークフロー実行は継続
+  }
+
+  await recordLangfuseTrace({
+    workflow: 'evidence-advice-workflow',
+    payload: {
+      executionId: traceId,
+      routineId,
+      promptVersions
+    },
+    traceId
+  });
+
   try {
     const run = await workflow.createRunAsync();
     const runResult = await run.start({
@@ -61,9 +89,31 @@ export async function getEvidenceAdviceAction({
       throw new Error('Evidence advice workflow execution failed');
     }
 
-    return runResult.result;
+    const result = runResult.result;
+    await recordLangfuseScore({
+      traceId,
+      name: 'suggestions-count',
+      value: result.suggestions.length,
+      comment: `Evidence advice: ${result.suggestions.length} suggestion(s), ${result.warnings.length} warning(s)`,
+      source: 'MODEL',
+      metadata: {
+        suggestionCount: result.suggestions.length,
+        warningCount: result.warnings.length,
+        hasQuery: Boolean(result.query?.trim())
+      }
+    });
+
+    return result;
   } catch (error) {
     console.error('[EvidenceAdvice] Workflow execution failed:', error);
+    await recordLangfuseScore({
+      traceId,
+      name: 'suggestions-count',
+      value: 0,
+      comment: 'Evidence advice workflow failed',
+      source: 'MODEL',
+      metadata: { error: error instanceof Error ? error.message : String(error) }
+    }).catch(() => {});
     return {
       query: '',
       suggestions: [],

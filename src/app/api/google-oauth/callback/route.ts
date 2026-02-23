@@ -30,8 +30,10 @@ export async function GET(request: NextRequest) {
     return NextResponse.redirect(new URL('/auth/error?reason=oauth_mismatch', request.url));
   }
 
+  const redirectUri = `${request.nextUrl.origin}/api/google-oauth/callback`;
+
   try {
-    const tokens = await exchangeCodeForTokens(code);
+    const tokens = await exchangeCodeForTokens(code, redirectUri);
     if (tokens.accessToken) {
       storeAccessTokenForUser(state.userId, tokens.accessToken, tokens.expiresAt);
     }
