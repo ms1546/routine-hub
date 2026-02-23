@@ -849,6 +849,7 @@ export function RoutineBlockTimelineEditor({
         {/* 編集モーダル */}
         {editingBlock && (
           <BlockEditModal
+            key={editingBlock.id ?? `${editingBlock.day}-${editingBlock.startHour}-${editingBlock.endHour}`}
             block={editingBlock}
             durationType={durationType}
             normalTimeRange={normalTimeRange}
@@ -1132,20 +1133,6 @@ function BlockEditModal({ block, durationType, normalTimeRange, onSave, onDelete
   const [objectiveError, setObjectiveError] = useState<string | null>(null);
   const [durationError, setDurationError] = useState<string | null>(null);
   const timeOptions = generateTimeOptions();
-
-  // blockが変更されたときにstartTimeを更新
-  useEffect(() => {
-    setStartTime(formatHourToTime(block.startHour));
-    setEndHour(block.endHour);
-    setDuration(block.endHour - block.startHour);
-    setLabel(block.label);
-    setObjective(block.objective);
-    setEnergyLevel(block.energyLevel);
-    setDay(block.day);
-    setLabelError(null);
-    setObjectiveError(null);
-    setDurationError(null);
-  }, [block]);
 
   // 開始時刻が変更されたときにendHourを自動更新
   const handleStartTimeChange = (timeStr: string) => {

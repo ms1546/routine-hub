@@ -26,7 +26,13 @@ const toLocalDateKey = (date: Date): string => {
 };
 
 const parseLocalDateKey = (dateKey: string): Date => {
-  const [year, month, day] = dateKey.split('-').map((part) => Number(part));
+  const [yearPart = '', monthPart = '', dayPart = ''] = dateKey.split('-');
+  const year = Number(yearPart);
+  const month = Number(monthPart);
+  const day = Number(dayPart);
+  if (!yearPart || !monthPart || !dayPart || Number.isNaN(year) || Number.isNaN(month) || Number.isNaN(day)) {
+    return new Date(dateKey);
+  }
   return new Date(year, month - 1, day);
 };
 

@@ -45,8 +45,19 @@ export async function getCalendarPreviewAction({
   }
 
   const timeZone = 'Asia/Tokyo';
-  const [startYear, startMonth, startDay] = startDate.split('-').map((part) => Number(part));
-  const [endYear, endMonth, endDay] = endDate.split('-').map((part) => Number(part));
+  const parseDateParts = (value: string) => {
+    const [yearPart = '', monthPart = '', dayPart = ''] = value.split('-');
+    const year = Number(yearPart);
+    const month = Number(monthPart);
+    const day = Number(dayPart);
+    if (!yearPart || !monthPart || !dayPart || Number.isNaN(year) || Number.isNaN(month) || Number.isNaN(day)) {
+      throw new Error('Invalid date format. Expected YYYY-MM-DD.');
+    }
+    return { year, month, day };
+  };
+
+  const { year: startYear, month: startMonth, day: startDay } = parseDateParts(startDate);
+  const { year: endYear, month: endMonth, day: endDay } = parseDateParts(endDate);
 
   const calendarWindow: CalendarTimeRange = {
     start: makeZonedDate({ year: startYear, month: startMonth, day: startDay }, timeZone).toISOString(),
