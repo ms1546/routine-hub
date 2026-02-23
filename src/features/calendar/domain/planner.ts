@@ -39,9 +39,10 @@ export async function planRoutineWithCalendar(routine: Routine, viewer: Authenti
   const allowedToExecute = await canExecuteWorkflow(viewer);
 
   const proposedEvents = buildProposedEvents(routine, calendarWindow);
-  const isCalendarConnected = await hasStoredRefreshToken(routine.owner);
+  // ログイン中ユーザー（viewer）のカレンダー接続状態を使用（routine.owner ではない）
+  const isCalendarConnected = await hasStoredRefreshToken(viewer.email);
   const existingEvents = isCalendarConnected
-    ? await getCalendarClient(routine.owner).listEvents(calendarWindow)
+    ? await getCalendarClient(viewer.email).listEvents(calendarWindow)
     : [];
   const allowance = allowedToExecute
     ? await getExecutionLimit(viewer)

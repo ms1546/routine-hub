@@ -66,9 +66,10 @@ export async function getCalendarPreviewAction({
   };
 
   const proposedEvents = buildProposedEvents(routine, calendarWindow, recurrence);
-  const isConnected = await hasStoredRefreshToken(routine.owner);
+  // ログイン中ユーザーのカレンダー接続状態を使用（routine.owner ではない）
+  const isConnected = await hasStoredRefreshToken(currentUser.email);
   const existingEvents = isConnected
-    ? await getCalendarClient(routine.owner).listEvents(calendarWindow)
+    ? await getCalendarClient(currentUser.email).listEvents(calendarWindow)
     : [];
 
   return { proposedEvents, existingEvents, isCalendarConnected: isConnected };
@@ -157,11 +158,12 @@ export async function confirmProposedEventsAction(
     );
   }
 
-  const isConnected = await hasStoredRefreshToken(routine.owner);
+  // ログイン中ユーザーのカレンダーに挿入するため、currentUser の接続状態を使用
+  const isConnected = await hasStoredRefreshToken(currentUser.email);
   if (!isConnected) {
     throw new Error('Google Calendarの接続が必要です。先に「Connect Calendar」を実行してください。');
   }
-  const client = getCalendarClient(routine.owner);
+  const client = getCalendarClient(currentUser.email);
   const result = await client.insertEvents(proposals);
   return {
     successCount: result.success.length,
