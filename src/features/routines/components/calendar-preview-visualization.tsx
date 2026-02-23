@@ -38,6 +38,49 @@ const parseLocalDateKey = (dateKey: string): Date => {
 
 const getHourFraction = (date: Date): number => date.getHours() + date.getMinutes() / 60;
 
+const getEventRange = (events: Array<{ start: string; end: string }>) => {
+  let minHour = Infinity;
+  let maxHour = -Infinity;
+  events.forEach((event) => {
+    const startHour = getHourFraction(new Date(event.start));
+    const endHour = getHourFraction(new Date(event.end));
+    if (Number.isNaN(startHour) || Number.isNaN(endHour)) return;
+    minHour = Math.min(minHour, startHour);
+    maxHour = Math.max(maxHour, endHour);
+  });
+
+  if (!Number.isFinite(minHour) || !Number.isFinite(maxHour)) {
+    return { start: 0, end: 24 };
+  }
+
+  const padding = 0.5;
+  let rangeStart = Math.max(0, minHour - padding);
+  let rangeEnd = Math.min(24, maxHour + padding);
+
+  if (rangeEnd - rangeStart < 1) {
+    const center = (minHour + maxHour) / 2;
+    rangeStart = Math.max(0, center - 0.5);
+    rangeEnd = Math.min(24, center + 0.5);
+  }
+
+  return { start: rangeStart, end: rangeEnd };
+};
+
+const buildAxisMarks = (rangeStart: number, rangeEnd: number) => {
+  const axisStart = Math.floor(rangeStart);
+  const axisEnd = Math.ceil(rangeEnd);
+  const axisRange = Math.max(1, axisEnd - axisStart);
+  const interval = axisRange <= 6 ? 1 : axisRange <= 12 ? 2 : 3;
+  const marks: number[] = [];
+  for (let hour = axisStart; hour <= axisEnd; hour += interval) {
+    marks.push(hour);
+  }
+  if (marks[marks.length - 1] !== axisEnd) {
+    marks.push(axisEnd);
+  }
+  return { axisStart, axisEnd, axisRange, marks };
+};
+
 export function CalendarPreviewVisualization({
   proposedEvents,
   existingEvents,
@@ -96,6 +139,8 @@ export function CalendarPreviewVisualization({
     <div className="space-y-6">
       {sortedDates.map((dateKey) => {
         const { proposed, existing } = eventsByDate.get(dateKey)!;
+        const { start: rangeStart, end: rangeEnd } = getEventRange([...proposed, ...existing]);
+        const { axisStart, axisRange, marks } = buildAxisMarks(rangeStart, rangeEnd);
         const date = parseLocalDateKey(dateKey);
         const dateLabel = date.toLocaleDateString('ja-JP', {
           month: 'long',
@@ -117,26 +162,27 @@ export function CalendarPreviewVisualization({
               <div className="space-y-3">
                 <div className="relative h-64 bg-muted/20 rounded-lg border border-border/50 p-2">
                   {/* 時間目盛り */}
-                  <div className="absolute inset-0 flex">
-                    {Array.from({ length: 24 }, (_, i) => (
+                  <div className="absolute inset-0">
+                    {marks.map((hour) => (
                       <div
-                        key={i}
-                        className="flex-1 border-r border-border/30 text-[10px] text-muted-foreground pt-1 pl-1"
+                        key={hour}
+                        className="absolute top-0 bottom-0 border-r border-border/30 text-[10px] text-muted-foreground pt-1"
+                        style={{ left: `${((hour - axisStart) / axisRange) * 100}%` }}
                       >
-                        {i}
+                        <span className="pl-1">{hour}</span>
                       </div>
                     ))}
                   </div>
 
                   {/* 既存イベント（背景に表示） */}
-                  <div className="absolute inset-2 flex">
+                  <div className="absolute left-2 right-2 top-2 bottom-2">
                     {existing.map((event) => {
                       const eventStart = new Date(event.start);
                       const eventEnd = new Date(event.end);
                       const startHour = getHourFraction(eventStart);
                       const endHour = getHourFraction(eventEnd);
-                      const leftPercent = (startHour / 24) * 100;
-                      const widthPercent = ((endHour - startHour) / 24) * 100;
+                      const leftPercent = ((startHour - axisStart) / axisRange) * 100;
+                      const widthPercent = ((endHour - startHour) / axisRange) * 100;
 
                       return (
                         <div
@@ -154,15 +200,15 @@ export function CalendarPreviewVisualization({
                     })}
                   </div>
 
-                  {/* 提案イベント */}
-                  <div className="absolute inset-2 flex flex-col gap-1">
+                  {/* 提案イベント（left/right で親幅を明示し、子の % が正しく効くようにする） */}
+                  <div className="absolute left-2 right-2 top-2 bottom-2">
                     {proposed.map((event, idx) => {
                       const eventStart = new Date(event.start);
                       const eventEnd = new Date(event.end);
                       const startHour = getHourFraction(eventStart);
                       const endHour = getHourFraction(eventEnd);
-                      const leftPercent = (startHour / 24) * 100;
-                      const widthPercent = ((endHour - startHour) / 24) * 100;
+                      const leftPercent = ((startHour - axisStart) / axisRange) * 100;
+                      const widthPercent = ((endHour - startHour) / axisRange) * 100;
                       const isSelected = selectedIds.includes(event.proposalId);
                       const hasConflict = hasTimeConflict(event, existing);
                       const energyLevel = 'medium'; // デフォルト（提案イベントから取得できない場合はmedium）
@@ -170,7 +216,7 @@ export function CalendarPreviewVisualization({
                       return (
                         <div
                           key={event.proposalId}
-                          className={`absolute h-8 border-2 rounded transition-all ${
+                          className={`absolute top-3 bottom-3 border-2 rounded transition-all ${
                             hasConflict
                               ? conflictColor
                               : isSelected
@@ -179,8 +225,7 @@ export function CalendarPreviewVisualization({
                           } ${hasConflict ? 'ring-2 ring-destructive/50' : ''}`}
                           style={{
                             left: `${leftPercent}%`,
-                            width: `${widthPercent}%`,
-                            top: `${idx * 40 + 10}px`
+                            width: `${widthPercent}%`
                           }}
                           title={`${event.title} (${startHour.toFixed(1)}h - ${endHour.toFixed(1)}h)${hasConflict ? ' [重複]' : ''}`}
                         >

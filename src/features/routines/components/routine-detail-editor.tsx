@@ -83,6 +83,13 @@ export function RoutineDetailEditor({
     setError(null);
     setMessage(null);
 
+    // 合計時間が3時間未満の場合は保存前にバリデーション
+    const totalMinutes = blocks.reduce((acc, b) => acc + (b.endHour - b.startHour) * 60, 0);
+    if (totalMinutes < 180) {
+      setError('Routine全体の合計時間は最低3時間必要です。');
+      return;
+    }
+
     startTransition(async () => {
       // Routine情報を更新（変更がある場合のみ）
       const infoPatch: { routineId: string; name?: string; description?: string; purpose?: string } = {

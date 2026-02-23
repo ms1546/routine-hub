@@ -665,6 +665,14 @@ export function RoutineBlockTimelineEditor({
     onChange(blocks.filter((b) => b.id !== blockId));
   };
 
+  // モーダルを閉じる（キャンセル時）。名前が空のブロックは追加直後とみなして削除する
+  const handleCloseBlockEdit = () => {
+    if (editingBlock && (!editingBlock.label || !editingBlock.label.trim())) {
+      onChange(blocks.filter((b) => b.id !== editingBlock.id));
+    }
+    setEditingBlock(null);
+  };
+
   // Block詳細編集
   const handleSaveBlockEdit = (updated: RoutineBlockInput): void => {
     // weeklyタイプでは24時を超えた値をそのまま保持する（正規化しない）
@@ -694,7 +702,7 @@ export function RoutineBlockTimelineEditor({
         </div>
 
         {/* 時間軸 */}
-        <div className="relative h-6">
+        <div className="relative w-full min-w-0 h-6">
           {(() => {
             // normalタイプで時間範囲が設定されている場合、その範囲内の時間軸を表示
             if (normalTimeRange) {
@@ -744,10 +752,10 @@ export function RoutineBlockTimelineEditor({
           })()}
         </div>
 
-        {/* タイムライン */}
+        {/* タイムライン（w-full で幅を明示し、ブロックを横一列に表示） */}
         <div
           ref={timelineRef}
-          className="relative h-32 bg-muted/30 rounded-md overflow-visible cursor-pointer"
+          className="relative w-full min-w-0 h-32 bg-muted/30 rounded-md overflow-visible cursor-pointer"
           onClick={(e) => handleTimelineClick(e)}
           onDoubleClick={(e) => handleTimelineDoubleClick(e)}
         >
@@ -855,7 +863,7 @@ export function RoutineBlockTimelineEditor({
             normalTimeRange={normalTimeRange}
             onSave={handleSaveBlockEdit}
             onDelete={handleDeleteBlock}
-            onClose={() => setEditingBlock(null)}
+            onClose={handleCloseBlockEdit}
           />
         )}
       </div>
@@ -976,12 +984,12 @@ export function RoutineBlockTimelineEditor({
                     })}
                   </div>
 
-                  {/* タイムライン */}
+                  {/* タイムライン（w-full で幅を明示し、ブロックを横一列に表示） */}
                   <div
                     ref={(el) => {
                       timelineRefsByDay.current[day] = el;
                     }}
-                    className="relative h-24 bg-muted/30 rounded-md overflow-visible cursor-pointer"
+                    className="relative w-full min-w-0 h-24 bg-muted/30 rounded-md overflow-visible cursor-pointer"
                     onClick={(e) => handleTimelineClick(e, day)}
                     onDoubleClick={(e) => handleTimelineDoubleClick(e, day)}
                   >
@@ -1103,7 +1111,7 @@ export function RoutineBlockTimelineEditor({
             normalTimeRange={normalTimeRange}
             onSave={handleSaveBlockEdit}
             onDelete={handleDeleteBlock}
-            onClose={() => setEditingBlock(null)}
+            onClose={handleCloseBlockEdit}
           />
         )}
     </div>

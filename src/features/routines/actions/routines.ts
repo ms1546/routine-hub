@@ -95,6 +95,13 @@ const toCreateInput = (input: FormData | CreateRoutineInput): CreateRoutineInput
 
 const handleActionError = <T>(error: unknown): ActionResult<T> => {
   console.error(error);
+  if (error instanceof z.ZodError) {
+    const messages = error.issues.map((issue) => issue.message).filter(Boolean);
+    return {
+      ok: false,
+      error: messages.length > 0 ? messages.join(' ') : '入力内容を確認してください。'
+    };
+  }
   return {
     ok: false,
     error: error instanceof Error ? error.message : '予期しないエラーが発生しました'

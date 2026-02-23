@@ -27,6 +27,20 @@ const formatDateInput = (date: Date) => {
   return `${year}-${month}-${day}`;
 };
 
+const parseLocalDateInput = (value: string) => {
+  const [yearPart = '', monthPart = '', dayPart = ''] = value.split('-');
+  const year = Number(yearPart);
+  const month = Number(monthPart);
+  const day = Number(dayPart);
+  if (!yearPart || !monthPart || !dayPart || Number.isNaN(year) || Number.isNaN(month) || Number.isNaN(day)) {
+    return new Date(value);
+  }
+  return new Date(year, month - 1, day);
+};
+
+const normalizeLocalDate = (date: Date) =>
+  new Date(date.getFullYear(), date.getMonth(), date.getDate());
+
 const today = () => formatDateInput(new Date());
 const plusDays = (days: number) => {
   const date = new Date();
@@ -694,11 +708,12 @@ export function ApplyRoutineForm({
             {displayEvents.length > 0 && (() => {
               // イベントを週ごとにグループ化
               const eventsByWeek = new Map<number, ProposedCalendarEvent[]>();
-              const startDateObj = new Date(previewData.startDate);
+              const startDateObj = parseLocalDateInput(previewData.startDate);
+              const startOfPreview = normalizeLocalDate(startDateObj);
 
               displayEvents.forEach((event) => {
-                const eventDate = new Date(event.start);
-                const diffTime = eventDate.getTime() - startDateObj.getTime();
+                const eventDate = normalizeLocalDate(new Date(event.start));
+                const diffTime = eventDate.getTime() - startOfPreview.getTime();
                 const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
                 const weekIndex = Math.floor(diffDays / 7);
 
@@ -740,7 +755,7 @@ export function ApplyRoutineForm({
                   <div className="space-y-2">
                     {weeks.map((weekIndex) => {
                       const weekEvents = eventsByWeek.get(weekIndex) ?? [];
-                      const weekStartDate = new Date(startDateObj);
+                      const weekStartDate = new Date(startOfPreview);
                       weekStartDate.setDate(weekStartDate.getDate() + (weekIndex * 7));
                       const weekEndDate = new Date(weekStartDate);
                       weekEndDate.setDate(weekEndDate.getDate() + 6);
