@@ -86,7 +86,6 @@ function EventEditModal({ event, onSave, onCancel }: EventEditModalProps) {
   /* eslint-enable react-hooks/set-state-in-effect */
 
   const handleSave = () => {
-    // 日付と時刻をISO文字列に変換
     const startParts = startTime.split(':');
     const endParts = endTime.split(':');
     const startHour = startParts[0] ? Number(startParts[0]) : 0;
@@ -94,13 +93,11 @@ function EventEditModal({ event, onSave, onCancel }: EventEditModalProps) {
     const endHour = endParts[0] ? Number(endParts[0]) : 0;
     const endMinute = endParts[1] ? Number(endParts[1]) : 0;
 
-    const startDateTime = new Date(date);
-    startDateTime.setHours(startHour, startMinute, 0, 0);
+    // YYYY-MM-DD をローカル日付として解釈（new Date(date) は UTC になるため）
+    const baseDate = parseLocalDateInput(date) ?? new Date();
+    const startDateTime = new Date(baseDate.getFullYear(), baseDate.getMonth(), baseDate.getDate(), startHour, startMinute, 0, 0);
+    let endDateTime = new Date(baseDate.getFullYear(), baseDate.getMonth(), baseDate.getDate(), endHour, endMinute, 0, 0);
 
-    const endDateTime = new Date(date);
-    endDateTime.setHours(endHour, endMinute, 0, 0);
-
-    // 終了時刻が開始時刻より前の場合は翌日として扱う
     if (endDateTime <= startDateTime) {
       endDateTime.setDate(endDateTime.getDate() + 1);
     }

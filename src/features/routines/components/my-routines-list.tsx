@@ -29,6 +29,7 @@ export function MyRoutinesList({ routines, userId, userEmail }: MyRoutinesListPr
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [status, setStatus] = useState<string | null>(null);
+  const [statusIsError, setStatusIsError] = useState(false);
   const [pending, startTransition] = useTransition();
 
   // ソート（フィルタリングは不要）
@@ -62,13 +63,14 @@ export function MyRoutinesList({ routines, userId, userEmail }: MyRoutinesListPr
     startTransition(async () => {
       const result = await deleteRoutineAction({ routineId: deletingId });
       if (result.ok) {
+        setStatusIsError(false);
         setStatus('Routineを削除しました');
         setShowDeleteConfirm(false);
         setDeletingId(null);
-        // ページをリロードして最新の状態を取得
         window.location.reload();
       } else {
-        setStatus(`エラー: ${result.error}`);
+        setStatusIsError(true);
+        setStatus(result.error ?? 'Routineの削除に失敗しました');
       }
     });
   };
@@ -231,8 +233,8 @@ export function MyRoutinesList({ routines, userId, userEmail }: MyRoutinesListPr
 
       {/* ステータス表示 */}
       {status && (
-        <div className={`p-4 rounded-lg ${status.includes('エラー') ? 'bg-destructive/10 border border-destructive/20' : 'bg-success/10 border border-success/20'}`}>
-          <p className={`text-sm ${status.includes('エラー') ? 'text-destructive' : 'text-success'}`}>
+        <div className={`p-4 rounded-lg ${statusIsError ? 'bg-destructive/10 border border-destructive/20' : 'bg-primary/10 border border-primary/20'}`} role={statusIsError ? 'alert' : undefined}>
+          <p className={`text-sm ${statusIsError ? 'text-destructive font-medium' : 'text-muted-foreground'}`}>
             {status}
           </p>
         </div>

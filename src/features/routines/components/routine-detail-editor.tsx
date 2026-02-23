@@ -115,7 +115,7 @@ export function RoutineDetailEditor({
         }
       }
 
-      // 1) 新規ブロックを追加
+      // 1) 新規ブロックを追加（サーバー採番の ID は router.refresh() で再取得するまでローカルに反映されない）
       if (onAddBlock && toAdd.length > 0) {
         for (const block of toAdd) {
           const addResult = await onAddBlock({

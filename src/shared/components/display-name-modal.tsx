@@ -55,14 +55,22 @@ export function DisplayNameModal({ open, userId, initialDisplayName, onComplete 
     });
   };
 
+  const handleSkip = () => {
+    setError(null);
+    onComplete();
+  };
+
   return (
     <Modal
       open={open}
-      onClose={() => {}} // 初回ログイン時は閉じられない
+      onClose={() => {}}
       title="表示名を設定"
       size="md"
       footer={
-        <div className="flex justify-end">
+        <div className="flex justify-end gap-2">
+          <Button type="button" variant="outline" onClick={handleSkip} disabled={pending}>
+            あとで設定
+          </Button>
           <Button onClick={handleSubmit} disabled={pending || !displayName.trim()}>
             {pending ? '保存中…' : '保存して続ける'}
           </Button>
