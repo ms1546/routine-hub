@@ -236,6 +236,14 @@ export function RoutineDetailEditor({
           </div>
           <Badge variant="secondary">{blocks.length} blocks</Badge>
         </div>
+        {(() => {
+          const totalMinutes = blocks.reduce((acc, b) => acc + (b.endHour - b.startHour) * 60, 0);
+          return totalMinutes < 180 ? (
+            <p className="text-sm text-destructive" role="alert">
+              Routine全体の合計時間は最低3時間必要です。（現在: {(totalMinutes / 60).toFixed(1)}時間）
+            </p>
+          ) : null;
+        })()}
         <Card className="p-6 overflow-visible">
           <RoutineBlockTimelineEditor
             blocks={blocks}
@@ -249,7 +257,10 @@ export function RoutineDetailEditor({
         <Button variant="outline" onClick={onCancel} disabled={pending}>
           キャンセル
         </Button>
-        <Button onClick={handleSaveAll} disabled={pending}>
+        <Button
+          onClick={handleSaveAll}
+          disabled={pending || blocks.reduce((acc, b) => acc + (b.endHour - b.startHour) * 60, 0) < 180}
+        >
           {pending ? '保存中...' : '保存'}
         </Button>
       </div>

@@ -134,6 +134,7 @@ export function RoutineBlockTimelineEditor({
   normalTimeRange
 }: RoutineBlockTimelineEditorProps) {
   const [editingBlock, setEditingBlock] = useState<RoutineBlockInput | null>(null);
+  const [overlapError, setOverlapError] = useState<string | null>(null);
   const [draggingBlockId, setDraggingBlockId] = useState<string | null>(null);
   const [draggingBlock, setDraggingBlock] = useState<RoutineBlockInput | null>(null);
   const [dragStartDay, setDragStartDay] = useState<string | null>(null);
@@ -646,11 +647,11 @@ export function RoutineBlockTimelineEditor({
 
     // 重複チェック
     if (checkBlockOverlap(validBlock)) {
-      // 重複している場合は追加しない（視覚的フィードバックは後で実装）
-      console.warn('この時間帯には既にブロックが存在します。');
+      setOverlapError('この時間帯には既にブロックが存在します。');
       return;
     }
 
+    setOverlapError(null);
     onChange([...blocks, validBlock]);
     setEditingBlock(validBlock); // 追加後すぐに編集モーダルを開く
   };
@@ -667,6 +668,7 @@ export function RoutineBlockTimelineEditor({
 
   // モーダルを閉じる（キャンセル時）。名前が空のブロックは追加直後とみなして削除する
   const handleCloseBlockEdit = () => {
+    setOverlapError(null);
     if (editingBlock && (!editingBlock.label || !editingBlock.label.trim())) {
       onChange(blocks.filter((b) => b.id !== editingBlock.id));
     }
@@ -681,11 +683,11 @@ export function RoutineBlockTimelineEditor({
 
     // 重複チェック（自分自身を除外）
     if (checkBlockOverlap(validBlock, validBlock.id)) {
-      // 重複している場合は保存しない（エラーメッセージは後で実装）
-      console.warn('この時間帯には既にブロックが存在します。');
+      setOverlapError('この時間帯には既にブロックが存在します。');
       return;
     }
 
+    setOverlapError(null);
     const newBlocks = blocks.map((b) => (b.id === validBlock.id ? validBlock : b));
     onChange(newBlocks);
     setEditingBlock(null);
@@ -700,6 +702,11 @@ export function RoutineBlockTimelineEditor({
         <div className="flex items-center justify-between">
           <h3 className="text-lg font-semibold">時間ブロック</h3>
         </div>
+        {overlapError && (
+          <p className="text-sm text-destructive" role="alert">
+            {overlapError}
+          </p>
+        )}
 
         {/* 時間軸 */}
         <div className="relative w-full min-w-0 h-6">
@@ -794,6 +801,7 @@ export function RoutineBlockTimelineEditor({
                     e.stopPropagation();
                     return;
                   }
+                  setOverlapError(null);
                   setEditingBlock(block);
                 }}
               >
@@ -846,7 +854,10 @@ export function RoutineBlockTimelineEditor({
                 type="button"
                 variant="ghost"
                 size="sm"
-                onClick={() => setEditingBlock(block)}
+                onClick={() => {
+                setOverlapError(null);
+                setEditingBlock(block);
+              }}
               >
                 編集
               </Button>
@@ -956,6 +967,11 @@ export function RoutineBlockTimelineEditor({
         <h3 className="text-lg font-semibold">時間ブロック</h3>
       </div>
 
+      {overlapError && (
+        <p className="text-sm text-destructive" role="alert">
+          {overlapError}
+        </p>
+      )}
       <div className="space-y-4">
         {weekdayOrder.map((day) => {
           const dayBlocks = blocksByDay[day] || [];
@@ -1043,6 +1059,7 @@ export function RoutineBlockTimelineEditor({
                             if (hasDragged) {
                               return;
                             }
+                            setOverlapError(null);
                             // 分割されたBlockの場合も、元のBlockを編集
                             setEditingBlock(originalBlock);
                           }}
@@ -1095,7 +1112,10 @@ export function RoutineBlockTimelineEditor({
               type="button"
               variant="ghost"
               size="sm"
-              onClick={() => setEditingBlock(block)}
+              onClick={() => {
+                setOverlapError(null);
+                setEditingBlock(block);
+              }}
             >
               編集
             </Button>

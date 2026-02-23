@@ -27,15 +27,18 @@ const formatDateInput = (date: Date) => {
   return `${year}-${month}-${day}`;
 };
 
-const parseLocalDateInput = (value: string) => {
+/** 日付文字列（YYYY-MM-DD）をパース。無効な場合は null を返す */
+const parseLocalDateInput = (value: string): Date | null => {
   const [yearPart = '', monthPart = '', dayPart = ''] = value.split('-');
   const year = Number(yearPart);
   const month = Number(monthPart);
   const day = Number(dayPart);
   if (!yearPart || !monthPart || !dayPart || Number.isNaN(year) || Number.isNaN(month) || Number.isNaN(day)) {
-    return new Date(value);
+    return null;
   }
-  return new Date(year, month - 1, day);
+  const date = new Date(year, month - 1, day);
+  if (Number.isNaN(date.getTime())) return null;
+  return date;
 };
 
 const normalizeLocalDate = (date: Date) =>
@@ -112,6 +115,14 @@ function EventEditModal({ event, onSave, onCancel }: EventEditModalProps) {
     onSave(edited);
   };
 
+  const startParts = startTime.split(':');
+  const endParts = endTime.split(':');
+  const startD = new Date(date);
+  startD.setHours(Number(startParts[0]) || 0, Number(startParts[1]) || 0, 0, 0);
+  const endD = new Date(date);
+  endD.setHours(Number(endParts[0]) || 0, Number(endParts[1]) || 0, 0, 0);
+  const endWouldBeNextDay = endD <= startD;
+
   return (
     <Modal
       open={true}
@@ -163,6 +174,11 @@ function EventEditModal({ event, onSave, onCancel }: EventEditModalProps) {
           />
         </div>
 
+        {endWouldBeNextDay && (
+          <p className="text-xs text-muted-foreground">
+            終了時刻が開始より前のため、保存すると終了は翌日に設定されます。
+          </p>
+        )}
         <div className="grid grid-cols-2 gap-4">
           <div className="space-y-2">
             <Label htmlFor="edit-event-start-time">開始時刻</Label>
@@ -255,10 +271,24 @@ export function ApplyRoutineForm({
     event.preventDefault();
     const formData = new FormData(event.currentTarget);
     const startDateValue = String(formData.get('startDate'));
-
-    // 検証済みの日付を使用
-    const validatedStartDate = startDateValue;
     const validatedEndDate = durationType === 'weekly' ? calculatedEndDate : endDate;
+
+    // 日付の妥当性チェック（プレビュー取得前に実施）
+    const startParsed = parseLocalDateInput(startDateValue);
+    if (!startParsed) {
+      setStatus('開始日が正しくありません。YYYY-MM-DD 形式で入力してください。');
+      return;
+    }
+    const endParsed = parseLocalDateInput(validatedEndDate);
+    if (!endParsed) {
+      setStatus('終了日が正しくありません。YYYY-MM-DD 形式で入力してください。');
+      return;
+    }
+    if (startParsed > endParsed) {
+      setStatus('終了日は開始日以降を指定してください。');
+      return;
+    }
+    const validatedStartDate = startDateValue;
 
     // 繰り返し設定
     const recurrence: RecurrencePattern =
@@ -438,9 +468,10 @@ export function ApplyRoutineForm({
 
         {/* 繰り返し設定 */}
         <div className="space-y-2">
-          <Label>繰り返し設定</Label>
-          <div className="flex gap-2">
+          <Label htmlFor="recurrenceType">繰り返し設定</Label>
+          <div className="flex gap-2 items-center">
             <select
+              id="recurrenceType"
               value={recurrenceType}
               onChange={(e) => setRecurrenceType(e.target.value as 'none' | 'weekly' | 'monthly')}
               className="h-11 flex-1 rounded-lg border border-input bg-background px-4 py-2.5 text-sm text-foreground transition-all duration-300 hover:border-primary/40 hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:border-ring/50"
@@ -450,17 +481,24 @@ export function ApplyRoutineForm({
               <option value="monthly">毎月</option>
             </select>
             {recurrenceType !== 'none' && (
-              <select
-                value={recurrenceInterval}
-                onChange={(e) => setRecurrenceInterval(Number(e.target.value))}
-                className="h-11 w-24 rounded-lg border border-input bg-background px-4 py-2.5 text-sm text-foreground transition-all duration-300 hover:border-primary/40 hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:border-ring/50"
-              >
+              <>
+                <Label htmlFor="recurrenceInterval" className="text-muted-foreground text-xs shrink-0">
+                  間隔
+                </Label>
+                <select
+                  id="recurrenceInterval"
+                  value={recurrenceInterval}
+                  onChange={(e) => setRecurrenceInterval(Number(e.target.value))}
+                  aria-label="繰り返しの間隔（週または月の単位）"
+                  className="h-11 w-24 rounded-lg border border-input bg-background px-4 py-2.5 text-sm text-foreground transition-all duration-300 hover:border-primary/40 hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:border-ring/50"
+                >
                 {Array.from({ length: 12 }, (_, i) => i + 1).map((n) => (
                   <option key={n} value={n}>
                     {n}
                   </option>
                 ))}
-              </select>
+                </select>
+              </>
             )}
           </div>
           {recurrenceType !== 'none' && (
@@ -476,7 +514,13 @@ export function ApplyRoutineForm({
           {pending || previewLoading ? 'プレビューを取得中…' : '適用'}
         </Button>
       </form>
-      {status && <p className="text-sm text-muted-foreground mt-2">{status}</p>}
+      {status && (
+        <p
+          className={`text-sm mt-2 ${status.includes('失敗') || status.includes('正しくありません') || status.includes('指定してください') ? 'text-destructive font-medium' : 'text-muted-foreground'}`}
+        >
+          {status}
+        </p>
+      )}
 
       {/* 確認モーダル */}
       <Modal
@@ -504,19 +548,19 @@ export function ApplyRoutineForm({
             // まず、カスタマイズ結果または元のイベントを取得
             let baseEvents = previewData.proposedEvents;
             if (useCustomized && customizationResult) {
-              const normaldMap = new Map(
+              const normalizedMap = new Map(
                 customizationResult.customizedEvents.map((c) => [c.proposalId, c])
               );
               baseEvents = previewData.proposedEvents.map((event) => {
-                const normald = normaldMap.get(event.proposalId);
-                if (!normald) return event;
+                const normalized = normalizedMap.get(event.proposalId);
+                if (!normalized) return event;
 
                 return {
                   ...event,
-                  title: normald.title ?? event.title,
-                  description: normald.description ?? event.description,
-                  start: normald.start ?? event.start,
-                  end: normald.end ?? event.end
+                  title: normalized.title ?? event.title,
+                  description: normalized.description ?? event.description,
+                  start: normalized.start ?? event.start,
+                  end: normalized.end ?? event.end
                 };
               });
             }
@@ -708,7 +752,7 @@ export function ApplyRoutineForm({
             {displayEvents.length > 0 && (() => {
               // イベントを週ごとにグループ化
               const eventsByWeek = new Map<number, ProposedCalendarEvent[]>();
-              const startDateObj = parseLocalDateInput(previewData.startDate);
+              const startDateObj = parseLocalDateInput(previewData.startDate) ?? new Date(previewData.startDate);
               const startOfPreview = normalizeLocalDate(startDateObj);
 
               displayEvents.forEach((event) => {
@@ -891,18 +935,18 @@ export function ApplyRoutineForm({
         const calculatedDisplayEvents = (() => {
           let baseEvents = previewData.proposedEvents;
           if (useCustomized && customizationResult) {
-            const normaldMap = new Map(
+            const normalizedMap = new Map(
               customizationResult.customizedEvents.map((c) => [c.proposalId, c])
             );
             baseEvents = previewData.proposedEvents.map((event) => {
-              const normald = normaldMap.get(event.proposalId);
-              if (!normald) return event;
+              const normalized = normalizedMap.get(event.proposalId);
+              if (!normalized) return event;
               return {
                 ...event,
-                title: normald.title ?? event.title,
-                description: normald.description ?? event.description,
-                start: normald.start ?? event.start,
-                end: normald.end ?? event.end
+                title: normalized.title ?? event.title,
+                description: normalized.description ?? event.description,
+                start: normalized.start ?? event.start,
+                end: normalized.end ?? event.end
               };
             });
           }
