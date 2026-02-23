@@ -37,7 +37,8 @@ export function Modal({ open, onClose, title, children, footer, size = 'md' }: M
     });
     return () => {
       cancelAnimationFrame(timer);
-      previousActiveElementRef.current?.focus();
+      const prev = previousActiveElementRef.current;
+      if (prev?.isConnected) prev.focus();
     };
   }, [open]);
 

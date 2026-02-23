@@ -146,6 +146,8 @@ export function RoutineBlockTimelineEditor({
   const timelineRef = useRef<HTMLDivElement>(null);
   const timelineRefsByDay = useRef<Record<string, HTMLDivElement | null>>({});
   const nextBlockIdRef = useRef(0);
+  /** ドラッグ開始時のブロック位置（マウスアップで重複していた場合に復元するため） */
+  const dragStartBlockSnapshot = useRef<RoutineBlockInput | null>(null);
 
   const isDayBased = durationType === 'normal';
 
@@ -272,8 +274,10 @@ export function RoutineBlockTimelineEditor({
     e.preventDefault();
     e.stopPropagation();
     if (!block.id) return;
+    setOverlapError(null);
     setDraggingBlockId(block.id);
     setDraggingBlock(block);
+    dragStartBlockSnapshot.current = { ...block };
     const targetDay = day || block.day;
     setDragStartDay(targetDay || null);
     setDragStartX(e.clientX);
@@ -584,23 +588,32 @@ export function RoutineBlockTimelineEditor({
 
   // マウスアップ（ドラッグ/リサイズ終了）
   const handleMouseUp = useCallback(() => {
-    // 少し遅延させてからhasDraggedをリセット（クリックイベントが発火する前に）
     const wasDragging = draggingBlockId !== null || resizingBlockId !== null;
+    const snapshot = dragStartBlockSnapshot.current;
+
+    if (wasDragging && draggingBlockId && snapshot) {
+      const currentBlock = blocks.find((b) => b.id === draggingBlockId);
+      if (currentBlock && checkBlockOverlap(currentBlock, draggingBlockId)) {
+        setOverlapError('この時間帯には既にブロックが存在します。');
+        onChange(
+          blocks.map((b) => (b.id === draggingBlockId ? snapshot : b))
+        );
+      }
+    }
+
     setDraggingBlockId(null);
     setDraggingBlock(null);
     setDragStartDay(null);
+    dragStartBlockSnapshot.current = null;
     setResizingBlockId(null);
     setResizeSide(null);
 
-    // ドラッグ/リサイズが発生していた場合は、クリックイベントを無視するために少し待つ
     if (wasDragging) {
-      setTimeout(() => {
-        setHasDragged(false);
-      }, 100);
+      setTimeout(() => setHasDragged(false), 100);
     } else {
       setHasDragged(false);
     }
-  }, [draggingBlockId, resizingBlockId]);
+  }, [draggingBlockId, resizingBlockId, blocks, onChange, checkBlockOverlap]);
 
   // イベントリスナーの登録
   useEffect(() => {
@@ -782,17 +795,13 @@ export function RoutineBlockTimelineEditor({
             }
             const isValid = actualDuration >= 0.25; // 15分（最短）
 
-            const minDisplayWidthPx = 60; // 最小表示幅（ピクセル）
-            const finalWidthPercent = actualWidthPercent;
-
             return (
               <div
                 key={block.id}
                 className={`absolute top-0 h-full border-2 ${energyLevelColors[block.energyLevel] || energyLevelColors.low} rounded-sm cursor-move transition-all ${!isValid ? 'border-destructive' : ''}`}
                 style={{
                   left: `${leftPercent}%`,
-                  width: `${finalWidthPercent}%`,
-                  minWidth: `${minDisplayWidthPx}px`
+                  width: `${actualWidthPercent}%`
                 }}
                 onMouseDown={(e) => handleDragStart(e, block)}
                 onClick={(e) => {
@@ -1015,7 +1024,8 @@ export function RoutineBlockTimelineEditor({
                       const originalBlockId = isSplitBlock && block.id ? block.id.replace('-next-day', '') : block.id;
 
                       // firstPartかどうかを判定（endHour === 24 かつ 元のBlockのendHour > 24）
-                      const isFirstPart = !isSplitBlock && block.endHour === 24 && blocks.find(b => b.id === block.id)?.endHour && (blocks.find(b => b.id === block.id)!.endHour > 24);
+                      const foundInBlocks = blocks.find((b) => b.id === block.id);
+                      const isFirstPart = !isSplitBlock && block.endHour === 24 && foundInBlocks != null && (foundInBlocks.endHour > 24);
 
                       // 元のBlockを取得（splitBlockまたはfirstPartの場合は、元のBlockを探す）
                       let originalBlock = block;
@@ -1032,9 +1042,6 @@ export function RoutineBlockTimelineEditor({
                       // 分割されたBlockの場合は重複チェックをスキップ（元のBlockでチェック）
                       const hasOverlap = isSplitBlock || !block.id ? false : checkBlockOverlap(block, block.id);
 
-                      const minDisplayWidthPx = 60; // 最小表示幅（ピクセル）
-                      const finalWidthPercent = actualWidthPercent;
-
                       return (
                         <div
                           key={block.id}
@@ -1042,8 +1049,7 @@ export function RoutineBlockTimelineEditor({
                           className={`absolute top-0 h-full border-2 ${energyLevelColors[block.energyLevel] || energyLevelColors.low} rounded-sm cursor-move transition-all ${!isValid || hasOverlap ? 'border-destructive' : ''} ${isSplitBlock ? 'opacity-80' : ''}`}
                           style={{
                             left: `${leftPercent}%`,
-                            width: `${finalWidthPercent}%`,
-                            minWidth: `${minDisplayWidthPx}px`
+                            width: `${actualWidthPercent}%`
                           }}
                           onMouseDown={(e) => {
                             // リサイズハンドルがクリックされた場合はドラッグを開始しない
@@ -1081,10 +1087,10 @@ export function RoutineBlockTimelineEditor({
                             </div>
                           </div>
 
-                          {/* リサイズハンドル（右） */}
+                          {/* リサイズハンドル（右） - 分割表示でも元のBlockを更新するため originalBlock を渡す */}
                           <div
                             className="absolute right-0 top-0 w-2 h-full bg-foreground/20 cursor-ew-resize hover:bg-foreground/40"
-                            onMouseDown={(e) => handleResizeStart(e, block, 'right')}
+                            onMouseDown={(e) => handleResizeStart(e, originalBlock, 'right')}
                           />
                         </div>
                       );
@@ -1123,9 +1129,10 @@ export function RoutineBlockTimelineEditor({
         ))}
       </div>
 
-      {/* 編集モーダル */}
+      {/* 編集モーダル（key でブロック切り替え時に再マウントして state をリセット） */}
         {editingBlock && (
           <BlockEditModal
+            key={editingBlock.id}
             block={editingBlock}
             durationType={durationType}
             normalTimeRange={normalTimeRange}

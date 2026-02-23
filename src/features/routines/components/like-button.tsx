@@ -41,6 +41,8 @@ export function LikeButton({ routineId, userId, initialLikes, initialLiked, acti
         onClick={handleToggle}
         disabled={pending}
         className="gap-2"
+        aria-label={liked ? 'いいねを解除' : 'いいねする'}
+        aria-pressed={liked}
       >
         <svg
           className={`h-4 w-4 ${liked ? 'fill-current' : ''}`}

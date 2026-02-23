@@ -249,6 +249,13 @@ export function RoutineDetailEditor({
             blocks={blocks}
             onChange={handleBlocksChange}
             durationType={routine.durationType}
+            normalTimeRange={
+              routine.durationType === 'normal' &&
+              routine.normalStartHour != null &&
+              routine.normalEndHour != null
+                ? { startHour: routine.normalStartHour, endHour: routine.normalEndHour }
+                : undefined
+            }
           />
         </Card>
       </section>
