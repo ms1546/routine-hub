@@ -17,18 +17,6 @@ jobs:
             - name: Checkout code
               uses: actions/checkout@v4
 
-            - name: Setup Node.js
-              uses: actions/setup-node@v4
-              with:
-                  node-version: "20"
-                  cache: "npm"
-
-            - name: Install dependencies
-              run: npm ci
-
-            - name: Build application
-              run: npm run build
-
             - name: Configure AWS credentials
               uses: aws-actions/configure-aws-credentials@v4
               with:
@@ -39,21 +27,31 @@ jobs:
             - name: Login to Amazon ECR
               uses: aws-actions/amazon-ecr-login@v2
 
-            - name: Build & Push Docker Image (Production)
+            - name: Set up Docker Buildx
+              uses: docker/setup-buildx-action@v3
+
+            - name: Validate ECR repository
               env:
                   ECR_REPOSITORY_URL: ${{ secrets.ECR_REPOSITORY_URL }}
-                  IMAGE_TAG: ${{ github.sha }}
               run: |
                   if [ -z "$ECR_REPOSITORY_URL" ]; then
                     echo "ECR_REPOSITORY_URL is not set."
                     exit 1
                   fi
-                  docker build \
-                    -t "$ECR_REPOSITORY_URL:$IMAGE_TAG" \
-                    -t "$ECR_REPOSITORY_URL:latest" \
-                    .
-                  docker push "$ECR_REPOSITORY_URL:$IMAGE_TAG"
-                  docker push "$ECR_REPOSITORY_URL:latest"
+
+            - name: Build & Push Docker Image (Production)
+              env:
+                  ECR_REPOSITORY_URL: ${{ secrets.ECR_REPOSITORY_URL }}
+                  IMAGE_TAG: ${{ github.sha }}
+              uses: docker/build-push-action@v5
+              with:
+                  context: .
+                  push: true
+                  tags: |
+                    ${{ secrets.ECR_REPOSITORY_URL }}:${{ github.sha }}
+                    ${{ secrets.ECR_REPOSITORY_URL }}:latest
+                  cache-from: type=gha
+                  cache-to: type=gha,mode=max
 
             - name: Setup Terraform
               uses: hashicorp/setup-terraform@v3
