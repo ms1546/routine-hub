@@ -20,11 +20,18 @@ import { getEvidenceAdviceAction } from '@/app/actions/evidence-advice';
 import type { EvidenceAdviceResult } from '@/features/ai/evidence/types';
 import { CalendarPreviewVisualization } from './calendar-preview-visualization';
 
-const today = () => new Date().toISOString().slice(0, 10);
+const formatDateInput = (date: Date) => {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
+const today = () => formatDateInput(new Date());
 const plusDays = (days: number) => {
   const date = new Date();
   date.setDate(date.getDate() + days);
-  return date.toISOString().slice(0, 10);
+  return formatDateInput(date);
 };
 
 // イベント編集モーダルコンポーネント
@@ -40,7 +47,7 @@ function EventEditModal({ event, onSave, onCancel }: EventEditModalProps) {
 
   const [title, setTitle] = useState(event.title);
   const [description, setDescription] = useState(event.description);
-  const [date, setDate] = useState(startDateObj.toISOString().slice(0, 10));
+  const [date, setDate] = useState(formatDateInput(startDateObj));
   const [startTime, setStartTime] = useState(
     `${String(startDateObj.getHours()).padStart(2, '0')}:${String(startDateObj.getMinutes()).padStart(2, '0')}`
   );
@@ -53,7 +60,7 @@ function EventEditModal({ event, onSave, onCancel }: EventEditModalProps) {
   useEffect(() => {
     const start = new Date(event.start);
     const end = new Date(event.end);
-    setDate(start.toISOString().slice(0, 10));
+    setDate(formatDateInput(start));
     setStartTime(`${String(start.getHours()).padStart(2, '0')}:${String(start.getMinutes()).padStart(2, '0')}`);
     setEndTime(`${String(end.getHours()).padStart(2, '0')}:${String(end.getMinutes()).padStart(2, '0')}`);
     setTitle(event.title);
@@ -216,7 +223,7 @@ export function ApplyRoutineForm({
         const start = new Date(startDate);
         const end = new Date(start);
         end.setDate(end.getDate() + (weekCount * 7));
-        return end.toISOString().slice(0, 10);
+        return formatDateInput(end);
       })()
     : endDate;
 
@@ -226,7 +233,7 @@ export function ApplyRoutineForm({
       const start = new Date(startDate);
       const end = new Date(start);
       end.setDate(end.getDate() + (weekCount * 7));
-      setEndDate(end.toISOString().slice(0, 10));
+      setEndDate(formatDateInput(end));
     }
   }, [startDate, weekCount, durationType]);
 
@@ -631,28 +638,34 @@ export function ApplyRoutineForm({
                             <p className="text-sm text-primary-foreground/80">{suggestion.description}</p>
                             <div className="rounded-md border border-border/60 bg-background/50 p-3">
                               <p className="text-xs font-medium mb-2">引用</p>
-                              <ul className="space-y-1">
-                                {suggestion.evidence.map((citation) => (
-                                  <li key={citation.sourceId} className="text-xs text-muted-foreground">
-                                    <span className="font-medium">{citation.title}</span>
-                                    {citation.year ? ` (${citation.year})` : ''}
-                                    {citation.venue ? ` / ${citation.venue}` : ''}
-                                    {citation.url && (
-                                      <>
-                                        {' '}
-                                        <a
-                                          href={citation.url}
-                                          target="_blank"
-                                          rel="noreferrer"
-                                          className="underline"
-                                        >
-                                          出典
-                                        </a>
-                                      </>
-                                    )}
-                                  </li>
-                                ))}
-                              </ul>
+                              {suggestion.evidence.length === 0 ? (
+                                <p className="text-xs text-muted-foreground">
+                                  引用が見つからなかったため、一般的な提案を表示しています。
+                                </p>
+                              ) : (
+                                <ul className="space-y-1">
+                                  {suggestion.evidence.map((citation) => (
+                                    <li key={citation.sourceId} className="text-xs text-muted-foreground">
+                                      <span className="font-medium">{citation.title}</span>
+                                      {citation.year ? ` (${citation.year})` : ''}
+                                      {citation.venue ? ` / ${citation.venue}` : ''}
+                                      {citation.url && (
+                                        <>
+                                          {' '}
+                                          <a
+                                            href={citation.url}
+                                            target="_blank"
+                                            rel="noreferrer"
+                                            className="underline"
+                                          >
+                                            出典
+                                          </a>
+                                        </>
+                                      )}
+                                    </li>
+                                  ))}
+                                </ul>
+                              )}
                             </div>
                           </div>
                         ))}

@@ -2,6 +2,7 @@
 
 import { routinesRepository } from '@/features/routines';
 import { buildProposedEvents } from '@/features/calendar/domain/proposals';
+import { makeZonedDate } from '@/features/calendar/domain/timezone';
 import { getCalendarClient } from '@/infrastructure/calendar/calendar-client-factory';
 import { hasStoredRefreshToken } from '@/infrastructure/auth/oauth-boundary';
 import { createDefaultCalendarWindow } from '@/features/calendar/domain/window';
@@ -33,15 +34,35 @@ export async function getCalendarPreviewAction({
 }): Promise<{ proposedEvents: ProposedCalendarEvent[]; existingEvents: CalendarEvent[]; isCalendarConnected: boolean }> {
   const { getCurrentUser } = await import('@/infrastructure/auth/session');
   const currentUser = await getCurrentUser();
-  const routine = await routinesRepository.get(routineId, currentUser.id, currentUser.email);
+  const routine = await routinesRepository.get(
+    routineId,
+    currentUser.id,
+    currentUser.email,
+    currentUser.role === 'admin'
+  );
   if (!routine) {
     throw new Error('Routine not found');
   }
 
+  const timeZone = 'Asia/Tokyo';
+  const parseDateParts = (value: string) => {
+    const [yearPart = '', monthPart = '', dayPart = ''] = value.split('-');
+    const year = Number(yearPart);
+    const month = Number(monthPart);
+    const day = Number(dayPart);
+    if (!yearPart || !monthPart || !dayPart || Number.isNaN(year) || Number.isNaN(month) || Number.isNaN(day)) {
+      throw new Error('Invalid date format. Expected YYYY-MM-DD.');
+    }
+    return { year, month, day };
+  };
+
+  const { year: startYear, month: startMonth, day: startDay } = parseDateParts(startDate);
+  const { year: endYear, month: endMonth, day: endDay } = parseDateParts(endDate);
+
   const calendarWindow: CalendarTimeRange = {
-    start: new Date(startDate).toISOString(),
-    end: new Date(endDate).toISOString(),
-    timezone: 'Asia/Tokyo'
+    start: makeZonedDate({ year: startYear, month: startMonth, day: startDay }, timeZone).toISOString(),
+    end: makeZonedDate({ year: endYear, month: endMonth, day: endDay }, timeZone).toISOString(),
+    timezone: timeZone
   };
 
   const proposedEvents = buildProposedEvents(routine, calendarWindow, recurrence);
@@ -97,7 +118,12 @@ export async function confirmProposedEventsAction({
     );
   }
 
-  const routine = await routinesRepository.get(routineId, currentUser.id, currentUser.email);
+  const routine = await routinesRepository.get(
+    routineId,
+    currentUser.id,
+    currentUser.email,
+    currentUser.role === 'admin'
+  );
   if (!routine) {
     throw new Error('Routine not found');
   }

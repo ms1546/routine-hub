@@ -5,9 +5,10 @@ import { MyRoutinesList } from '@/features/routines/components/my-routines-list'
 
 export default async function MyRoutinesPage() {
   const currentUser = await getCurrentUser();
+  const isAdmin = currentUser.role === 'admin';
 
   // 自分のRoutineのみを取得
-  const myRoutines = await routinesRepository.list(undefined, currentUser.id, currentUser.email);
+  const myRoutines = await routinesRepository.list(undefined, currentUser.id, currentUser.email, isAdmin);
   const listItems = myRoutines.map(toRoutineListItem);
 
   return (

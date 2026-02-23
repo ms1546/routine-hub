@@ -13,7 +13,12 @@ export async function getEvidenceAdviceAction({
   routineId: string;
 }): Promise<EvidenceAdviceResult> {
   const currentUser = await getCurrentUser();
-  const routine = await routinesRepository.get(routineId, currentUser.id, currentUser.email);
+  const routine = await routinesRepository.get(
+    routineId,
+    currentUser.id,
+    currentUser.email,
+    currentUser.role === 'admin'
+  );
   if (!routine) {
     throw new Error('Routine not found');
   }

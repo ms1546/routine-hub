@@ -211,7 +211,12 @@ export async function POST(request: NextRequest) {
     }
 
     const user = await getCurrentUser();
-    const routine = await routinesRepository.get(routineId, user.id, user.email);
+    const routine = await routinesRepository.get(
+      routineId,
+      user.id,
+      user.email,
+      user.role === 'admin'
+    );
     if (!routine) {
       return new Response(JSON.stringify({ error: 'Routine not found' }), {
         status: 404,

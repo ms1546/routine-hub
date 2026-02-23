@@ -18,6 +18,26 @@ const energyLevelColors: Record<string, string> = {
 
 const conflictColor = 'bg-destructive/20 border-destructive/50';
 
+const toLocalDateKey = (date: Date): string => {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
+const parseLocalDateKey = (dateKey: string): Date => {
+  const [yearPart = '', monthPart = '', dayPart = ''] = dateKey.split('-');
+  const year = Number(yearPart);
+  const month = Number(monthPart);
+  const day = Number(dayPart);
+  if (!yearPart || !monthPart || !dayPart || Number.isNaN(year) || Number.isNaN(month) || Number.isNaN(day)) {
+    return new Date(dateKey);
+  }
+  return new Date(year, month - 1, day);
+};
+
+const getHourFraction = (date: Date): number => date.getHours() + date.getMinutes() / 60;
+
 export function CalendarPreviewVisualization({
   proposedEvents,
   existingEvents,
@@ -30,7 +50,7 @@ export function CalendarPreviewVisualization({
   proposedEvents.forEach((event) => {
     const start: string | undefined = event.start;
     if (!start || typeof start !== 'string') return;
-    const dateKey: string = new Date(start).toISOString().split('T')[0]!;
+    const dateKey: string = toLocalDateKey(new Date(start));
     if (!eventsByDate.has(dateKey)) {
       eventsByDate.set(dateKey, { proposed: [], existing: [] });
     }
@@ -44,7 +64,7 @@ export function CalendarPreviewVisualization({
   existingEvents.forEach((event) => {
     const start: string | undefined = event.start;
     if (!start || typeof start !== 'string') return;
-    const dateKey: string = new Date(start).toISOString().split('T')[0]!;
+    const dateKey: string = toLocalDateKey(new Date(start));
     if (!eventsByDate.has(dateKey)) {
       eventsByDate.set(dateKey, { proposed: [], existing: [] });
     }
@@ -76,7 +96,7 @@ export function CalendarPreviewVisualization({
     <div className="space-y-6">
       {sortedDates.map((dateKey) => {
         const { proposed, existing } = eventsByDate.get(dateKey)!;
-        const date = new Date(dateKey);
+        const date = parseLocalDateKey(dateKey);
         const dateLabel = date.toLocaleDateString('ja-JP', {
           month: 'long',
           day: 'numeric',
@@ -113,8 +133,8 @@ export function CalendarPreviewVisualization({
                     {existing.map((event) => {
                       const eventStart = new Date(event.start);
                       const eventEnd = new Date(event.end);
-                      const startHour = eventStart.getHours() + eventStart.getMinutes() / 60;
-                      const endHour = eventEnd.getHours() + eventEnd.getMinutes() / 60;
+                      const startHour = getHourFraction(eventStart);
+                      const endHour = getHourFraction(eventEnd);
                       const leftPercent = (startHour / 24) * 100;
                       const widthPercent = ((endHour - startHour) / 24) * 100;
 
@@ -139,8 +159,8 @@ export function CalendarPreviewVisualization({
                     {proposed.map((event, idx) => {
                       const eventStart = new Date(event.start);
                       const eventEnd = new Date(event.end);
-                      const startHour = eventStart.getHours() + eventStart.getMinutes() / 60;
-                      const endHour = eventEnd.getHours() + eventEnd.getMinutes() / 60;
+                      const startHour = getHourFraction(eventStart);
+                      const endHour = getHourFraction(eventEnd);
                       const leftPercent = (startHour / 24) * 100;
                       const widthPercent = ((endHour - startHour) / 24) * 100;
                       const isSelected = selectedIds.includes(event.proposalId);

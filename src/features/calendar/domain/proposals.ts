@@ -1,5 +1,6 @@
 import type { Routine } from '@/features/routines';
 import type { ProposedCalendarEvent, CalendarTimeRange, RecurrencePattern } from './types';
+import { getDatePartsInTimeZone, makeZonedDate } from './timezone';
 
 const weekdayOrder: Record<string, number> = {
   sunday: 0,
@@ -17,15 +18,28 @@ export function buildProposedEvents(
   recurrence?: RecurrencePattern
 ): ProposedCalendarEvent[] {
   const baseDate = new Date(window.start);
+  const timeZone = window.timezone || 'UTC';
+  const baseParts = getDatePartsInTimeZone(baseDate, timeZone);
+  const baseDay = makeZonedDate(
+    {
+      year: baseParts.year,
+      month: baseParts.month,
+      day: baseParts.day
+    },
+    timeZone
+  );
 
   return routine.timeBlocks.map((block) => {
     const targetWeekday = weekdayOrder[block.day];
     if (typeof targetWeekday === 'undefined') {
       throw new Error(`Unknown weekday: ${block.day}`);
     }
-    const startDate = alignDate(baseDate, targetWeekday);
-    const blockStart = setHoursUtc(startDate, block.startHour);
-    const blockEnd = setHoursUtc(startDate, block.endHour);
+    const offset = (targetWeekday - baseParts.weekdayIndex + 7) % 7;
+    const alignedDay = new Date(baseDay.getTime() + offset * 24 * 60 * 60 * 1000);
+    const startOffsetMinutes = Math.round(block.startHour * 60);
+    const endOffsetMinutes = Math.round(block.endHour * 60);
+    const blockStart = new Date(alignedDay.getTime() + startOffsetMinutes * 60 * 1000);
+    const blockEnd = new Date(alignedDay.getTime() + endOffsetMinutes * 60 * 1000);
 
     return {
       proposalId: `${routine.id}-${block.id}`,
@@ -39,18 +53,4 @@ export function buildProposedEvents(
       recurrence
     };
   });
-}
-
-function alignDate(baseDate: Date, targetWeekday: number) {
-  const cloned = new Date(baseDate);
-  const baseWeekday = cloned.getUTCDay();
-  const offset = (targetWeekday - baseWeekday + 7) % 7;
-  cloned.setUTCDate(cloned.getUTCDate() + offset);
-  return cloned;
-}
-
-function setHoursUtc(date: Date, hour: number) {
-  const cloned = new Date(date);
-  cloned.setUTCHours(hour, 0, 0, 0);
-  return cloned;
 }

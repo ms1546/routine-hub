@@ -95,6 +95,20 @@ const buildSuggestionText = (routine: Routine, citation: EvidenceCitation): stri
   return `「${routineFocus}」に関連して、研究「${citation.title}」${yearSuffix}が参考になります。${actionHint}`;
 };
 
+const buildFallbackSuggestion = (routine: Routine): EvidenceSuggestion => {
+  const routineFocus = routine.purpose || routine.name;
+  const actionHint = routine.durationType === 'weekly'
+    ? '週次でのブロック配分や休憩間隔を見直してみてください。'
+    : '時間帯や休憩間隔の見直しを検討してみてください。';
+
+  return {
+    id: generateUUID(),
+    description: `「${routineFocus}」に関連する参考文献が見つからなかったため、一般的な観点として${actionHint}`,
+    evidence: [],
+    confidence: 'low'
+  };
+};
+
 export async function runEvidenceAdviceAgent({
   routine,
   userProfile,
@@ -127,8 +141,8 @@ export async function runEvidenceAdviceAgent({
   }
 
   if (citations.length < minEvidenceCount) {
-    warnings.push('根拠となる文献が不足しているため、提案を作成できませんでした。');
-    return applyEvidencePolicy({ query: displayQuery, suggestions: [], warnings });
+    warnings.push('根拠となる文献が不足しているため、一般的な提案を表示しています。');
+    return applyEvidencePolicy({ query: displayQuery, suggestions: [buildFallbackSuggestion(routine)], warnings });
   }
 
   const suggestions: EvidenceSuggestion[] = citations.slice(0, 3).map((citation) => ({

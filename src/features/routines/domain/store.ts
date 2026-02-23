@@ -103,12 +103,17 @@ const applyFilter = (routine: Routine, filter: RoutineFilter): boolean => {
   return true;
 };
 
-const list = async (filter?: RoutineFilter, userId?: string, userEmail?: string): Promise<Routine[]> => {
+const list = async (
+  filter?: RoutineFilter,
+  userId?: string,
+  userEmail?: string,
+  isAdmin = false
+): Promise<Routine[]> => {
   const routines = Array.from(routineStore.values());
   let filtered = filter ? routines.filter((r) => applyFilter(r, filter)) : routines;
 
   // If userId or userEmail is provided, filter by owner
-  if (userId || userEmail) {
+  if (!isAdmin && (userId || userEmail)) {
     filtered = filtered.filter((r) =>
       (userEmail && r.owner === userEmail) || (userId && r.owner === userId)
     );
@@ -117,7 +122,7 @@ const list = async (filter?: RoutineFilter, userId?: string, userEmail?: string)
   return filtered.map(clone);
 };
 
-const get = async (id: string, userId?: string, userEmail?: string): Promise<Routine | null> => {
+const get = async (id: string, userId?: string, userEmail?: string, isAdmin = false): Promise<Routine | null> => {
   const routine = routineStore.get(id);
   if (!routine) {
     return null;
@@ -125,7 +130,8 @@ const get = async (id: string, userId?: string, userEmail?: string): Promise<Rou
   if (
     routine.visibility === 'private' &&
     routine.owner !== userId &&
-    routine.owner !== userEmail
+    routine.owner !== userEmail &&
+    !isAdmin
   ) {
     return null;
   }
