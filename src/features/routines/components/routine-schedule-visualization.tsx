@@ -69,14 +69,20 @@ export function RoutineScheduleVisualization({
                 );
               })}
             </div>
-            {/* Blockを1行に並べる */}
-            <div className="flex flex-wrap gap-3 overflow-visible">
+            {/* タイムライン */}
+            <div className={`relative bg-muted/30 rounded-md ${compact ? 'h-16 overflow-hidden' : 'h-24'} overflow-visible`}>
               {sortedBlocks.map((block) => {
+                const leftPercent = (block.startHour / 24) * 100;
+                const widthPercent = ((block.endHour - block.startHour) / 24) * 100;
                 const isHovered = hoveredBlockId === block.id;
                 return (
                   <div
                     key={block.id}
-                    className={`relative flex flex-col justify-center items-center border-2 ${energyLevelColors[block.energyLevel] || energyLevelColors.low} rounded-lg transition-all hover:z-30 ${compact ? 'px-3 py-2 text-xs' : 'px-4 py-3 text-sm'} min-w-[120px]`}
+                    className={`absolute top-0 h-full border-2 ${energyLevelColors[block.energyLevel] || energyLevelColors.low} rounded-sm transition-all hover:z-30 relative flex flex-col justify-center items-center ${compact ? 'p-1.5' : 'p-2.5'}`}
+                    style={{
+                      left: `${leftPercent}%`,
+                      width: `${widthPercent}%`
+                    }}
                     onMouseEnter={() => setHoveredBlockId(block.id)}
                     onMouseLeave={() => setHoveredBlockId(null)}
                   >

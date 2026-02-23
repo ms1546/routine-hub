@@ -95,4 +95,37 @@ describe('Routine server actions', () => {
     expect(preview.ok).toBe(true);
     expect(preview.data?.totalBlocks).toBeGreaterThan(0);
   });
+
+  it('allows admin to preview a private routine owned by another user', async () => {
+    process.env.MOCK_USER_EMAIL = 'routunehub.dev@gmail.com';
+    const privateRoutine = await routinesRepository.create({
+      name: 'Admin Private Routine',
+      description: 'Private routine for admin preview test.',
+      purpose: 'Admin preview',
+      durationType: 'weekly',
+      visibility: 'private',
+      tags: ['admin'],
+      owner: 'owner@example.com',
+      timeBlocks: [
+        {
+          day: 'friday',
+          startHour: 9,
+          endHour: 12,
+          label: 'Admin Block',
+          objective: 'Admin objective',
+          energyLevel: 'medium'
+        }
+      ]
+    });
+
+    const preview = await applyRoutineAction({
+      routineId: privateRoutine.id,
+      startDate: '2024-01-01',
+      endDate: '2024-01-07',
+      recurrence: { type: 'none' }
+    });
+
+    expect(preview.ok).toBe(true);
+    expect(preview.data?.totalBlocks).toBeGreaterThan(0);
+  });
 });

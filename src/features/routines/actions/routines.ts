@@ -136,7 +136,12 @@ export async function updateRoutineVisibilityAction(
   try {
     const parsed = visibilityToggleSchema.parse(payload);
     const currentUser = await getCurrentUser();
-    const routine = await routinesRepository.get(parsed.routineId, currentUser.id, currentUser.email);
+    const routine = await routinesRepository.get(
+      parsed.routineId,
+      currentUser.id,
+      currentUser.email,
+      currentUser.role === 'admin'
+    );
     if (!routine) {
       throw new Error('Routineが見つかりません');
     }
@@ -190,7 +195,12 @@ export async function updateRoutineBlockAction(
   try {
     const parsed = updateBlockSchema.parse(payload);
     const currentUser = await getCurrentUser();
-    const routine = await routinesRepository.get(parsed.routineId, currentUser.id, currentUser.email);
+    const routine = await routinesRepository.get(
+      parsed.routineId,
+      currentUser.id,
+      currentUser.email,
+      currentUser.role === 'admin'
+    );
     if (!routine) {
       throw new Error('Routineが見つかりません');
     }
@@ -230,7 +240,13 @@ export async function deleteRoutineBlockAction(
 ): Promise<ActionResult<Routine>> {
   try {
     const parsed = deleteBlockSchema.parse(payload);
-    const routine = await routinesRepository.get(parsed.routineId);
+    const currentUser = await getCurrentUser();
+    const routine = await routinesRepository.get(
+      parsed.routineId,
+      currentUser.id,
+      currentUser.email,
+      currentUser.role === 'admin'
+    );
     if (!routine) {
       throw new Error('Routine not found');
     }
@@ -268,7 +284,12 @@ export async function reorderRoutineBlocksAction(
   try {
     const parsed = reorderBlocksSchema.parse(payload);
     const currentUser = await getCurrentUser();
-    const routine = await routinesRepository.get(parsed.routineId, currentUser.id, currentUser.email);
+    const routine = await routinesRepository.get(
+      parsed.routineId,
+      currentUser.id,
+      currentUser.email,
+      currentUser.role === 'admin'
+    );
     if (!routine) {
       throw new Error('Routineが見つかりません');
     }
@@ -337,7 +358,12 @@ export async function deleteRoutineAction(
   try {
     const parsed = deleteRoutineSchema.parse(payload);
     const currentUser = await getCurrentUser();
-    const routine = await routinesRepository.get(parsed.routineId, currentUser.id, currentUser.email);
+    const routine = await routinesRepository.get(
+      parsed.routineId,
+      currentUser.id,
+      currentUser.email,
+      currentUser.role === 'admin'
+    );
 
     if (!routine) {
       throw new Error('Routineが見つかりません');
@@ -372,7 +398,12 @@ export async function updateRoutineInfoAction(
   try {
     const parsed = updateRoutineInfoSchema.parse(payload);
     const currentUser = await getCurrentUser();
-    const routine = await routinesRepository.get(parsed.routineId, currentUser.id, currentUser.email);
+    const routine = await routinesRepository.get(
+      parsed.routineId,
+      currentUser.id,
+      currentUser.email,
+      currentUser.role === 'admin'
+    );
 
     if (!routine) {
       throw new Error('Routineが見つかりません');
@@ -461,7 +492,12 @@ export async function applyRoutineAction(
   try {
     const parsed = routineApplicationSchema.parse(payload);
     const currentUser = await getCurrentUser();
-    const routine = await routinesRepository.get(parsed.routineId, currentUser.id, currentUser.email);
+    const routine = await routinesRepository.get(
+      parsed.routineId,
+      currentUser.id,
+      currentUser.email,
+      currentUser.role === 'admin'
+    );
     if (!routine) {
       throw new Error('Routineが見つかりません');
     }

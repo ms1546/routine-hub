@@ -35,10 +35,11 @@ export default async function RoutinesPage({
   searchParams?: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const currentUser = await getCurrentUser();
+  const isAdmin = currentUser.role === 'admin';
   const resolvedSearchParams = await searchParams;
   const [allRoutines, filteredRoutines] = await Promise.all([
-    routinesRepository.list(undefined, currentUser.id, currentUser.email),
-    routinesRepository.list(parseFilters(resolvedSearchParams), currentUser.id, currentUser.email)
+    routinesRepository.list(undefined, currentUser.id, currentUser.email, isAdmin),
+    routinesRepository.list(parseFilters(resolvedSearchParams), currentUser.id, currentUser.email, isAdmin)
   ]);
   const uniqueTags = Array.from(new Set(allRoutines.flatMap((routine) => routine.tags))).sort();
   const listItems = filteredRoutines.map(toRoutineListItem);

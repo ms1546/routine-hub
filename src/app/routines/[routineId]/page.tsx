@@ -26,13 +26,14 @@ export default async function RoutineDetailPage({
 }) {
   const { routineId } = await params;
   const currentUser = await getCurrentUser();
+  const isAdmin = currentUser.role === 'admin';
 
   // デバッグログ（本番では削除可能）
   if (typeof window === 'undefined') {
     console.log(`[RoutineDetailPage] routineId=${routineId}, currentUserId=${currentUser.id}`);
   }
 
-  const routine = await routinesRepository.get(routineId, currentUser.id, currentUser.email);
+  const routine = await routinesRepository.get(routineId, currentUser.id, currentUser.email, isAdmin);
 
   // デバッグログ（本番では削除可能）
   if (typeof window === 'undefined') {
@@ -109,7 +110,8 @@ async function RoutineDetailFallback({
   routine: RoutineDetailView;
 }) {
   const currentUser = await getCurrentUser();
-  const fullRoutine = await routinesRepository.get(routine.id, currentUser.id, currentUser.email);
+  const isAdmin = currentUser.role === 'admin';
+  const fullRoutine = await routinesRepository.get(routine.id, currentUser.id, currentUser.email, isAdmin);
   const isLiked = fullRoutine
     ? await routinesRepository.isLikedByUser(routine.id, currentUser.id)
     : false;

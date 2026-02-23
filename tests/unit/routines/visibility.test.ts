@@ -102,6 +102,71 @@ describe('Routine visibility and access control', () => {
     expect(otherAccess).toBeNull();
   });
 
+  it('allows admin to access private routines via get', async () => {
+    const privateRoutine = await routinesRepository.create({
+      name: `Private Admin Routine ${randomUUID()}`,
+      description: 'Private routine for admin access test.',
+      purpose: 'Admin access',
+      durationType: 'weekly',
+      visibility: 'private',
+      tags: ['test'],
+      owner: 'owner@example.com',
+      timeBlocks: [
+        {
+          day: 'wednesday',
+          startHour: 9,
+          endHour: 12,
+          label: 'Admin Access',
+          objective: 'Test objective',
+          energyLevel: 'medium'
+        }
+      ]
+    });
+
+    const adminAccess = await routinesRepository.get(
+      privateRoutine.id,
+      'account-ops',
+      'routunehub.dev@gmail.com',
+      true
+    );
+
+    expect(adminAccess).not.toBeNull();
+    expect(adminAccess?.id).toBe(privateRoutine.id);
+  });
+
+  it('allows admin to list routines across owners', async () => {
+    const ownerEmail = `owner-${randomUUID()}@example.com`;
+    const privateRoutine = await routinesRepository.create({
+      name: `Admin List Routine ${randomUUID()}`,
+      description: 'Private routine for admin list test.',
+      purpose: 'Admin list access',
+      durationType: 'weekly',
+      visibility: 'private',
+      tags: ['test'],
+      owner: ownerEmail,
+      timeBlocks: [
+        {
+          day: 'thursday',
+          startHour: 13,
+          endHour: 16,
+          label: 'Admin List',
+          objective: 'Test objective',
+          energyLevel: 'low'
+        }
+      ]
+    });
+
+    const adminList = await routinesRepository.list(
+      undefined,
+      'account-ops',
+      'routunehub.dev@gmail.com',
+      true
+    );
+
+    const includesPrivate = adminList.some((routine) => routine.id === privateRoutine.id);
+    expect(includesPrivate).toBe(true);
+  });
+
   it('allows public routines to be accessed by anyone', async () => {
     const publicRoutine = await routinesRepository.create({
       name: 'Public Test Routine',

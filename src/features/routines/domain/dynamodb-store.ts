@@ -105,7 +105,15 @@ const applyFilter = (routine: Routine, filter: RoutineFilter): boolean => {
   return true;
 };
 
-const filterByOwner = (routine: Routine, userId?: string, userEmail?: string): boolean => {
+const filterByOwner = (
+  routine: Routine,
+  userId?: string,
+  userEmail?: string,
+  isAdmin = false
+): boolean => {
+  if (isAdmin) {
+    return true;
+  }
   if (!userId && !userEmail) {
     return true;
   }
@@ -126,7 +134,8 @@ const fetchRoutineRecord = async (routineId: string): Promise<RoutineRecord | nu
 const list = async (
   filter?: RoutineFilter,
   userId?: string,
-  userEmail?: string
+  userEmail?: string,
+  isAdmin = false
 ): Promise<Routine[]> => {
   const result = await dynamoDBDocumentClient.send(
     new ScanCommand({
@@ -138,11 +147,16 @@ const list = async (
   const routines = items.map((item) => fromRoutineRecord(item).routine);
   let filtered = filter ? routines.filter((routine) => applyFilter(routine, filter)) : routines;
 
-  filtered = filtered.filter((routine) => filterByOwner(routine, userId, userEmail));
+  filtered = filtered.filter((routine) => filterByOwner(routine, userId, userEmail, isAdmin));
   return filtered.map(clone);
 };
 
-const get = async (id: string, userId?: string, userEmail?: string): Promise<Routine | null> => {
+const get = async (
+  id: string,
+  userId?: string,
+  userEmail?: string,
+  isAdmin = false
+): Promise<Routine | null> => {
   const record = await fetchRoutineRecord(id);
   if (!record) {
     return null;
@@ -152,7 +166,8 @@ const get = async (id: string, userId?: string, userEmail?: string): Promise<Rou
   if (
     routine.visibility === 'private' &&
     routine.owner !== userId &&
-    routine.owner !== userEmail
+    routine.owner !== userEmail &&
+    !isAdmin
   ) {
     return null;
   }

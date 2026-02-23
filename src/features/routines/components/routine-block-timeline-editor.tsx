@@ -638,7 +638,7 @@ export function RoutineBlockTimelineEditor({
       startHour: Math.max(0, hour),
       endHour: hour + 0.25, // 15分（最小）
       label: '',
-      objective: '目的を入力してください',
+      objective: '',
       energyLevel: 'medium'
     };
 
@@ -1129,6 +1129,8 @@ function BlockEditModal({ block, durationType, normalTimeRange, onSave, onDelete
   const [duration, setDuration] = useState(block.endHour - block.startHour);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [labelError, setLabelError] = useState<string | null>(null);
+  const [objectiveError, setObjectiveError] = useState<string | null>(null);
+  const [durationError, setDurationError] = useState<string | null>(null);
   const timeOptions = generateTimeOptions();
 
   // blockが変更されたときにstartTimeを更新
@@ -1140,6 +1142,9 @@ function BlockEditModal({ block, durationType, normalTimeRange, onSave, onDelete
     setObjective(block.objective);
     setEnergyLevel(block.energyLevel);
     setDay(block.day);
+    setLabelError(null);
+    setObjectiveError(null);
+    setDurationError(null);
   }, [block]);
 
   // 開始時刻が変更されたときにendHourを自動更新
@@ -1184,6 +1189,7 @@ function BlockEditModal({ block, durationType, normalTimeRange, onSave, onDelete
 
     const validDuration = Math.max(minDuration, Math.min(maxDuration, newDuration));
     setDuration(validDuration);
+    setDurationError(null);
 
     const currentStartHour = parseTimeToHour(startTime);
     let newEndHour = currentStartHour + validDuration;
@@ -1208,6 +1214,17 @@ function BlockEditModal({ block, durationType, normalTimeRange, onSave, onDelete
     }
     setLabelError(null);
 
+    // 目的のバリデーション
+    if (!objective || objective.trim().length === 0) {
+      setObjectiveError('ブロックの目的は必須です');
+      return;
+    }
+    if (objective.length > 240) {
+      setObjectiveError('ブロックの目的は240文字以下である必要があります');
+      return;
+    }
+    setObjectiveError(null);
+
     // 最小15分を確保
     const minDuration = 0.25;
     let maxDuration: number;
@@ -1217,6 +1234,12 @@ function BlockEditModal({ block, durationType, normalTimeRange, onSave, onDelete
     } else {
       maxDuration = Infinity;
     }
+
+    if (!Number.isFinite(duration) || duration < minDuration) {
+      setDurationError('ブロックの長さは15分以上必要です');
+      return;
+    }
+    setDurationError(null);
 
     const validDuration = Math.max(minDuration, Math.min(maxDuration, duration));
     const currentStartHour = parseTimeToHour(startTime);
@@ -1319,10 +1342,16 @@ function BlockEditModal({ block, durationType, normalTimeRange, onSave, onDelete
           <Input
             id="edit-objective"
             value={objective}
-            onChange={(e) => setObjective(e.target.value)}
-            placeholder="このBlockの目的"
+            onChange={(e) => {
+              setObjective(e.target.value);
+              setObjectiveError(null);
+            }}
+            placeholder="目的を入力してください"
             required
           />
+          {objectiveError && (
+            <p className="text-sm text-destructive">{objectiveError}</p>
+          )}
         </div>
 
         {durationType === 'weekly' && (
@@ -1366,13 +1395,16 @@ function BlockEditModal({ block, durationType, normalTimeRange, onSave, onDelete
               id="edit-duration"
               type="number"
               step="0.25"
-              min={durationType === 'normal' ? 3 : 0.25}
+              min={0.25}
               max={durationType === 'normal' ? 24 : undefined}
               value={duration}
               onChange={(e) => handleDurationChange(Number(e.target.value))}
               required
               className="h-11 w-full rounded-lg border-2 border-input bg-background px-4 py-2.5 text-sm text-foreground transition-all duration-300 hover:border-primary/50 hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:border-ring/50 focus-visible:shadow-lg focus-visible:shadow-ring/20"
             />
+            {durationError && (
+              <p className="text-sm text-destructive">{durationError}</p>
+            )}
           </div>
           <div className="flex flex-col space-y-2">
             <Label htmlFor="edit-end-hour">終了時間</Label>
