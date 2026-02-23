@@ -175,8 +175,10 @@ const addBlockSchema = z.object({
   block: routineBlockInputSchema
 });
 
+export type AddBlockPayload = z.infer<typeof addBlockSchema>;
+
 export async function addRoutineBlockAction(
-  payload: z.infer<typeof addBlockSchema>
+  payload: AddBlockPayload
 ): Promise<ActionResult<RoutineBlock>> {
   try {
     const parsed = addBlockSchema.parse(payload);

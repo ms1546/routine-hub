@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useTransition, useEffect } from 'react';
+import { useState, useTransition, useEffect, useMemo } from 'react';
 import type { FormEvent } from 'react';
 import { usePathname } from 'next/navigation';
 import { Button } from '@/shared/ui/button';
@@ -267,6 +267,33 @@ export function ApplyRoutineForm({
     }
   }, [startDate, weekCount, durationType]);
 
+  /** プレビュー＋編集＋AIカスタマイズを反映した適用対象イベント（確認して適用でサーバーに渡す） */
+  const displayEventsToApply = useMemo((): ProposedCalendarEvent[] => {
+    if (!previewData) return [];
+    let base = previewData.proposedEvents;
+    if (useCustomized && customizationResult) {
+      const normalizedMap = new Map(
+        customizationResult.customizedEvents.map((c) => [c.proposalId, c])
+      );
+      base = base.map((event) => {
+        const n = normalizedMap.get(event.proposalId);
+        if (!n) return event;
+        return {
+          ...event,
+          title: n.title ?? event.title,
+          description: n.description ?? event.description,
+          start: n.start ?? event.start,
+          end: n.end ?? event.end
+        };
+      });
+    }
+    return base.map((event) => {
+      const edited = editedEvents.get(event.proposalId);
+      if (!edited) return event;
+      return { ...event, ...edited } as ProposedCalendarEvent;
+    });
+  }, [previewData, useCustomized, customizationResult, editedEvents]);
+
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const formData = new FormData(event.currentTarget);
@@ -378,7 +405,6 @@ export function ApplyRoutineForm({
   const handleConfirmApply = async () => {
     if (!previewData) return;
 
-    // すべての提案イベントを自動的に適用
     const allProposalIds = previewData.proposedEvents.map((e) => e.proposalId);
 
     setConfirming(true);
@@ -386,7 +412,10 @@ export function ApplyRoutineForm({
       const result = await confirmProposedEventsAction({
         routineId,
         proposalIds: allProposalIds,
-        recurrence: previewData.recurrence
+        recurrence: previewData.recurrence,
+        startDate: previewData.startDate,
+        endDate: previewData.endDate,
+        events: displayEventsToApply.length > 0 ? displayEventsToApply : undefined
       });
       setStatus(`${result.successCount}件のイベントを適用しました`);
       setShowPreviewModal(false);
@@ -543,39 +572,7 @@ export function ApplyRoutineForm({
         }
       >
       {previewData && (() => {
-          // 表示用のイベントを決定（優先順位: 手動編集 > AIカスタマイズ > 元のイベント）
-          const displayEvents = (() => {
-            // まず、カスタマイズ結果または元のイベントを取得
-            let baseEvents = previewData.proposedEvents;
-            if (useCustomized && customizationResult) {
-              const normalizedMap = new Map(
-                customizationResult.customizedEvents.map((c) => [c.proposalId, c])
-              );
-              baseEvents = previewData.proposedEvents.map((event) => {
-                const normalized = normalizedMap.get(event.proposalId);
-                if (!normalized) return event;
-
-                return {
-                  ...event,
-                  title: normalized.title ?? event.title,
-                  description: normalized.description ?? event.description,
-                  start: normalized.start ?? event.start,
-                  end: normalized.end ?? event.end
-                };
-              });
-            }
-
-            // 手動編集を適用（最優先）
-            return baseEvents.map((event) => {
-              const edited = editedEvents.get(event.proposalId);
-              if (!edited) return event;
-
-              return {
-                ...event,
-                ...edited
-              };
-            });
-          })();
+          const displayEvents = displayEventsToApply;
 
           return (
             <div className="space-y-6">
