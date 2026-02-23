@@ -1199,11 +1199,11 @@ function BlockEditModal({ block, durationType, normalTimeRange, onSave, onDelete
   const handleSave = () => {
     // ラベルのバリデーション
     if (!label || label.trim().length === 0) {
-      setLabelError('Blockの名前は必須です（3文字以上80文字以下）');
+      setLabelError('Blockの名前は必須です');
       return;
     }
-    if (label.length < 3 || label.length > 80) {
-      setLabelError('Blockの名前は3文字以上80文字以下である必要があります');
+    if (label.length > 80) {
+      setLabelError('Blockの名前は80文字以下である必要があります');
       return;
     }
     setLabelError(null);
