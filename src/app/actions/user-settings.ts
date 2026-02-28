@@ -6,10 +6,18 @@ import type { ActionResult } from '@/shared/types/actionResult';
 import type { UserSettings, UpdateUserSettingsInput } from '@/features/users';
 import { z } from 'zod';
 
+const optionalTimeString = z.preprocess(
+  (v) => (v === '' ? undefined : v),
+  z.string().regex(/^([01]?[0-9]|2[0-3]):[0-5][0-9]$/).optional()
+);
+
 const updateUserSettingsSchema = z.object({
   displayName: z.string().min(1).max(80).optional(),
   timezone: z.string().optional(),
   requiredSleepHours: z.number().int().min(4).max(12).optional(),
+  preferredWorkStartTime: optionalTimeString,
+  preferredWorkEndTime: optionalTimeString,
+  minBreakBetweenMinutes: z.number().int().min(5).max(30).optional(),
   priorities: z.array(z.string().min(1).max(100)).optional(),
   constraints: z.array(z.string().min(1).max(100)).optional(),
   energyLevel: z.enum(['low', 'medium', 'high']).optional()

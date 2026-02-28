@@ -27,7 +27,11 @@ const fallbackData = (userProfile: UserProfileContext): ProfileAgentData => ({
       systemPrompt,
       userPrompt: `優先順位: ${userProfile.priorities.join(', ') || '未設定'}\n制約: ${
         userProfile.constraints.join(', ') || '未設定'
-      }\nエネルギー: ${userProfile.energyLevel}\nタイムゾーン: ${userProfile.timezone}`,
+      }\nエネルギー: ${userProfile.energyLevel}\nタイムゾーン: ${userProfile.timezone}${
+        userProfile.requiredSleepHours != null ? `\n必要睡眠時間: ${userProfile.requiredSleepHours}時間` : ''
+      }${userProfile.preferredWorkStartTime ? `\n希望活動開始: ${userProfile.preferredWorkStartTime}` : ''}${
+        userProfile.preferredWorkEndTime ? `\n希望活動終了: ${userProfile.preferredWorkEndTime}` : ''
+      }${userProfile.minBreakBetweenMinutes != null ? `\n連続イベント間最小休憩: ${userProfile.minBreakBetweenMinutes}分` : ''}`,
       schema: profileAgentDataSchema,
       shapeExample: JSON.stringify(fallback),
       temperature: 0.2

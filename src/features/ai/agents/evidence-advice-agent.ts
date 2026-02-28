@@ -16,16 +16,55 @@ export type EvidenceAdviceAgentInput = {
   minEvidenceCount?: number;
 };
 
+/** 文献検索用：目的・優先・制約をそのまま連結したクエリ（フォールバック用） */
 const buildEvidenceQuery = (routine: Routine, userProfile: UserProfileContext): string => {
   const parts = [
     routine.purpose,
-    routine.description,
-    routine.tags?.join(' '),
     userProfile.priorities.join(' '),
     userProfile.constraints.join(' ')
   ].filter((part): part is string => Boolean(part && part.trim().length > 0));
 
   return parts.join(' ').slice(0, 400);
+};
+
+const keywordsSchema = z.object({
+  keywords: z.array(z.string().min(1)).min(2).max(8)
+});
+
+/**
+ * 目的・優先・制約の「要素」から、文献検索用の英語キーワードを抽出する。
+ * 長文をそのまま検索するよりヒット率が上がる。
+ */
+const extractSearchKeywords = async (
+  routine: Routine,
+  userProfile: UserProfileContext
+): Promise<{ keywords: string[]; failed: boolean }> => {
+  const displayQuery = buildDisplayQuery(routine, userProfile);
+  if (!displayQuery.trim() || !isBedrockEnabled()) {
+    return { keywords: [], failed: true };
+  }
+
+  try {
+    const result = await invokeBedrockWithFallback(
+      {
+        systemPrompt:
+          'You extract 3-6 English keywords for searching academic literature. ' +
+          'Input: routine purpose, priorities, constraints (may be in Japanese). ' +
+          'Output: short English terms that appear in research (e.g. time management, productivity, healthy lifestyle, work-life balance). ' +
+          'One or two words per concept. No full sentences.',
+        userPrompt: `Extract search keywords from:\n${displayQuery}\n\nOutput JSON: { "keywords": ["keyword1", "keyword2", ...] }`,
+        schema: keywordsSchema,
+        shapeExample: JSON.stringify({ keywords: ['time management', 'productivity', 'healthy lifestyle'] }),
+        temperature: 0.2,
+        maxTokens: 150
+      },
+      () => ({ keywords: [] })
+    );
+    const keywords = result.keywords?.filter((k) => k.trim().length > 0) ?? [];
+    return { keywords, failed: keywords.length < 2 };
+  } catch {
+    return { keywords: [], failed: true };
+  }
 };
 
 /** 表示用：目的・優先・制約を分けて重複を除き、見やすくする */
@@ -134,14 +173,13 @@ const buildSuggestionText = (routine: Routine, citation: EvidenceCitation): stri
 };
 
 const buildFallbackSuggestion = (routine: Routine): EvidenceSuggestion => {
-  const routineFocus = routine.purpose || routine.name;
   const actionHint = routine.durationType === 'weekly'
     ? '週次でのブロック配分や休憩間隔を見直してみてください。'
     : '時間帯や休憩間隔の見直しを検討してみてください。';
 
   return {
     id: generateUUID(),
-    description: `「${routineFocus}」に関連する参考文献が見つからなかったため、一般的な観点として${actionHint}`,
+    description: `一般的な観点として${actionHint}`,
     evidence: [],
     confidence: 'low'
   };
@@ -164,9 +202,20 @@ export async function runEvidenceAdviceAgent({
     return applyEvidencePolicy({ query: '', displayQuery: '', suggestions: [], warnings });
   }
 
-  const { searchQuery, translationFailed } = await translateQueryToEnglish(query, translationSystemPrompt);
-  if (translationFailed) {
-    warnings.push('日本語のクエリで検索しました。（英語での検索は利用できませんでした）');
+  // 要素からキーワードを抽出して検索（長文のまま検索するとヒット率が悪いため）
+  const { keywords, failed: keywordsFailed } = await extractSearchKeywords(routine, userProfile);
+  let searchQuery: string;
+  let translationFailed = false;
+
+  if (keywords.length >= 2) {
+    searchQuery = keywords.join(' ');
+  } else {
+    const translated = await translateQueryToEnglish(query, translationSystemPrompt);
+    searchQuery = translated.searchQuery;
+    translationFailed = translated.translationFailed;
+    if (translationFailed) {
+      warnings.push('日本語のクエリで検索しました。（英語での検索は利用できませんでした）');
+    }
   }
 
   let citations: EvidenceCitation[] = [];

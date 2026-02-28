@@ -2,6 +2,14 @@ import type { Routine } from '@/features/routines';
 
 export type UserProfileContext = {
   timezone: string;
+  /** 必要睡眠時間（時間）。AIカスタマイズで就寝・早起き回避等に利用 */
+  requiredSleepHours?: number;
+  /** イベントを入れたい最早時刻（HH:mm）。これより前は避ける */
+  preferredWorkStartTime?: string;
+  /** イベントを入れたい最遅時刻（HH:mm）。これより後は避ける */
+  preferredWorkEndTime?: string;
+  /** 連続イベント間の最小休憩（分） */
+  minBreakBetweenMinutes?: number;
   priorities: string[];
   constraints: string[];
   energyLevel: 'low' | 'medium' | 'high';

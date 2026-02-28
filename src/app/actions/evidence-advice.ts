@@ -77,6 +77,10 @@ export async function getEvidenceAdviceAction({
         routine,
         userProfile: {
           timezone: settings.timezone,
+          requiredSleepHours: settings.requiredSleepHours,
+          preferredWorkStartTime: settings.preferredWorkStartTime,
+          preferredWorkEndTime: settings.preferredWorkEndTime,
+          minBreakBetweenMinutes: settings.minBreakBetweenMinutes,
           priorities: settings.priorities,
           constraints: settings.constraints,
           energyLevel: settings.energyLevel

@@ -31,11 +31,17 @@ const workflowInputSchema = z.object({
   ),
   userProfile: z.object({
     timezone: z.string(),
+    requiredSleepHours: z.number().int().min(4).max(12).optional(),
+    preferredWorkStartTime: z.string().optional(),
+    preferredWorkEndTime: z.string().optional(),
+    minBreakBetweenMinutes: z.number().int().min(5).max(30).optional(),
     priorities: z.array(z.string()),
     constraints: z.array(z.string()),
     energyLevel: z.enum(['low', 'medium', 'high'])
   }),
-  routinePurpose: z.string().optional() // Routineの目的を追加
+  routinePurpose: z.string().optional(),
+  /** 文献に基づくアドバイス（根拠）。ある場合、カスタマイズの判断に参照する */
+  evidenceContext: z.string().optional()
 });
 
 const workflowOutputSchema = z.object({
@@ -67,7 +73,8 @@ const customizationStep = createStep({
       proposedEvents: inputData.proposedEvents as ProposedCalendarEvent[],
       existingEvents: inputData.existingEvents as CalendarEvent[],
       userProfile: inputData.userProfile as UserProfileContext,
-      routinePurpose: inputData.routinePurpose
+      routinePurpose: inputData.routinePurpose,
+      evidenceContext: inputData.evidenceContext
     });
 
     return {

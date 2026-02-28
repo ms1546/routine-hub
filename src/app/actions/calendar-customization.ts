@@ -31,11 +31,14 @@ export type CalendarCustomizationResult = {
 export async function customizeCalendarEventsAction({
   proposedEvents,
   existingEvents,
-  routineId
+  routineId,
+  /** 文献に基づくアドバイス。渡すとカスタマイズの判断に参照される */
+  evidenceContext
 }: {
   proposedEvents: ProposedCalendarEvent[];
   existingEvents: CalendarEvent[];
   routineId?: string;
+  evidenceContext?: string;
 }): Promise<CalendarCustomizationResult> {
   const currentUser = await getCurrentUser();
 
@@ -51,6 +54,10 @@ export async function customizeCalendarEventsAction({
 
   const userProfile: UserProfileContext = {
     timezone: settings.timezone,
+    requiredSleepHours: settings.requiredSleepHours,
+    preferredWorkStartTime: settings.preferredWorkStartTime,
+    preferredWorkEndTime: settings.preferredWorkEndTime,
+    minBreakBetweenMinutes: settings.minBreakBetweenMinutes,
     priorities: settings.priorities,
     constraints: settings.constraints,
     energyLevel: settings.energyLevel
@@ -109,7 +116,8 @@ export async function customizeCalendarEventsAction({
         proposedEvents,
         existingEvents,
         userProfile,
-        routinePurpose
+        routinePurpose,
+        evidenceContext: evidenceContext ?? undefined
       },
       tracingOptions: { traceId }
     });
