@@ -38,6 +38,10 @@ export async function previewRoutineAiAction(routineId: string) {
 
   const userContext = {
     timezone: settings.timezone,
+    requiredSleepHours: settings.requiredSleepHours,
+    preferredWorkStartTime: settings.preferredWorkStartTime,
+    preferredWorkEndTime: settings.preferredWorkEndTime,
+    minBreakBetweenMinutes: settings.minBreakBetweenMinutes,
     priorities: settings.priorities,
     constraints: settings.constraints,
     energyLevel: settings.energyLevel

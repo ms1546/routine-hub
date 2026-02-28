@@ -234,7 +234,10 @@ export function ApplyRoutineForm({
   const [useCustomized, setUseCustomized] = useState(false); // カスタマイズされたイベントを使用するか
   const [customizationResult, setCustomizationResult] = useState<CalendarCustomizationResult | null>(null);
   const [evidenceAdvice, setEvidenceAdvice] = useState<EvidenceAdviceResult | null>(null);
-  const [evidenceLoading, setEvidenceLoading] = useState(false);
+  /** モーダル内で表示する適用結果（成功・失敗） */
+  const [applyResult, setApplyResult] = useState<
+    null | { type: 'success'; count: number } | { type: 'error'; message: string }
+  >(null);
   const [editedEvents, setEditedEvents] = useState<Map<string, Partial<ProposedCalendarEvent>>>(new Map()); // 手動編集されたイベント
   const [editingEventId, setEditingEventId] = useState<string | null>(null); // 編集中のイベントID
   const [startDate, setStartDate] = useState<string>(today());
@@ -363,39 +366,46 @@ export function ApplyRoutineForm({
     });
   };
 
-  const handleCustomize = async () => {
+  /** 根拠を取得してから、その内容を参照してカスタマイズする（1本化） */
+  const handleEvidenceBasedCustomize = async () => {
     if (!previewData) return;
 
     setCustomizing(true);
+    setEvidenceAdvice(null);
+    setCustomizationResult(null);
     try {
+      // 1. 文献に基づくアドバイスを取得（要素→キーワードで検索）
+      const evidenceResult = await getEvidenceAdviceAction({ routineId });
+      setEvidenceAdvice(evidenceResult);
+
+      // 2. 根拠をテキストにまとめてカスタマイズのコンテキストにする
+      const evidenceContextParts: string[] = [];
+      evidenceResult.suggestions.forEach((s) => {
+        evidenceContextParts.push(`- ${s.description}`);
+        s.evidence.forEach((c) => {
+          evidenceContextParts.push(`  出典: ${c.title}${c.year ? ` (${c.year})` : ''}`);
+        });
+      });
+      const evidenceContext =
+        evidenceContextParts.length > 0
+          ? evidenceContextParts.join('\n')
+          : evidenceResult.warnings.some((w) => w.includes('一般的な観点'))
+            ? '該当する研究文献は見つかりませんでした。一般的な観点からの提案として時間帯・休憩間隔の見直しを考慮してください。'
+            : undefined;
+
+      // 3. 根拠＋ユーザー設定でカスタマイズ
       const result = await customizeCalendarEventsAction({
         proposedEvents: previewData.proposedEvents,
         existingEvents: previewData.existingEvents,
-        routineId // Routine IDを渡す
+        routineId,
+        evidenceContext
       });
       setCustomizationResult(result);
-      setStatus('カスタマイズが完了しました');
+      setStatus('根拠に基づくカスタマイズが完了しました');
     } catch (error) {
       setStatus(error instanceof Error ? error.message : 'カスタマイズに失敗しました');
     } finally {
       setCustomizing(false);
-    }
-  };
-
-  const handleEvidenceAdvice = async () => {
-    setEvidenceLoading(true);
-    try {
-      const result = await getEvidenceAdviceAction({ routineId });
-      setEvidenceAdvice(result);
-      if (result.suggestions.length === 0) {
-        setStatus('根拠が不足しているため提案は表示されませんでした。');
-      } else {
-        setStatus('根拠付きアドバイスを取得しました');
-      }
-    } catch (error) {
-      setStatus(error instanceof Error ? error.message : '根拠付きアドバイスの取得に失敗しました');
-    } finally {
-      setEvidenceLoading(false);
     }
   };
 
@@ -405,6 +415,7 @@ export function ApplyRoutineForm({
     const allProposalIds = previewData.proposedEvents.map((e) => e.proposalId);
 
     setConfirming(true);
+    setApplyResult(null);
     try {
       const result = await confirmProposedEventsAction({
         routineId,
@@ -414,20 +425,30 @@ export function ApplyRoutineForm({
         endDate: previewData.endDate,
         events: displayEventsToApply.length > 0 ? displayEventsToApply : undefined
       });
-      setStatus(`${result.successCount}件のイベントを適用しました`);
-      setShowPreviewModal(false);
-      setPreviewData(null);
+      const message =
+        result.successCount > 0
+          ? `${result.successCount}件をカレンダーに追加しました${result.failureCount > 0 ? `（${result.failureCount}件は反映されませんでした）` : ''}`
+          : result.failureCount > 0
+            ? `${result.failureCount}件の反映に失敗しました`
+            : '適用が完了しました';
+      setApplyResult({ type: 'success', count: result.successCount });
+      setStatus(result.successCount > 0 ? `${result.successCount}件のイベントを適用しました` : message);
+      // モーダル内で成功を見せてから閉じる
+      setTimeout(() => {
+        setShowPreviewModal(false);
+        setPreviewData(null);
+        setApplyResult(null);
+      }, 1800);
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'イベントの適用に失敗しました';
-      // 管理者制限のエラーメッセージを明確に表示
-      if (errorMessage.includes('admin') || errorMessage.includes('portfolio mode')) {
-        setStatus(
-          'カレンダーへのエクスポートは現在、管理者のみが利用可能です。' +
-          'これはポートフォリオモードでの意図的な設計制限です。'
-        );
-      } else {
-        setStatus(errorMessage);
-      }
+      const displayMessage =
+        errorMessage.includes('admin') || errorMessage.includes('portfolio mode')
+          ? 'カレンダーへのエクスポートは現在、管理者のみが利用可能です。'
+          : errorMessage.includes('接続') || errorMessage.includes('Connect')
+            ? 'Google Calendarに接続されていません。上の「Google Calendarを接続」ボタンから接続してください。'
+            : errorMessage;
+      setApplyResult({ type: 'error', message: displayMessage });
+      setStatus(displayMessage);
     } finally {
       setConfirming(false);
     }
@@ -542,8 +563,16 @@ export function ApplyRoutineForm({
       </form>
       {status && (
         <p
-          className={`text-sm mt-2 ${status.includes('失敗') || status.includes('正しくありません') || status.includes('指定してください') ? 'text-destructive font-medium' : 'text-muted-foreground'}`}
+          role="status"
+          className={`text-sm mt-2 rounded-md px-3 py-2 border ${
+            status.includes('適用しました') || status.includes('追加しました')
+              ? 'bg-green-500/10 text-green-800 dark:text-green-200 border-green-500/20 font-medium'
+              : status.includes('失敗') || status.includes('正しくありません') || status.includes('指定してください') || status.includes('接続')
+                ? 'text-destructive font-medium bg-destructive/10 border-destructive/20'
+                : 'text-muted-foreground border-transparent'
+          }`}
         >
+          {status.includes('適用しました') || status.includes('追加しました') ? '✓ ' : ''}
           {status}
         </p>
       )}
@@ -553,18 +582,45 @@ export function ApplyRoutineForm({
         open={showPreviewModal}
         onClose={() => {
           setShowPreviewModal(false);
-          setStatus(''); // モーダルを閉じたときにステータスをリセット
+          setApplyResult(null);
+          setStatus('');
         }}
         title="カレンダー適用の確認"
         size="xl"
         footer={
-          <div className="flex justify-end gap-3">
-            <Button variant="outline" onClick={() => setShowPreviewModal(false)} disabled={confirming}>
-              キャンセル
-            </Button>
-            <Button onClick={handleConfirmApply} disabled={confirming || !previewData || previewData.proposedEvents.length === 0}>
-              {confirming ? '適用中…' : '確認して適用'}
-            </Button>
+          <div className="space-y-3 w-full">
+            {applyResult && (
+              <div
+                className={`rounded-lg p-3 text-sm ${applyResult.type === 'success' ? 'bg-green-500/10 text-green-800 dark:text-green-200 border border-green-500/30' : 'bg-destructive/10 text-destructive border border-destructive/30'}`}
+              >
+                {applyResult.type === 'success' ? (
+                  <span>✓ {applyResult.count}件をカレンダーに追加しました。まもなく閉じます。</span>
+                ) : (
+                  <span>{applyResult.message}</span>
+                )}
+              </div>
+            )}
+            <div className="flex justify-end gap-3">
+              <Button variant="outline" onClick={() => setShowPreviewModal(false)} disabled={confirming}>
+                キャンセル
+              </Button>
+              <Button
+                onClick={handleConfirmApply}
+                disabled={
+                  confirming ||
+                  !previewData ||
+                  previewData.proposedEvents.length === 0 ||
+                  previewData.isCalendarConnected === false
+                }
+              >
+                {confirming ? '適用中…' : '確認して適用'}
+              </Button>
+            </div>
+            {previewData?.isCalendarConnected === false && (
+              <p className="text-sm text-amber-700 dark:text-amber-300">
+                Google Calendarに接続されていません。適用するには先に「Google Calendarを接続」から接続してください。
+              </p>
+            )}
           </div>
         }
       >
@@ -581,30 +637,46 @@ export function ApplyRoutineForm({
                   </p>
                 </div>
               )}
-              {/* AIカスタマイズセクション */}
+              {/* 根拠に基づくカスタマイズ（AIアドバイス＋カスタマイズを1本化） */}
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
                   <div>
-                    <h4 className="font-semibold mb-1">AIカスタマイズ</h4>
+                    <h4 className="font-semibold mb-1">根拠に基づくカスタマイズ</h4>
                     <p className="text-sm text-muted-foreground">
-                      あなたの設定に基づいてイベントを最適化します
+                      論文データの根拠とユーザー設定に基づいてイベントを最適化します
                     </p>
                   </div>
                   <Button
                     type="button"
                     variant="outline"
-                    onClick={handleCustomize}
+                    onClick={handleEvidenceBasedCustomize}
                     disabled={customizing || !previewData}
                   >
-                    {customizing ? 'カスタマイズ中...' : 'AIでカスタマイズ'}
+                    {customizing ? 'AIカスタマイズ中...' : 'AIカスタマイズ'}
                   </Button>
                 </div>
+
+                <p className="text-xs text-muted-foreground">
+                  {evidenceAdvice?.disclaimer ??
+                    '本機能は情報提供のみを目的とした提案です。最終判断はユーザーが行ってください。医療・法律・金融の専門助言ではありません。'}
+                </p>
+
+                {evidenceAdvice && customizationResult && (
+                  <div className="rounded-lg border border-muted-foreground/20 bg-muted/20 p-3 space-y-2">
+                    <p className="text-xs font-medium text-muted-foreground">参照した根拠</p>
+                    <ul className="text-xs text-muted-foreground space-y-1">
+                      {evidenceAdvice.suggestions.slice(0, 3).map((s) => (
+                        <li key={s.id}>• {s.description}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
 
                 {customizationResult && (
                   <div className="rounded-lg border border-primary/50 bg-primary/10 p-4 space-y-3">
                     <div className="flex items-center justify-between">
                       <p className="text-sm font-medium text-foreground">
-                        カスタマイズが完了しました
+                        根拠に基づくカスタマイズが完了しました
                       </p>
                       <div className="flex items-center gap-2">
                         <label className="flex items-center gap-2 text-sm cursor-pointer text-foreground">
@@ -633,33 +705,8 @@ export function ApplyRoutineForm({
                     )}
                   </div>
                 )}
-              </div>
 
-              {/* 根拠付きアドバイスセクション */}
-              <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h4 className="font-semibold mb-1">根拠付きアドバイス</h4>
-                    <p className="text-sm text-muted-foreground">
-                      無料の論文データを参照して提案を生成します
-                    </p>
-                  </div>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={handleEvidenceAdvice}
-                    disabled={evidenceLoading}
-                  >
-                    {evidenceLoading ? '取得中...' : '根拠付きで提案'}
-                  </Button>
-                </div>
-
-                <p className="text-xs text-muted-foreground">
-                  {evidenceAdvice?.disclaimer ??
-                    '本機能は情報提供のみを目的とした提案です。最終判断はユーザーが行ってください。'}
-                </p>
-
-                {evidenceAdvice && (
+                {evidenceAdvice && !customizationResult && (
                   <div className="rounded-lg border border-muted-foreground/20 bg-muted/20 p-4 space-y-3">
                     {(evidenceAdvice.displayQuery ?? evidenceAdvice.query) && (
                       <p className="text-xs text-muted-foreground">

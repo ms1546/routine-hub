@@ -301,6 +301,10 @@ export async function POST(request: NextRequest) {
       routine,
       user: {
         timezone: settings.timezone,
+        requiredSleepHours: settings.requiredSleepHours,
+        preferredWorkStartTime: settings.preferredWorkStartTime,
+        preferredWorkEndTime: settings.preferredWorkEndTime,
+        minBreakBetweenMinutes: settings.minBreakBetweenMinutes,
         priorities: settings.priorities,
         constraints: settings.constraints,
         energyLevel: settings.energyLevel

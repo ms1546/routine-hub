@@ -19,6 +19,10 @@ import { evaluateWorkflow } from '../evaluation/judge';
 
 const userProfileSchema = z.object({
   timezone: z.string(),
+  requiredSleepHours: z.number().int().min(4).max(12).optional(),
+  preferredWorkStartTime: z.string().optional(),
+  preferredWorkEndTime: z.string().optional(),
+  minBreakBetweenMinutes: z.number().int().min(5).max(30).optional(),
   priorities: z.array(z.string()),
   constraints: z.array(z.string()),
   energyLevel: z.enum(['low', 'medium', 'high'])

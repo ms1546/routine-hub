@@ -21,6 +21,15 @@ export function UserSettingsForm({ userId, initialSettings, action }: UserSettin
   const [displayName, setDisplayName] = useState(initialSettings.displayName ?? '');
   const [timezone, setTimezone] = useState(initialSettings.timezone);
   const [requiredSleepHours, setRequiredSleepHours] = useState(initialSettings.requiredSleepHours);
+  const [preferredWorkStartTime, setPreferredWorkStartTime] = useState(
+    initialSettings.preferredWorkStartTime ?? ''
+  );
+  const [preferredWorkEndTime, setPreferredWorkEndTime] = useState(
+    initialSettings.preferredWorkEndTime ?? ''
+  );
+  const [minBreakBetweenMinutes, setMinBreakBetweenMinutes] = useState(
+    initialSettings.minBreakBetweenMinutes ?? 5
+  );
   const [priorities, setPriorities] = useState(initialSettings.priorities.join('\n'));
   const [constraints, setConstraints] = useState(initialSettings.constraints.join('\n'));
   const [energyLevel, setEnergyLevel] = useState(initialSettings.energyLevel);
@@ -37,6 +46,9 @@ export function UserSettingsForm({ userId, initialSettings, action }: UserSettin
           displayName: displayName || undefined,
           timezone,
           requiredSleepHours,
+          preferredWorkStartTime: preferredWorkStartTime || undefined,
+          preferredWorkEndTime: preferredWorkEndTime || undefined,
+          minBreakBetweenMinutes,
           priorities: priorities
             .split('\n')
             .map((p) => p.trim())
@@ -113,6 +125,46 @@ export function UserSettingsForm({ userId, initialSettings, action }: UserSettin
               onChange={(e) => setRequiredSleepHours(Number(e.target.value))}
             />
             <p className="text-xs text-muted-foreground">AIがスケジュール最適化時に考慮する睡眠時間です</p>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="space-y-2.5">
+              <Label htmlFor="preferredWorkStartTime">希望活動開始時刻</Label>
+              <Input
+                id="preferredWorkStartTime"
+                type="time"
+                value={preferredWorkStartTime}
+                onChange={(e) => setPreferredWorkStartTime(e.target.value)}
+              />
+              <p className="text-xs text-muted-foreground">この時刻より前にはイベントを入れないようAIが調整します（未設定で制限なし）</p>
+            </div>
+            <div className="space-y-2.5">
+              <Label htmlFor="preferredWorkEndTime">希望活動終了時刻</Label>
+              <Input
+                id="preferredWorkEndTime"
+                type="time"
+                value={preferredWorkEndTime}
+                onChange={(e) => setPreferredWorkEndTime(e.target.value)}
+              />
+              <p className="text-xs text-muted-foreground">この時刻より後にはイベントを入れないようAIが調整します（未設定で制限なし）</p>
+            </div>
+          </div>
+
+          <div className="space-y-2.5">
+            <Label htmlFor="minBreakBetweenMinutes">連続イベント間の最小休憩（分）</Label>
+            <select
+              id="minBreakBetweenMinutes"
+              value={minBreakBetweenMinutes}
+              onChange={(e) => setMinBreakBetweenMinutes(Number(e.target.value))}
+              className="relative h-11 w-full rounded-lg border-2 border-input bg-background px-4 py-2.5 text-sm text-foreground transition-all duration-300 hover:border-primary/50 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:border-primary/60"
+            >
+              <option value={5}>5分</option>
+              <option value={10}>10分</option>
+              <option value={15}>15分</option>
+              <option value={20}>20分</option>
+              <option value={30}>30分</option>
+            </select>
+            <p className="text-xs text-muted-foreground">AIが連続するイベントの間に最低この休憩を挟むよう調整します</p>
           </div>
 
           <div className="space-y-2.5">

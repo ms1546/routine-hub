@@ -31,14 +31,17 @@ export type CalendarCustomizationAgentInput = {
   proposedEvents: ProposedCalendarEvent[];
   existingEvents: CalendarEvent[];
   userProfile: UserProfileContext;
-  routinePurpose?: string; // Routineの目的を追加
+  routinePurpose?: string;
+  /** 文献に基づくアドバイス。ある場合、カスタマイズの理由・提案に反映する */
+  evidenceContext?: string;
 };
 
 export async function runCalendarCustomizationAgent({
   proposedEvents,
   existingEvents,
   userProfile,
-  routinePurpose
+  routinePurpose,
+  evidenceContext
 }: CalendarCustomizationAgentInput): Promise<AgentResult<CalendarCustomizationAgentData>> {
   // 既存イベントとの競合を検出
   const conflictMap = new Map<string, CalendarEvent[]>();
@@ -101,8 +104,16 @@ export async function runCalendarCustomizationAgent({
     }))
   };
 
-  // LLMによるカスタマイズ提案
+  // LLMによるカスタマイズ提案（根拠がある場合は参照する）
   const systemPrompt = await getSystemPrompt('calendar-customization-agent');
+  const evidenceBlock = evidenceContext?.trim()
+    ? `
+
+【文献・根拠に基づくアドバイス（参照してカスタマイズの理由や提案に活かしてください）】
+${evidenceContext}
+`
+    : '';
+
   const data = await invokeBedrockWithFallback(
     {
       systemPrompt,
@@ -118,9 +129,14 @@ ${JSON.stringify(existingEvents.map((e) => ({ title: e.title, start: e.start, en
 - 制約: ${userProfile.constraints.join(', ') || '未設定'}
 - エネルギーレベル: ${userProfile.energyLevel}
 - タイムゾーン: ${userProfile.timezone}
+${userProfile.requiredSleepHours != null ? `\n- 必要睡眠時間: ${userProfile.requiredSleepHours}時間` : ''}
+${userProfile.preferredWorkStartTime ? `\n- 希望活動開始時刻（これより前は避ける）: ${userProfile.preferredWorkStartTime}` : ''}
+${userProfile.preferredWorkEndTime ? `\n- 希望活動終了時刻（これより後は避ける）: ${userProfile.preferredWorkEndTime}` : ''}
+${userProfile.minBreakBetweenMinutes != null ? `\n- 連続イベント間の最小休憩: ${userProfile.minBreakBetweenMinutes}分` : ''}
 
 Routineの目的:
 ${routinePurpose ? routinePurpose : '未設定'}
+${evidenceBlock}
       `,
       schema: calendarCustomizationAgentDataSchema,
       shapeExample: JSON.stringify(fallbackData),
