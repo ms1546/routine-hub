@@ -44,5 +44,7 @@ export async function GET(request: NextRequest) {
   }
 
   const returnTo = state.returnTo ?? '/routines';
-  return NextResponse.redirect(new URL(returnTo, base));
+  const returnUrl = new URL(returnTo, base);
+  returnUrl.searchParams.set('calendarConnected', '1');
+  return NextResponse.redirect(returnUrl);
 }

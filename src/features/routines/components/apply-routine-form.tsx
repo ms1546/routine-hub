@@ -2,7 +2,7 @@
 
 import { useState, useTransition, useEffect, useMemo } from 'react';
 import type { FormEvent } from 'react';
-import { usePathname } from 'next/navigation';
+import { usePathname, useSearchParams, useRouter } from 'next/navigation';
 import { Button } from '@/shared/ui/button';
 import { Input } from '@/shared/ui/input';
 import { Label } from '@/shared/ui/label';
@@ -217,6 +217,8 @@ export function ApplyRoutineForm({
     '⚠️ この機能はポートフォリオデモ用の管理者専用機能です。一般ユーザーには提供されていません。'
   );
   const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const router = useRouter();
   const connectUrl = `/api/google-oauth/connect?returnTo=${encodeURIComponent(pathname ?? '/routines')}`;
   const [pending, startTransition] = useTransition();
   const [showPreviewModal, setShowPreviewModal] = useState(false);
@@ -266,6 +268,40 @@ export function ApplyRoutineForm({
       setEndDate(formatDateInput(end));
     }
   }, [startDate, weekCount, durationType]);
+
+  // OAuth から戻った直後（calendarConnected=1）は bfcache で古い previewData が残るため再取得
+  useEffect(() => {
+    const justConnected = searchParams.get('calendarConnected') === '1';
+    if (!justConnected || !previewData) return;
+
+    const refetch = async () => {
+      setPreviewLoading(true);
+      try {
+        const preview = await getCalendarPreviewAction({
+          routineId,
+          startDate: previewData.startDate,
+          endDate: previewData.endDate,
+          recurrence: previewData.recurrence
+        });
+        setPreviewData({
+          ...preview,
+          startDate: previewData.startDate,
+          endDate: previewData.endDate,
+          recurrence: previewData.recurrence
+        });
+      } finally {
+        setPreviewLoading(false);
+      }
+    };
+
+    refetch();
+    const next = new URLSearchParams(searchParams);
+    next.delete('calendarConnected');
+    const base = pathname ?? '/routines';
+    const href = next.toString() ? `${base}?${next.toString()}` : base;
+    router.replace(href, { scroll: false });
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- calendarConnected=1 検知時のみ実行、previewData はその時点の値を使用
+  }, [searchParams]);
 
   /** プレビュー＋編集＋AIカスタマイズを反映した適用対象イベント（確認して適用でサーバーに渡す） */
   const displayEventsToApply = useMemo((): ProposedCalendarEvent[] => {
