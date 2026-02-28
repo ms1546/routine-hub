@@ -661,66 +661,91 @@ export function ApplyRoutineForm({
 
                 {evidenceAdvice && (
                   <div className="rounded-lg border border-muted-foreground/20 bg-muted/20 p-4 space-y-3">
-                    {evidenceAdvice.query && (
-                      <p className="text-xs text-muted-foreground">検索クエリ: {evidenceAdvice.query}</p>
+                    {(evidenceAdvice.displayQuery ?? evidenceAdvice.query) && (
+                      <p className="text-xs text-muted-foreground">
+                        検索: {evidenceAdvice.displayQuery ?? evidenceAdvice.query}
+                      </p>
                     )}
 
                     {evidenceAdvice.warnings.length > 0 && (
                       <ul className="space-y-1">
-                        {evidenceAdvice.warnings.map((warning, index) => (
-                          <li key={index} className="text-xs text-amber-800 dark:text-amber-200">
-                            ⚠️ {warning}
-                          </li>
-                        ))}
+                        {evidenceAdvice.warnings.map((warning, index) => {
+                          const isInfo =
+                            warning.includes('日本語のクエリで検索') ||
+                            warning.includes('一般的な観点からの提案');
+                          return (
+                            <li
+                              key={index}
+                              className={
+                                isInfo
+                                  ? 'text-xs text-muted-foreground'
+                                  : 'text-xs text-amber-800 dark:text-amber-200'
+                              }
+                            >
+                              {isInfo ? 'ℹ️ ' : '⚠️ '}
+                              {warning}
+                            </li>
+                          );
+                        })}
                       </ul>
                     )}
 
                     {evidenceAdvice.suggestions.length === 0 ? (
                       <p className="text-sm text-muted-foreground">
-                        根拠が不足しているため提案を表示できません。
+                        提案を生成できませんでした。ルーチンの目的や優先事項を入力すると検索しやすくなります。
                       </p>
                     ) : (
                       <div className="space-y-3">
-                        {evidenceAdvice.suggestions.map((suggestion) => (
-                          <div key={suggestion.id} className="space-y-2">
-                            <div className="flex items-center gap-2">
-                              <Badge variant="outline">{suggestion.confidence}</Badge>
-                              <p className="text-sm font-medium">提案</p>
+                        {evidenceAdvice.suggestions.map((suggestion) => {
+                          const confidenceLabel =
+                            suggestion.confidence === 'high'
+                              ? '根拠あり'
+                              : suggestion.confidence === 'medium'
+                                ? '参考'
+                                : '一般的な観点';
+                          return (
+                            <div key={suggestion.id} className="space-y-2">
+                              <div className="flex items-center gap-2">
+                                <Badge variant="outline" className="font-normal">
+                                  {confidenceLabel}
+                                </Badge>
+                                <p className="text-sm font-medium">提案</p>
+                              </div>
+                              <p className="text-sm text-foreground">{suggestion.description}</p>
+                              <div className="rounded-md border border-border/60 bg-background/50 p-3">
+                                <p className="text-xs font-medium mb-2">引用</p>
+                                {suggestion.evidence.length === 0 ? (
+                                  <p className="text-xs text-muted-foreground">
+                                    この提案は文献に基づく引用はありません。ルーティン設計の一般的な観点からまとめています。
+                                  </p>
+                                ) : (
+                                  <ul className="space-y-1">
+                                    {suggestion.evidence.map((citation) => (
+                                      <li key={citation.sourceId} className="text-xs text-muted-foreground">
+                                        <span className="font-medium">{citation.title}</span>
+                                        {citation.year ? ` (${citation.year})` : ''}
+                                        {citation.venue ? ` / ${citation.venue}` : ''}
+                                        {citation.url && (
+                                          <>
+                                            {' '}
+                                            <a
+                                              href={citation.url}
+                                              target="_blank"
+                                              rel="noreferrer"
+                                              className="underline"
+                                            >
+                                              出典
+                                            </a>
+                                          </>
+                                        )}
+                                      </li>
+                                    ))}
+                                  </ul>
+                                )}
+                              </div>
                             </div>
-                            <p className="text-sm text-foreground">{suggestion.description}</p>
-                            <div className="rounded-md border border-border/60 bg-background/50 p-3">
-                              <p className="text-xs font-medium mb-2">引用</p>
-                              {suggestion.evidence.length === 0 ? (
-                                <p className="text-xs text-muted-foreground">
-                                  引用が見つからなかったため、一般的な提案を表示しています。
-                                </p>
-                              ) : (
-                                <ul className="space-y-1">
-                                  {suggestion.evidence.map((citation) => (
-                                    <li key={citation.sourceId} className="text-xs text-muted-foreground">
-                                      <span className="font-medium">{citation.title}</span>
-                                      {citation.year ? ` (${citation.year})` : ''}
-                                      {citation.venue ? ` / ${citation.venue}` : ''}
-                                      {citation.url && (
-                                        <>
-                                          {' '}
-                                          <a
-                                            href={citation.url}
-                                            target="_blank"
-                                            rel="noreferrer"
-                                            className="underline"
-                                          >
-                                            出典
-                                          </a>
-                                        </>
-                                      )}
-                                    </li>
-                                  ))}
-                                </ul>
-                              )}
-                            </div>
-                          </div>
-                        ))}
+                          );
+                        })}
                       </div>
                     )}
                   </div>
