@@ -83,6 +83,9 @@ export async function invokeBedrockStructured<TSchema extends z.ZodTypeAny>(
     attempts.push({ modelId: fallbackModelId, label: 'fallback-model' });
   }
 
+  const guardrailId = process.env.AWS_BEDROCK_GUARDRAIL_ARN ?? process.env.AWS_BEDROCK_GUARDRAIL_ID;
+  const guardrailVersion = process.env.AWS_BEDROCK_GUARDRAIL_VERSION;
+
   let lastError: unknown;
   for (const attempt of attempts) {
     try {
@@ -91,7 +94,10 @@ export async function invokeBedrockStructured<TSchema extends z.ZodTypeAny>(
           contentType: 'application/json',
           accept: 'application/json',
           body,
-          modelId: attempt.modelId
+          modelId: attempt.modelId,
+          ...(guardrailId && guardrailVersion
+            ? { guardrailIdentifier: guardrailId, guardrailVersion }
+            : {})
         })
       );
 
