@@ -94,6 +94,8 @@ export async function getEvidenceAdviceAction({
     }
 
     const result = runResult.result;
+    const hasLiteratureEvidence = result.suggestions.some((s) => s.evidence.length > 0);
+    const isGenericFallback = result.suggestions.length > 0 && result.suggestions.every((s) => s.evidence.length === 0);
     await recordLangfuseScore({
       traceId,
       name: 'suggestions-count',
@@ -103,7 +105,9 @@ export async function getEvidenceAdviceAction({
       metadata: {
         suggestionCount: result.suggestions.length,
         warningCount: result.warnings.length,
-        hasQuery: Boolean(result.query?.trim())
+        hasQuery: Boolean(result.query?.trim()),
+        hasLiteratureEvidence,
+        isGenericFallback
       }
     });
 

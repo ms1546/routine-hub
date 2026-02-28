@@ -127,6 +127,8 @@ export async function customizeCalendarEventsAction({
     }
 
     const result = runResult.result;
+    const hasEvidenceContext = Boolean(evidenceContext?.trim());
+    const evidenceIsGeneric = hasEvidenceContext && (evidenceContext?.includes('一般的な観点') ?? false);
     await recordLangfuseScore({
       traceId,
       name: 'customized-events-count',
@@ -135,7 +137,9 @@ export async function customizeCalendarEventsAction({
       source: 'MODEL',
       metadata: {
         customizedCount: result.customizedEvents.length,
-        suggestionCount: result.suggestions.length
+        suggestionCount: result.suggestions.length,
+        hasEvidenceContext,
+        evidenceIsGeneric
       }
     });
 
