@@ -7,7 +7,11 @@ import { mastraRepository } from '@/features/ai/mastra/repository';
 import { routinesRepository } from '@/features/routines';
 import { userSettingsRepository } from '@/features/users';
 import { getCurrentUser } from '@/infrastructure/auth/session';
-import { recordLangfuseTrace, recordLangfuseScore } from '@/features/ai/evaluation/langfuse-boundary';
+import {
+  recordLangfuseTrace,
+  recordLangfuseScore,
+  updateLangfuseTraceOutput
+} from '@/features/ai/evaluation/langfuse-boundary';
 import { getSystemPromptInfo } from '@/features/ai/evaluation/prompt-helper';
 
 const generateUUID = createDefaultUUIDGenerator();
@@ -96,6 +100,16 @@ export async function getEvidenceAdviceAction({
     const result = runResult.result;
     const hasLiteratureEvidence = result.suggestions.some((s: EvidenceSuggestion) => s.evidence.length > 0);
     const isGenericFallback = result.suggestions.length > 0 && result.suggestions.every((s: EvidenceSuggestion) => s.evidence.length === 0);
+
+    await updateLangfuseTraceOutput({
+      traceId,
+      output: {
+        query: result.query,
+        suggestions: result.suggestions,
+        warnings: result.warnings
+      }
+    });
+
     await recordLangfuseScore({
       traceId,
       name: 'suggestions-count',
@@ -114,6 +128,10 @@ export async function getEvidenceAdviceAction({
     return result;
   } catch (error) {
     console.error('[EvidenceAdvice] Workflow execution failed:', error);
+    await updateLangfuseTraceOutput({
+      traceId,
+      output: { error: error instanceof Error ? error.message : String(error), fallback: true }
+    }).catch(() => {});
     await recordLangfuseScore({
       traceId,
       name: 'suggestions-count',
