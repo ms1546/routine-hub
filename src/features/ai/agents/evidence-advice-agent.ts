@@ -28,43 +28,69 @@ const buildEvidenceQuery = (routine: Routine, userProfile: UserProfileContext): 
 };
 
 const keywordsSchema = z.object({
-  keywords: z.array(z.string().min(1)).min(2).max(8)
+  keywords: z.array(z.string().min(1)).min(1).max(6)
 });
 
 /**
- * 目的・優先・制約の「要素」から、文献検索用の英語キーワードを抽出する。
- * 長文をそのまま検索するよりヒット率が上がる。
+ * 1つの概念（目的・優先・制約の各要素）から文献検索用の英語キーワードを抽出する。
  */
-const extractSearchKeywords = async (
-  routine: Routine,
-  userProfile: UserProfileContext
-): Promise<{ keywords: string[]; failed: boolean }> => {
-  const displayQuery = buildDisplayQuery(routine, userProfile);
-  if (!displayQuery.trim() || !isBedrockEnabled()) {
-    return { keywords: [], failed: true };
-  }
-
+const extractKeywordsForElement = async (text: string): Promise<string[]> => {
+  if (!text.trim() || !isBedrockEnabled()) return [];
   try {
     const result = await invokeBedrockWithFallback(
       {
         systemPrompt:
-          'You extract 3-6 English keywords for searching academic literature. ' +
-          'Input: routine purpose, priorities, constraints (may be in Japanese). ' +
-          'Output: short English terms that appear in research (e.g. time management, productivity, healthy lifestyle, work-life balance). ' +
+          'You extract 1-3 English keywords for searching academic literature. ' +
+          'Input: a single concept (may be in Japanese). ' +
+          'Output: short English terms that appear in research (e.g. time management, productivity, healthy lifestyle). ' +
           'One or two words per concept. No full sentences.',
-        userPrompt: `Extract search keywords from:\n${displayQuery}\n\nOutput JSON: { "keywords": ["keyword1", "keyword2", ...] }`,
+        userPrompt: `Extract search keywords from this concept:\n${text.trim().slice(0, 200)}\n\nOutput JSON: { "keywords": ["keyword1", "keyword2", ...] }`,
         schema: keywordsSchema,
-        shapeExample: JSON.stringify({ keywords: ['time management', 'productivity', 'healthy lifestyle'] }),
+        shapeExample: JSON.stringify({ keywords: ['time management', 'productivity'] }),
         temperature: 0.2,
-        maxTokens: 150
+        maxTokens: 80
       },
       () => ({ keywords: [] })
     );
-    const keywords = result.keywords?.filter((k) => k.trim().length > 0) ?? [];
-    return { keywords, failed: keywords.length < 2 };
+    return result.keywords?.filter((k) => k.trim().length > 0) ?? [];
   } catch {
-    return { keywords: [], failed: true };
+    return [];
   }
+};
+
+/**
+ * 目的・優先・制約を「要素ごと」に分解し、各要素からキーワードを抽出して結合する。
+ * 長文をそのまま検索するよりヒット率が上がる。
+ */
+const extractSearchKeywordsByElement = async (
+  routine: Routine,
+  userProfile: UserProfileContext
+): Promise<{ keywords: string[]; failed: boolean }> => {
+  if (!isBedrockEnabled()) return { keywords: [], failed: true };
+
+  const elements: string[] = [];
+  if (routine.purpose?.trim()) elements.push(routine.purpose.trim());
+  const priorities = [...new Set(userProfile.priorities.filter((p) => p?.trim()))];
+  elements.push(...priorities);
+  const constraints = [...new Set(userProfile.constraints.filter((c) => c?.trim()))];
+  elements.push(...constraints);
+
+  if (elements.length === 0) return { keywords: [], failed: true };
+
+  const allKeywords: string[] = [];
+  const seen = new Set<string>();
+  for (const el of elements) {
+    const kw = await extractKeywordsForElement(el);
+    for (const k of kw) {
+      const lower = k.toLowerCase();
+      if (!seen.has(lower)) {
+        seen.add(lower);
+        allKeywords.push(k);
+      }
+    }
+  }
+
+  return { keywords: allKeywords, failed: allKeywords.length < 2 };
 };
 
 /** 表示用：目的・優先・制約を分けて重複を除き、見やすくする */
@@ -202,8 +228,8 @@ export async function runEvidenceAdviceAgent({
     return applyEvidencePolicy({ query: '', displayQuery: '', suggestions: [], warnings });
   }
 
-  // 要素からキーワードを抽出して検索（長文のまま検索するとヒット率が悪いため）
-  const { keywords, failed: keywordsFailed } = await extractSearchKeywords(routine, userProfile);
+  // 要素ごとにキーワードを抽出して検索（長文のまま検索するとヒット率が悪いため）
+  const { keywords } = await extractSearchKeywordsByElement(routine, userProfile);
   let searchQuery: string;
   let translationFailed = false;
 
@@ -228,7 +254,7 @@ export async function runEvidenceAdviceAgent({
     citations = rankCitations(searchResult.citations);
   } catch (error) {
     warnings.push('論文 API の取得に失敗しました。時間を置いて再試行してください。');
-    return applyEvidencePolicy({ query, displayQuery, suggestions: [], warnings });
+    return applyEvidencePolicy({ query, displayQuery, searchQuery, suggestions: [], warnings });
   }
 
   if (citations.length < minEvidenceCount) {
@@ -237,6 +263,7 @@ export async function runEvidenceAdviceAgent({
     return applyEvidencePolicy({
       query,
       displayQuery,
+      searchQuery,
       suggestions: [fallbackSuggestion],
       warnings
     });
@@ -257,5 +284,5 @@ export async function runEvidenceAdviceAgent({
     }))
   );
 
-  return applyEvidencePolicy({ query, displayQuery, suggestions, warnings });
+  return applyEvidencePolicy({ query, displayQuery, searchQuery, suggestions, warnings });
 }

@@ -105,6 +105,7 @@ export async function getEvidenceAdviceAction({
       traceId,
       output: {
         query: result.query,
+        searchQuery: result.searchQuery,
         suggestions: result.suggestions,
         warnings: result.warnings
       }

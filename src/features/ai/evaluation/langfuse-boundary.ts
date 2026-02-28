@@ -61,6 +61,7 @@ type LangfusePrompt = {
 };
 
 type LangfuseClient = {
+  flushAsync?: () => Promise<void>;
   trace: (payload: {
     id: string;
     name?: string;
@@ -210,6 +211,7 @@ export async function recordLangfuseScore(
           environment: process.env.NODE_ENV ?? 'development'
         }
       });
+      await client.flushAsync?.();
     }
   } catch (error) {
     console.warn('[RoutuneHub] Langfuse score recording failed, continuing without telemetry.', error);

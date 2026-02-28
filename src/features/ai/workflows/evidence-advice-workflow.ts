@@ -17,7 +17,7 @@ const evidenceCitationSchema = z.object({
 const evidenceSuggestionSchema = z.object({
   id: z.string(),
   description: z.string(),
-  evidence: z.array(evidenceCitationSchema).min(1),
+  evidence: z.array(evidenceCitationSchema),
   confidence: z.enum(['low', 'medium', 'high'])
 });
 
@@ -29,6 +29,7 @@ const workflowInputSchema = z.object({
 
 const workflowOutputSchema = z.object({
   query: z.string(),
+  searchQuery: z.string().optional(),
   suggestions: z.array(evidenceSuggestionSchema),
   warnings: z.array(z.string()),
   disclaimer: z.string()
