@@ -95,8 +95,7 @@ export function CalendarProposalPanel({
           ) : (
             <div className="space-y-3">
               <p className="text-sm text-muted-foreground">
-                Calendar export is currently limited to admin users in portfolio mode.
-                This is an intentional design decision to avoid requiring sensitive calendar permissions from reviewers.
+                Connect Google Calendar to export proposed events.
               </p>
               {connectUrl ? (
                 <a href={connectUrl}>
