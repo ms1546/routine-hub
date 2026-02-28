@@ -20,7 +20,8 @@
     "test:storybook": "vitest run --config vitest.storybook.config.ts",
     "storybook": "storybook dev -p 6006",
     "build-storybook": "storybook build",
-    "chromatic": "chromatic"
+    "chromatic": "chromatic",
+    "experiment:routine": "tsx scripts/run-routine-experiment.ts"
   },
   "dependencies": {
     "@aws-sdk/client-bedrock-runtime": "^3.645.0",
@@ -72,6 +73,7 @@
     "shadcn": "^3.6.3",
     "storybook": "^10.2.0",
     "ts-node": "^10.9.2",
+    "tsx": "^4.19.0",
     "typescript": "^5.6.3",
     "vite": "^7.3.1",
     "vite-tsconfig-paths": "^6.0.5",

@@ -4,7 +4,16 @@ import { setCalendarClient } from '@/infrastructure/calendar/calendar-client-fac
 import { MockCalendarClient } from '@/features/calendar/domain/mock-client';
 import { routinesRepository } from '@/features/routines';
 import { buildProposedEvents } from '@/features/calendar/domain/proposals';
-import { createDefaultCalendarWindow } from '@/features/calendar/domain/window';
+import type { CalendarTimeRange } from '@/features/calendar/domain/types';
+
+/** 月曜を含む固定ウィンドウ（weekly ルーチンのテストで安定して1件以上得るため） */
+function createFixedWindowWithMonday(): CalendarTimeRange {
+  return {
+    start: '2025-02-03T00:00:00.000Z',
+    end: '2025-02-10T00:00:00.000Z',
+    timezone: 'UTC'
+  };
+}
 
 let proposalId: string;
 let routineId: string;
@@ -35,7 +44,7 @@ beforeEach(async () => {
     ]
   });
   routineId = routine.id;
-  const proposals = buildProposedEvents(routine, createDefaultCalendarWindow());
+  const proposals = buildProposedEvents(routine, createFixedWindowWithMonday());
   proposalId = proposals[0]?.proposalId ?? '';
 });
 
@@ -44,7 +53,9 @@ describe('confirmProposedEventsAction', () => {
     if (!proposalId) throw new Error('Missing proposal id in test setup');
     const firstInsert = await confirmProposedEventsAction({
       routineId,
-      proposalIds: [proposalId]
+      proposalIds: [proposalId],
+      startDate: '2025-02-03',
+      endDate: '2025-02-10'
     });
 
     expect(firstInsert.successCount).toBe(1);
@@ -52,7 +63,9 @@ describe('confirmProposedEventsAction', () => {
 
     const secondInsert = await confirmProposedEventsAction({
       routineId,
-      proposalIds: [proposalId]
+      proposalIds: [proposalId],
+      startDate: '2025-02-03',
+      endDate: '2025-02-10'
     });
 
     expect(secondInsert.successCount).toBe(0);
@@ -67,7 +80,9 @@ describe('confirmProposedEventsAction', () => {
 
     const result = await confirmProposedEventsAction({
       routineId,
-      proposalIds: [proposalId]
+      proposalIds: [proposalId],
+      startDate: '2025-02-03',
+      endDate: '2025-02-10'
     });
 
     expect(result.successCount).toBe(0);
@@ -78,7 +93,7 @@ describe('confirmProposedEventsAction', () => {
   it('handles recurrence pattern in proposals', async () => {
     const routine = await routinesRepository.get(routineId, undefined);
     if (!routine) throw new Error('Seed routine missing');
-    const proposals = buildProposedEvents(routine, createDefaultCalendarWindow(), {
+    const proposals = buildProposedEvents(routine, createFixedWindowWithMonday(), {
       type: 'weekly',
       interval: 1
     });
@@ -87,6 +102,8 @@ describe('confirmProposedEventsAction', () => {
     const result = await confirmProposedEventsAction({
       routineId,
       proposalIds: [proposalIdWithRecurrence],
+      startDate: '2025-02-03',
+      endDate: '2025-02-10',
       recurrence: { type: 'weekly', interval: 1 }
     });
 

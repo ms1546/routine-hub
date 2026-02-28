@@ -28,6 +28,17 @@ const buildEvidenceQuery = (routine: Routine, userProfile: UserProfileContext): 
   return parts.join(' ').slice(0, 400);
 };
 
+/** 表示用：目的・優先・制約を分けて重複を除き、見やすくする */
+const buildDisplayQuery = (routine: Routine, userProfile: UserProfileContext): string => {
+  const segs: string[] = [];
+  if (routine.purpose?.trim()) segs.push(`目的: ${routine.purpose.trim()}`);
+  const priorities = [...new Set(userProfile.priorities.filter((p) => p?.trim()))];
+  if (priorities.length > 0) segs.push(`優先: ${priorities.join('、')}`);
+  const constraints = [...new Set(userProfile.constraints.filter((c) => c?.trim()))];
+  if (constraints.length > 0) segs.push(`制約: ${constraints.join('、')}`);
+  return segs.join(' ｜ ');
+};
+
 const NON_ASCII_REGEX = /[^\x00-\x7F]/;
 
 const translationSchema = z.object({
@@ -146,14 +157,16 @@ export async function runEvidenceAdviceAgent({
   const query = buildEvidenceQuery(routine, userProfile);
   const warnings: string[] = [];
 
+  const displayQuery = buildDisplayQuery(routine, userProfile);
+
   if (!query) {
     warnings.push('検索クエリを生成できなかったため、提案を作成できませんでした。');
-    return applyEvidencePolicy({ query: '', suggestions: [], warnings });
+    return applyEvidencePolicy({ query: '', displayQuery: '', suggestions: [], warnings });
   }
 
   const { searchQuery, translationFailed } = await translateQueryToEnglish(query, translationSystemPrompt);
   if (translationFailed) {
-    warnings.push('英語への自動翻訳が利用できないため、日本語クエリで検索しました。');
+    warnings.push('日本語のクエリで検索しました。（英語での検索は利用できませんでした）');
   }
 
   let citations: EvidenceCitation[] = [];
@@ -166,14 +179,15 @@ export async function runEvidenceAdviceAgent({
     citations = rankCitations(searchResult.citations);
   } catch (error) {
     warnings.push('論文 API の取得に失敗しました。時間を置いて再試行してください。');
-    return applyEvidencePolicy({ query, suggestions: [], warnings });
+    return applyEvidencePolicy({ query, displayQuery, suggestions: [], warnings });
   }
 
   if (citations.length < minEvidenceCount) {
-    warnings.push('根拠となる文献が不足しているため、一般的な提案を表示しています。');
+    warnings.push('該当する研究文献は見つかりませんでした。一般的な観点からの提案です。');
     const fallbackSuggestion = buildFallbackSuggestion(routine);
     return applyEvidencePolicy({
       query,
+      displayQuery,
       suggestions: [fallbackSuggestion],
       warnings
     });
@@ -194,5 +208,5 @@ export async function runEvidenceAdviceAgent({
     }))
   );
 
-  return applyEvidencePolicy({ query, suggestions, warnings });
+  return applyEvidencePolicy({ query, displayQuery, suggestions, warnings });
 }
