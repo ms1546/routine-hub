@@ -9,17 +9,20 @@ export const evidenceDisclaimer = DEFAULT_DISCLAIMER;
 export function applyEvidencePolicy({
   query,
   displayQuery,
+  searchQuery,
   suggestions,
   warnings
 }: {
   query: string;
   displayQuery?: string;
+  searchQuery?: string;
   suggestions: EvidenceSuggestion[];
   warnings: string[];
 }): EvidenceAdviceResult {
   return {
     query,
     displayQuery,
+    searchQuery,
     suggestions,
     warnings,
     disclaimer: DEFAULT_DISCLAIMER
