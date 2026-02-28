@@ -18,7 +18,8 @@ const WORKFLOW_AGENTS: AgentPromptName[] = [
   'calendar-conflict-agent',
   'optimization-agent',
   'future-simulation-agent',
-  'calendar-customization-agent'
+  'calendar-customization-agent',
+  'judge-agent'
 ];
 
 const generateUUID = createDefaultUUIDGenerator();

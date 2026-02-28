@@ -92,8 +92,6 @@ export type ConfirmProposedEventsInput = {
  *
  * - events を渡した場合: その内容をそのままカレンダーに挿入（ユーザーが選んだ日付・編集・AIカスタマイズを反映）。
  * - events を渡さない場合: startDate/endDate またはデフォルト窓で buildProposedEvents し、proposalIds でフィルタして挿入。
- *
- * PORTFOLIO MODE RESTRICTION: Calendar writes are ADMIN-ONLY.
  */
 export async function confirmProposedEventsAction(
   input: ConfirmProposedEventsInput
@@ -101,13 +99,6 @@ export async function confirmProposedEventsAction(
   const { routineId, events: eventsToInsert, startDate, endDate, proposalIds, recurrence } = input;
   const { getCurrentUser } = await import('@/infrastructure/auth/session');
   const currentUser = await getCurrentUser();
-
-  if (currentUser.role !== 'admin') {
-    throw new Error(
-      'Calendar export is currently limited to admin users in portfolio mode. ' +
-      'This is an intentional design decision to avoid requiring sensitive calendar permissions from reviewers.'
-    );
-  }
 
   const routine = await routinesRepository.get(
     routineId,

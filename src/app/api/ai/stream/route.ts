@@ -1,5 +1,4 @@
 import { NextRequest } from 'next/server';
-import { runRoutineAiWorkflow } from '@/features/ai';
 import { routinesRepository } from '@/features/routines';
 import { getCurrentUser } from '@/infrastructure/auth/session';
 import {
@@ -14,7 +13,18 @@ import { runCalendarConflictAgent } from '@/features/ai/agents/calendar-conflict
 import { runOptimizationAgent } from '@/features/ai/agents/optimization-agent';
 import { runFutureSimulationAgent } from '@/features/ai/agents/future-simulation-agent';
 import { evaluateWorkflow } from '@/features/ai/evaluation/judge';
+import { recordLangfuseTrace, recordLangfuseScore } from '@/features/ai/evaluation/langfuse-boundary';
+import { getSystemPromptInfo, type AgentPromptName } from '@/features/ai/evaluation/prompt-helper';
 import type { RoutineAiWorkflowInput } from '@/features/ai/types';
+
+const STREAM_WORKFLOW_AGENTS: AgentPromptName[] = [
+  'profile-agent',
+  'routine-interpreter-agent',
+  'calendar-conflict-agent',
+  'optimization-agent',
+  'future-simulation-agent',
+  'judge-agent'
+];
 
 export const dynamic = 'force-dynamic';
 
@@ -66,6 +76,34 @@ async function* streamWorkflow(
   user: any
 ): AsyncGenerator<StreamChunk> {
   const executionId = crypto.randomUUID();
+
+  // Langfuse: プロンプトバージョン取得 & Trace作成
+  const promptVersions: Record<string, { version?: number; labels?: string[]; source: string }> = {};
+  await Promise.all(
+    STREAM_WORKFLOW_AGENTS.map(async (agentName) => {
+      try {
+        const promptInfo = await getSystemPromptInfo(agentName);
+        promptVersions[agentName] = {
+          version: promptInfo.version,
+          labels: promptInfo.labels,
+          source: promptInfo.source
+        };
+      } catch {
+        // プロンプト取得に失敗してもワークフロー実行は継続
+      }
+    })
+  );
+
+  const langfuse = await recordLangfuseTrace({
+    workflow: 'routine-planning-workflow-stream',
+    payload: {
+      executionId,
+      routineId: routine.id,
+      promptVersions
+    },
+    traceId: executionId
+  });
+
   try {
     // Step 1: Profile
     yield { type: 'progress', step: 'profile', message: 'プロフィールを分析しています...' };
@@ -142,6 +180,24 @@ async function* streamWorkflow(
     }
     yield { type: 'step', step: 'evaluation', data: evaluation };
 
+    // Langfuse: LLM as Judge のスコアを記録
+    const evalData = evaluation.data;
+    const averageScore =
+      (evalData.clarity.score + evalData.consistency.score + evalData.explanationQuality.score) / 3;
+    await recordLangfuseScore({
+      traceId: langfuse.traceId,
+      name: 'judge-overall',
+      value: averageScore,
+      comment: `Verdict: ${evalData.verdict}`,
+      source: 'MODEL',
+      metadata: {
+        clarity: evalData.clarity.score,
+        consistency: evalData.consistency.score,
+        explanationQuality: evalData.explanationQuality.score,
+        verdict: evalData.verdict
+      }
+    });
+
     // Complete
     const result = {
       profile,
@@ -154,7 +210,7 @@ async function* streamWorkflow(
         executionId,
         mastraTraceId: executionId,
         proposalsOnly: true as const,
-        langfuseTraceId: null
+        langfuseTraceId: langfuse.traceId
       }
     };
 

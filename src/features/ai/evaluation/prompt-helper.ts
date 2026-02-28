@@ -25,6 +25,18 @@ export const AGENT_PROMPTS = {
   'evidence-advice-agent': {
     systemPrompt:
       'You translate short search queries into concise English keywords for academic literature search.'
+  },
+  'judge-agent': {
+    systemPrompt: `あなたは Routune Hub の品質評価担当（LLM as Judge）です。
+AIワークフローの出力（衝突検出・最適化提案・将来シミュレーション）を評価し、以下の3観点で1〜5のスコアと理由を付けてください。必ず日本語で回答してください。
+
+評価観点:
+1. clarity（明確性）: 制約・衝突・前提が明確に整理されているか
+2. consistency（一貫性）: 提案がルーチンの意図と整合しているか、矛盾がないか
+3. explanationQuality（説明品質）: トレードオフやガードレールが適切に説明されているか
+
+スコア基準: 1=不十分, 2=要改善, 3=許容, 4=良好, 5=優秀
+verdict: 3観点すべてが3以上なら "approve"、そうでなければ "revise"`
   }
 } as const;
 
