@@ -58,6 +58,8 @@ locals {
     {
       AUTH_URL     = local.app_url
       NEXTAUTH_URL = local.app_url
+      # カレンダー OAuth の redirect_uri を GCP と一致させるため（redirect_uri_mismatch 対策）
+      APP_URL      = local.app_url
     },
     var.env_vars
   )

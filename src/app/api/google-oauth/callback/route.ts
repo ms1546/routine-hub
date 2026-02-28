@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { exchangeCodeForTokens, storeAccessTokenForUser } from '@/infrastructure/auth/oauth-boundary';
 import { getCurrentUser } from '@/infrastructure/auth/session';
+import { getOAuthRedirectBase, OAUTH_CALLBACK_PATH } from '../utils';
 
 type OAuthState = {
   userId: string;
@@ -30,7 +31,8 @@ export async function GET(request: NextRequest) {
     return NextResponse.redirect(new URL('/auth/error?reason=oauth_mismatch', request.url));
   }
 
-  const redirectUri = `${request.nextUrl.origin}/api/google-oauth/callback`;
+  const base = getOAuthRedirectBase(request.nextUrl.origin);
+  const redirectUri = `${base}${OAUTH_CALLBACK_PATH}`;
 
   try {
     const tokens = await exchangeCodeForTokens(code, redirectUri);

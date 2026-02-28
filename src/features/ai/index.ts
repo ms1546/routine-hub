@@ -1,4 +1,3 @@
-// Public API for AI feature
 export * from './types';
 export {
   runRoutineAiWorkflow,
