@@ -19,19 +19,18 @@ const parseState = (state: string | null): OAuthState | null => {
 };
 
 export async function GET(request: NextRequest) {
+  const base = getOAuthRedirectBase(request.nextUrl.origin);
   const code = request.nextUrl.searchParams.get('code');
   const state = parseState(request.nextUrl.searchParams.get('state'));
   const currentUser = await getCurrentUser();
 
   if (!code || !state) {
-    return NextResponse.redirect(new URL('/auth/error?reason=oauth', request.url));
+    return NextResponse.redirect(new URL('/auth/error?reason=oauth', base));
   }
 
   if (state.userId && state.userId !== currentUser.id && state.userId !== currentUser.email) {
-    return NextResponse.redirect(new URL('/auth/error?reason=oauth_mismatch', request.url));
+    return NextResponse.redirect(new URL('/auth/error?reason=oauth_mismatch', base));
   }
-
-  const base = getOAuthRedirectBase(request.nextUrl.origin);
   const redirectUri = `${base}${OAUTH_CALLBACK_PATH}`;
 
   try {
@@ -41,9 +40,9 @@ export async function GET(request: NextRequest) {
     }
   } catch (error) {
     console.error('[GoogleOAuthCallback] token exchange failed', error);
-    return NextResponse.redirect(new URL('/auth/error?reason=oauth_exchange', request.url));
+    return NextResponse.redirect(new URL('/auth/error?reason=oauth_exchange', base));
   }
 
   const returnTo = state.returnTo ?? '/routines';
-  return NextResponse.redirect(new URL(returnTo, request.url));
+  return NextResponse.redirect(new URL(returnTo, base));
 }
