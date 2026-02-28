@@ -13,7 +13,11 @@ import { runCalendarConflictAgent } from '@/features/ai/agents/calendar-conflict
 import { runOptimizationAgent } from '@/features/ai/agents/optimization-agent';
 import { runFutureSimulationAgent } from '@/features/ai/agents/future-simulation-agent';
 import { evaluateWorkflow } from '@/features/ai/evaluation/judge';
-import { recordLangfuseTrace, recordLangfuseScore } from '@/features/ai/evaluation/langfuse-boundary';
+import {
+  recordLangfuseTrace,
+  recordLangfuseScore,
+  updateLangfuseTraceOutput
+} from '@/features/ai/evaluation/langfuse-boundary';
 import { getSystemPromptInfo, type AgentPromptName } from '@/features/ai/evaluation/prompt-helper';
 import type { RoutineAiWorkflowInput } from '@/features/ai/types';
 
@@ -180,8 +184,19 @@ async function* streamWorkflow(
     }
     yield { type: 'step', step: 'evaluation', data: evaluation };
 
-    // Langfuse: LLM as Judge のスコアを記録
+    // Langfuse: Trace の output を記録
     const evalData = evaluation.data;
+    await updateLangfuseTraceOutput({
+      traceId: langfuse.traceId,
+      output: {
+        verdict: evalData.verdict,
+        evaluation: evalData,
+        conflictCount: conflicts.data.conflicts?.length ?? 0,
+        optimizationCount: optimizations.data.proposals?.length ?? 0
+      }
+    });
+
+    // Langfuse: LLM as Judge のスコアを記録
     const averageScore =
       (evalData.clarity.score + evalData.consistency.score + evalData.explanationQuality.score) / 3;
     await recordLangfuseScore({
@@ -224,6 +239,10 @@ async function* streamWorkflow(
 
     yield { type: 'complete', data: result };
   } catch (error) {
+    await updateLangfuseTraceOutput({
+      traceId: langfuse.traceId,
+      output: { error: error instanceof Error ? error.message : String(error), fallback: true }
+    }).catch(() => {});
     // Record failure
     await recordWorkflowFailure({
       workflowName: 'routine-ai-workflow',

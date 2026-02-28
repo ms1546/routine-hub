@@ -5,7 +5,11 @@ import type {
   RoutineAiWorkflowResult,
   RoutineAiWorkflowRunner
 } from '../types';
-import { recordLangfuseTrace, recordLangfuseScore } from '../evaluation/langfuse-boundary';
+import {
+  recordLangfuseTrace,
+  recordLangfuseScore,
+  updateLangfuseTraceOutput
+} from '../evaluation/langfuse-boundary';
 import { getSystemPromptInfo, type AgentPromptName } from '../evaluation/prompt-helper';
 import { mastraRepository } from '../mastra/repository';
 
@@ -73,9 +77,21 @@ export class MastraRoutineAiWorkflowRunner implements RoutineAiWorkflowRunner {
       throw new Error('Mastra workflow execution failed');
     }
 
-    // 3. LLM as Judgeの評価結果をLangfuseに記録
-    if (runResult.result.evaluation) {
-      const evalData = runResult.result.evaluation.data;
+    // 3. Trace の output を記録
+    const result = runResult.result;
+    await updateLangfuseTraceOutput({
+      traceId: langfuse.traceId,
+      output: {
+        verdict: result.evaluation?.data.verdict,
+        evaluation: result.evaluation?.data,
+        conflictCount: result.conflicts?.data.conflicts?.length ?? 0,
+        optimizationCount: result.optimizations?.data.proposals?.length ?? 0
+      }
+    });
+
+    // 4. LLM as Judgeの評価結果をLangfuseに記録
+    if (result.evaluation) {
+      const evalData = result.evaluation.data;
       const averageScore = (
         evalData.clarity.score +
         evalData.consistency.score +
@@ -98,7 +114,7 @@ export class MastraRoutineAiWorkflowRunner implements RoutineAiWorkflowRunner {
     }
 
     return {
-      ...runResult.result,
+      ...result,
       meta: {
         executionId: traceId,
         mastraTraceId: traceId,

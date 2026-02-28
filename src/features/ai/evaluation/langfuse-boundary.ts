@@ -9,6 +9,11 @@ export type LangfuseTraceResult = {
   recordedAt: string;
 };
 
+export type LangfuseTraceOutputInput = {
+  traceId: string;
+  output: unknown;
+};
+
 export type LangfuseScoreInput = {
   traceId: string;
   name: string;
@@ -58,9 +63,10 @@ type LangfusePrompt = {
 type LangfuseClient = {
   trace: (payload: {
     id: string;
-    name: string;
-    timestamp: Date;
+    name?: string;
+    timestamp?: Date;
     input?: unknown;
+    output?: unknown;
     metadata?: Record<string, unknown>;
   }) => Promise<unknown>;
   score: (payload: {
@@ -159,6 +165,26 @@ export async function recordLangfuseTrace(
     traceId,
     recordedAt: recordedAt.toISOString()
   };
+}
+
+/**
+ * Trace の output を更新する。ワークフロー完了後に呼び出す。
+ * 同じ traceId で trace を再送信し、Langfuse が既存 Trace にマージする（60日以内）。
+ */
+export async function updateLangfuseTraceOutput(
+  input: LangfuseTraceOutputInput
+): Promise<void> {
+  try {
+    const client = await getLangfuseClient();
+    if (client) {
+      await client.trace({
+        id: input.traceId,
+        output: input.output
+      });
+    }
+  } catch (error) {
+    console.warn('[RoutuneHub] Langfuse trace output update failed.', error);
+  }
 }
 
 export async function recordLangfuseScore(

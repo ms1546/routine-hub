@@ -7,7 +7,11 @@ import { userSettingsRepository } from '@/features/users';
 import { getCurrentUser } from '@/infrastructure/auth/session';
 import { mastraRepository } from '@/features/ai/mastra/repository';
 import { routinesRepository } from '@/features/routines';
-import { recordLangfuseTrace, recordLangfuseScore } from '@/features/ai/evaluation/langfuse-boundary';
+import {
+  recordLangfuseTrace,
+  recordLangfuseScore,
+  updateLangfuseTraceOutput
+} from '@/features/ai/evaluation/langfuse-boundary';
 import { getSystemPromptInfo } from '@/features/ai/evaluation/prompt-helper';
 
 const generateUUID = createDefaultUUIDGenerator();
@@ -129,6 +133,15 @@ export async function customizeCalendarEventsAction({
     const result = runResult.result;
     const hasEvidenceContext = Boolean(evidenceContext?.trim());
     const evidenceIsGeneric = hasEvidenceContext && (evidenceContext?.includes('一般的な観点') ?? false);
+
+    await updateLangfuseTraceOutput({
+      traceId,
+      output: {
+        customizedEvents: result.customizedEvents,
+        suggestions: result.suggestions
+      }
+    });
+
     await recordLangfuseScore({
       traceId,
       name: 'customized-events-count',
@@ -146,6 +159,10 @@ export async function customizeCalendarEventsAction({
     return result;
   } catch (error) {
     console.error('[CalendarCustomization] Workflow execution failed:', error);
+    await updateLangfuseTraceOutput({
+      traceId,
+      output: { error: error instanceof Error ? error.message : String(error), fallback: true }
+    }).catch(() => {});
     await recordLangfuseScore({
       traceId,
       name: 'customized-events-count',
