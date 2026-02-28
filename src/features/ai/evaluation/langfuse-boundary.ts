@@ -122,7 +122,11 @@ async function getLangfuseClient(): Promise<LangfuseClient | null> {
           baseUrl: process.env.LANGFUSE_BASE_URL ?? 'https://cloud.langfuse.com',
           secretKey,
           publicKey,
-          release: process.env.VERCEL_GIT_COMMIT_SHA
+          release: process.env.VERCEL_GIT_COMMIT_SHA,
+          // サーバーレス（Next.js Server Actions / API Routes）ではリクエスト終了前に flush されないため、
+          // イベントごとに即送信する。これがないと Score 等が Langfuse に届かない。
+          flushAt: 1,
+          flushInterval: 0
         }) as LangfuseClient;
       })
       .catch((error) => {
