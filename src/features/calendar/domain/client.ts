@@ -21,9 +21,17 @@ import type {
  * Domain layer depends on this interface, not concrete implementations.
  * Implementations are provided by infrastructure layer.
  */
+export type CalendarEventUpdate = {
+  title?: string;
+  description?: string;
+  start?: string;
+  end?: string;
+};
+
 export interface CalendarClient {
   listEvents(range: CalendarTimeRange): Promise<CalendarEvent[]>;
   insertEvents(events: ProposedCalendarEvent[]): Promise<CalendarInsertResult>;
+  updateEvent(eventId: string, updates: CalendarEventUpdate): Promise<CalendarEvent>;
 }
 
 // Note: getCalendarClient() and setCalendarClient() are now in infrastructure layer

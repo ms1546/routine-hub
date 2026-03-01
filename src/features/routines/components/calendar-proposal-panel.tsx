@@ -75,7 +75,11 @@ export function CalendarProposalPanel({
           ...(eventsToInsert != null && eventsToInsert.length > 0 ? { events: eventsToInsert } : {})
         });
         setResult(confirmation);
-        setStatus(`Inserted ${confirmation.successCount} event(s).`);
+        const parts: string[] = [];
+        if (confirmation.successCount > 0) parts.push(`${confirmation.successCount} inserted`);
+        if (confirmation.mergedCount > 0) parts.push(`${confirmation.mergedCount} merged`);
+        if (confirmation.skipped.length > 0) parts.push(`${confirmation.skipped.length} skipped`);
+        setStatus(parts.length > 0 ? parts.join(', ') + '.' : 'Done.');
         setError(null);
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Unexpected error');

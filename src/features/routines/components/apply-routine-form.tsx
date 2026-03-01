@@ -461,14 +461,17 @@ export function ApplyRoutineForm({
         endDate: previewData.endDate,
         events: displayEventsToApply.length > 0 ? displayEventsToApply : undefined
       });
-      const message =
-        result.successCount > 0
-          ? `${result.successCount}件をカレンダーに追加しました${result.failureCount > 0 ? `（${result.failureCount}件は反映されませんでした）` : ''}`
-          : result.failureCount > 0
-            ? `${result.failureCount}件の反映に失敗しました`
-            : '適用が完了しました';
-      setApplyResult({ type: 'success', count: result.successCount });
-      setStatus(result.successCount > 0 ? `${result.successCount}件のイベントを適用しました` : message);
+      const parts: string[] = [];
+      if (result.successCount > 0) parts.push(`${result.successCount}件を追加`);
+      if (result.mergedCount > 0) parts.push(`${result.mergedCount}件を既存予定にマージ`);
+      if (result.failureCount > 0) parts.push(`${result.failureCount}件は反映されませんでした`);
+      if (result.skipped.length > 0) {
+        const reasons = result.skipped.map((s) => s.reason || s.proposalId).slice(0, 2).join('、');
+        parts.push(`${result.skipped.length}件スキップ${reasons ? `（${reasons}${result.skipped.length > 2 ? '…' : ''}）` : ''}`);
+      }
+      const message = parts.length > 0 ? parts.join('。') : '適用が完了しました';
+      setApplyResult({ type: 'success', count: result.successCount + result.mergedCount });
+      setStatus(message);
       // モーダル内で成功を見せてから閉じる
       setTimeout(() => {
         setShowPreviewModal(false);

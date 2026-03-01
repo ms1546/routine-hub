@@ -65,10 +65,12 @@ export async function confirmProposedEventsAction({
       description: 'This is a mock calendar event for Storybook',
       start: new Date().toISOString(),
       end: new Date(Date.now() + 3600000).toISOString(),
-      routineId,
-      blockId: 'mock-block-1'
+      source: { routineId, blockId: 'mock-block-1', proposalId: id }
     })),
-    failedEvents: []
+    failedEvents: [],
+    mergedCount: 0,
+    mergedEvents: [],
+    skipped: []
   };
 }
 

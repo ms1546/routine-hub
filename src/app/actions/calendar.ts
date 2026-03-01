@@ -13,12 +13,18 @@ import type {
   CalendarTimeRange,
   ProposedCalendarEvent
 } from '@/features/calendar/domain/types';
+import { runCalendarApplyResolutionAgent } from '@/features/ai/agents/calendar-apply-resolution-agent';
+
+export type SkippedProposal = { proposalId: string; reason?: string };
 
 export type CalendarConfirmationResult = {
   successCount: number;
   failureCount: number;
   insertedEvents: CalendarEvent[];
   failedEvents: CalendarInsertFailure[];
+  mergedCount: number;
+  mergedEvents: CalendarEvent[];
+  skipped: SkippedProposal[];
 };
 
 export async function getCalendarPreviewAction({
@@ -149,17 +155,87 @@ export async function confirmProposedEventsAction(
     );
   }
 
-  // ログイン中ユーザーのカレンダーに挿入するため、currentUser の接続状態を使用
   const isConnected = await hasStoredRefreshToken(currentUser.email);
   if (!isConnected) {
     throw new Error('Google Calendarの接続が必要です。先に「Connect Calendar」を実行してください。');
   }
+  if (proposals.length === 0) {
+    return {
+      successCount: 0,
+      failureCount: 0,
+      insertedEvents: [],
+      failedEvents: [],
+      mergedCount: 0,
+      mergedEvents: [],
+      skipped: []
+    };
+  }
   const client = getCalendarClient(currentUser.email);
-  const result = await client.insertEvents(proposals);
+
+  // 適用方針を決定（insert / merge / skip）
+  const windowFromProposals: CalendarTimeRange = {
+    start: proposals.reduce((min, p) => (p.start < min ? p.start : min), proposals[0]?.start ?? new Date().toISOString()),
+    end: proposals.reduce((max, p) => (p.end > max ? p.end : max), proposals[0]?.end ?? new Date().toISOString()),
+    timezone: 'Asia/Tokyo'
+  };
+  const existingEvents = await client.listEvents(windowFromProposals);
+  const resolutions = await runCalendarApplyResolutionAgent({
+    proposedEvents: proposals,
+    existingEvents,
+    routineId
+  });
+
+  const proposalsByProposalId = new Map(proposals.map((p) => [p.proposalId, p]));
+  const existingById = new Map(existingEvents.map((e) => [e.id, e]));
+
+  const toInsert: ProposedCalendarEvent[] = [];
+  const skipped: SkippedProposal[] = [];
+  const mergedEvents: CalendarEvent[] = [];
+
+  for (const r of resolutions) {
+    const prop = proposalsByProposalId.get(r.proposalId);
+    if (!prop) continue;
+
+    if (r.action === 'skip') {
+      skipped.push({ proposalId: r.proposalId, reason: r.reason });
+      continue;
+    }
+
+    if (r.action === 'merge' && r.existingEventId) {
+      const existing = existingById.get(r.existingEventId);
+      if (existing?.source?.routineId === routineId) {
+        try {
+          const updated = await client.updateEvent(r.existingEventId, {
+            title: prop.title,
+            description: prop.description,
+            start: prop.start,
+            end: prop.end
+          });
+          mergedEvents.push(updated);
+        } catch {
+          toInsert.push(prop);
+        }
+      } else {
+        toInsert.push(prop);
+      }
+      continue;
+    }
+
+    if (r.action === 'insert') {
+      const start = r.recommendedStart ?? prop.start;
+      const end = r.recommendedEnd ?? prop.end;
+      toInsert.push({ ...prop, start, end });
+    }
+  }
+
+  const result = await client.insertEvents(toInsert);
   return {
     successCount: result.success.length,
     failureCount: result.failures.length,
     insertedEvents: result.success,
-    failedEvents: result.failures
+    failedEvents: result.failures,
+    mergedCount: mergedEvents.length,
+    mergedEvents,
+    skipped
   };
 }

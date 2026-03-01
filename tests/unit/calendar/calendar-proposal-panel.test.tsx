@@ -8,7 +8,10 @@ vi.mock('@/app/actions/calendar', () => ({
       successCount: 1,
       failureCount: 0,
       insertedEvents: [],
-      failedEvents: []
+      failedEvents: [],
+      mergedCount: 0,
+      mergedEvents: [],
+      skipped: []
     })
   )
 }));

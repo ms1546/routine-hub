@@ -9,6 +9,7 @@ import type {
   ProposedCalendarEvent,
   CalendarInsertResult
 } from './types';
+import type { CalendarEventUpdate } from './client';
 
 type MockCalendarOptions = {
   failingProposals?: string[];
@@ -78,6 +79,20 @@ export class MockCalendarClient implements CalendarClient {
     }
 
     return { success: inserted, failures };
+  }
+
+  async updateEvent(eventId: string, updates: CalendarEventUpdate): Promise<CalendarEvent> {
+    const event = this.events.find((e) => e.id === eventId);
+    if (!event) throw new Error(`Event not found: ${eventId}`);
+    const updated: CalendarEvent = {
+      ...event,
+      ...(updates.title !== undefined && { title: updates.title }),
+      ...(updates.description !== undefined && { description: updates.description }),
+      ...(updates.start !== undefined && { start: updates.start }),
+      ...(updates.end !== undefined && { end: updates.end })
+    };
+    this.events = this.events.map((e) => (e.id === eventId ? updated : e));
+    return updated;
   }
 
   reset(events: CalendarEvent[] = seedEvents) {
