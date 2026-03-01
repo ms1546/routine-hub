@@ -9,7 +9,7 @@
  */
 
 import { calendar_v3, google } from 'googleapis';
-import type { CalendarClient } from '@/features/calendar/domain/client';
+import type { CalendarClient, CalendarEventUpdate } from '@/features/calendar/domain/client';
 import type {
   CalendarEvent,
   CalendarInsertResult,
@@ -198,6 +198,23 @@ export class GoogleCalendarClient implements CalendarClient {
     }
 
     return { success: inserted, failures };
+  }
+
+  async updateEvent(eventId: string, updates: CalendarEventUpdate): Promise<CalendarEvent> {
+    const calendar = await this.getCalendar();
+    const body: calendar_v3.Schema$Event = {};
+    if (updates.title !== undefined) body.summary = updates.title;
+    if (updates.description !== undefined) body.description = updates.description;
+    if (updates.start !== undefined) body.start = { dateTime: updates.start };
+    if (updates.end !== undefined) body.end = { dateTime: updates.end };
+
+    const response = await calendar.events.patch({
+      calendarId: CALENDAR_ID,
+      eventId,
+      requestBody: body
+    });
+
+    return mapGoogleEvent(response.data);
   }
 
   private async findEventByProposal(proposalId: string, calendar: calendar_v3.Calendar) {

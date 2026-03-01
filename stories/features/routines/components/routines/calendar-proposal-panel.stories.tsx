@@ -30,7 +30,10 @@ export const PartialSuccess: Story = {
       successCount: 1,
       failureCount: 1,
       insertedEvents: [],
-      failedEvents: [{ proposalId: 'mock-2', reason: 'Conflict detected' }]
+      failedEvents: [{ proposalId: 'mock-2', reason: 'Conflict detected' }],
+      mergedCount: 0,
+      mergedEvents: [],
+      skipped: []
     }
   }
 };
