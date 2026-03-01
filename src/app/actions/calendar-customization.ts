@@ -17,51 +17,6 @@ import { isBedrockEnabled } from '@/features/ai/providers/bedrock';
 
 const generateUUID = createDefaultUUIDGenerator();
 
-/** 既存予定と時間が重なっている proposalId の集合を返す */
-function getConflictingProposalIds(
-  proposedEvents: { proposalId: string; start: string; end: string }[],
-  existingEvents: { start: string; end: string }[]
-): Set<string> {
-  const conflictIds = new Set<string>();
-  for (const prop of proposedEvents) {
-    const propStart = new Date(prop.start).getTime();
-    const propEnd = new Date(prop.end).getTime();
-    const hasConflict = existingEvents.some((e) => {
-      const eStart = new Date(e.start).getTime();
-      const eEnd = new Date(e.end).getTime();
-      return propStart < eEnd && propEnd > eStart;
-    });
-    if (hasConflict) conflictIds.add(prop.proposalId);
-  }
-  return conflictIds;
-}
-
-/** 衝突しているが LLM が start/end を返していない提案に、30分ずらしをマージする */
-function mergeConflictFallback(
-  customizedEvents: CalendarCustomizationResult['customizedEvents'],
-  proposedEvents: ProposedCalendarEvent[],
-  conflictingIds: Set<string>
-): CalendarCustomizationResult['customizedEvents'] {
-  const proposedById = new Map(proposedEvents.map((p) => [p.proposalId, p]));
-  return customizedEvents.map((c) => {
-    if (!conflictingIds.has(c.proposalId)) return c;
-    if (c.start != null && c.end != null) return c;
-    const prop = proposedById.get(c.proposalId);
-    if (!prop) return c;
-    const start = new Date(prop.start);
-    start.setMinutes(start.getMinutes() + 30);
-    const end = new Date(prop.end);
-    end.setMinutes(end.getMinutes() + 30);
-    const fallbackReason = '既存予定との競合を避けるため、30分後ろにシフトしました。';
-    return {
-      ...c,
-      start: c.start ?? start.toISOString(),
-      end: c.end ?? end.toISOString(),
-      reasoning: c.reasoning ? `${c.reasoning} ${fallbackReason}` : fallbackReason
-    };
-  });
-}
-
 export type CalendarCustomizationResult = {
   customizedEvents: Array<{
     proposalId: string;
@@ -181,41 +136,30 @@ export async function customizeCalendarEventsAction({
     const hasEvidenceContext = Boolean(evidenceContext?.trim());
     const evidenceIsGeneric = hasEvidenceContext && (evidenceContext?.includes('一般的な観点') ?? false);
 
-    // 衝突しているのに LLM が start/end を返していない提案に、30分ずらしをマージ
-    const conflictingIds = getConflictingProposalIds(proposedEvents, existingEvents);
-    const mergedCustomizedEvents = mergeConflictFallback(
-      result.customizedEvents,
-      proposedEvents,
-      conflictingIds
-    );
-    const finalResult: CalendarCustomizationResult = {
-      customizedEvents: mergedCustomizedEvents,
-      suggestions: result.suggestions
-    };
-
+    // 同一予定か・調整要否は AI の出力に任せる（start/end を返さない＝調整不要とみなす）。プログラム側で上書きしない。
     await updateLangfuseTraceOutput({
       traceId,
       output: {
-        customizedEvents: finalResult.customizedEvents,
-        suggestions: finalResult.suggestions
+        customizedEvents: result.customizedEvents,
+        suggestions: result.suggestions
       }
     });
 
     await recordLangfuseScore({
       traceId,
       name: 'customized-events-count',
-      value: finalResult.customizedEvents.length,
-      comment: `Calendar customization: ${finalResult.customizedEvents.length} event(s), ${finalResult.suggestions.length} suggestion(s)`,
+      value: result.customizedEvents.length,
+      comment: `Calendar customization: ${result.customizedEvents.length} event(s), ${result.suggestions.length} suggestion(s)`,
       source: 'MODEL',
       metadata: {
-        customizedCount: finalResult.customizedEvents.length,
-        suggestionCount: finalResult.suggestions.length,
+        customizedCount: result.customizedEvents.length,
+        suggestionCount: result.suggestions.length,
         hasEvidenceContext,
         evidenceIsGeneric
       }
     });
 
-    return finalResult;
+    return result;
   } catch (error) {
     console.error('[CalendarCustomization] Workflow execution failed:', error);
     await updateLangfuseTraceOutput({

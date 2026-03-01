@@ -43,7 +43,7 @@ export async function runCalendarCustomizationAgent({
   routinePurpose,
   evidenceContext
 }: CalendarCustomizationAgentInput): Promise<AgentResult<CalendarCustomizationAgentData>> {
-  // 既存イベントとの競合を検出
+  // 既存イベントとの時間重複を検出（同一予定かどうかの判断は AI に任せるため、ここでは重複のみ）
   const conflictMap = new Map<string, CalendarEvent[]>();
   proposedEvents.forEach((proposed) => {
     const proposedStart = new Date(proposed.start);
@@ -62,19 +62,17 @@ export async function runCalendarCustomizationAgent({
     }
   });
 
-  // フォールバックデータ（ヒューリスティックなカスタマイズ）
+  // フォールバック（Bedrock 無効時）: 時間重複があれば 30 分ずらす。同一予定の判定は AI 任せのためオフ時は一律ずらす
   const fallbackCustomizedEvents = proposedEvents.map((event) => {
     const conflicts = conflictMap.get(event.proposalId) ?? [];
     let customized = { ...event };
     let reasoning = '';
 
     if (conflicts.length > 0) {
-      // 競合がある場合は、30分後ろにシフト
       const originalStart = new Date(event.start);
       originalStart.setMinutes(originalStart.getMinutes() + 30);
       const originalEnd = new Date(event.end);
       originalEnd.setMinutes(originalEnd.getMinutes() + 30);
-
       customized = {
         ...customized,
         start: originalStart.toISOString(),
