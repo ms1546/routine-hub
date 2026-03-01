@@ -92,6 +92,13 @@ type LangfuseClient = {
       version?: number | 'latest';
       label?: string;
     }) => Promise<LangfusePrompt>;
+    scoreCreate?: (data: {
+      traceId: string;
+      name: string;
+      value: number;
+      comment?: string;
+      dataType?: string;
+    }) => Promise<unknown>;
   };
   prompts?: {
     getPrompt: (name: string, options?: {
@@ -200,18 +207,30 @@ export async function recordLangfuseScore(
   try {
     const client = await getLangfuseClient();
     if (client) {
-      await client.score({
-        traceId: input.traceId,
-        name: input.name,
-        value: input.value,
-        comment: input.comment,
-        source: input.source ?? 'MODEL',
-        metadata: {
-          ...input.metadata,
-          environment: process.env.NODE_ENV ?? 'development'
-        }
-      });
-      await client.flushAsync?.();
+      const comment = input.comment ?? (input.metadata ? JSON.stringify(input.metadata) : undefined);
+      const api = (client as { api?: { scoreCreate?: (data: Record<string, unknown>) => Promise<unknown> } }).api;
+      if (api?.scoreCreate) {
+        await api.scoreCreate({
+          traceId: input.traceId,
+          name: input.name,
+          value: input.value,
+          comment: comment?.slice(0, 500),
+          dataType: 'NUMERIC'
+        });
+      } else {
+        await client.score({
+          traceId: input.traceId,
+          name: input.name,
+          value: input.value,
+          comment: input.comment,
+          source: input.source ?? 'MODEL',
+          metadata: {
+            ...input.metadata,
+            environment: process.env.NODE_ENV ?? 'development'
+          }
+        });
+        await client.flushAsync?.();
+      }
     }
   } catch (error) {
     console.warn('[RoutuneHub] Langfuse score recording failed, continuing without telemetry.', error);
