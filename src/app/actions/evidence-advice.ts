@@ -13,6 +13,7 @@ import {
   updateLangfuseTraceOutput
 } from '@/features/ai/evaluation/langfuse-boundary';
 import { getSystemPromptInfo } from '@/features/ai/evaluation/prompt-helper';
+import { isBedrockEnabled } from '@/features/ai/providers/bedrock';
 
 const generateUUID = createDefaultUUIDGenerator();
 
@@ -69,7 +70,8 @@ export async function getEvidenceAdviceAction({
     payload: {
       executionId: traceId,
       routineId,
-      promptVersions
+      promptVersions,
+      bedrockEnabled: isBedrockEnabled()
     },
     traceId
   });

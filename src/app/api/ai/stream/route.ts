@@ -19,6 +19,7 @@ import {
   updateLangfuseTraceOutput
 } from '@/features/ai/evaluation/langfuse-boundary';
 import { getSystemPromptInfo, type AgentPromptName } from '@/features/ai/evaluation/prompt-helper';
+import { isBedrockEnabled } from '@/features/ai/providers/bedrock';
 import type { RoutineAiWorkflowInput } from '@/features/ai/types';
 
 const STREAM_WORKFLOW_AGENTS: AgentPromptName[] = [
@@ -103,7 +104,8 @@ async function* streamWorkflow(
     payload: {
       executionId,
       routineId: routine.id,
-      promptVersions
+      promptVersions,
+      bedrockEnabled: isBedrockEnabled()
     },
     traceId: executionId
   });

@@ -13,6 +13,7 @@ import {
   updateLangfuseTraceOutput
 } from '@/features/ai/evaluation/langfuse-boundary';
 import { getSystemPromptInfo } from '@/features/ai/evaluation/prompt-helper';
+import { isBedrockEnabled } from '@/features/ai/providers/bedrock';
 
 const generateUUID = createDefaultUUIDGenerator();
 
@@ -103,7 +104,8 @@ export async function customizeCalendarEventsAction({
       routineId: routineId ?? undefined,
       proposedEventCount: proposedEvents.length,
       existingEventCount: existingEvents.length,
-      promptVersions
+      promptVersions,
+      bedrockEnabled: isBedrockEnabled()
     },
     traceId
   });
