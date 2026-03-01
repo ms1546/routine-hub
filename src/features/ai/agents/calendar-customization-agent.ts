@@ -82,7 +82,9 @@ export async function runCalendarCustomizationAgent({
       };
       reasoning = `既存イベントとの競合を避けるため、30分後ろにシフトしました。`;
     } else {
-      reasoning = 'カスタマイズの必要はありませんでした。';
+      const priorityLabel =
+        userProfile.priorities.length > 0 ? `ユーザーの優先（${userProfile.priorities.slice(0, 2).join('、')}）` : 'ユーザー設定';
+      reasoning = `${priorityLabel}と提案が一致しているため変更なし。`;
     }
 
     return {
@@ -95,13 +97,27 @@ export async function runCalendarCustomizationAgent({
     };
   });
 
+  const conflictSuggestions = Array.from(conflictMap.keys()).map((proposalId) => ({
+    type: 'conflict-resolution' as const,
+    description: '既存イベントとの競合を検出しました。時間を調整することをおすすめします。',
+    affectedProposalIds: [proposalId]
+  }));
+  const hasEvidence = Boolean(evidenceContext?.trim());
+  const fallbackSuggestions =
+    conflictSuggestions.length > 0
+      ? conflictSuggestions
+      : hasEvidence && proposedEvents.length > 0
+        ? [
+            {
+              type: 'time-adjustment' as const,
+              description: '文献を参照し、時間帯や休憩間隔の見直しを検討してください。',
+              affectedProposalIds: proposedEvents.slice(0, 3).map((e) => e.proposalId)
+            }
+          ]
+        : [];
   const fallbackData: CalendarCustomizationAgentData = {
     customizedEvents: fallbackCustomizedEvents,
-    suggestions: Array.from(conflictMap.keys()).map((proposalId) => ({
-      type: 'conflict-resolution' as const,
-      description: '既存イベントとの競合を検出しました。時間を調整することをおすすめします。',
-      affectedProposalIds: [proposalId]
-    }))
+    suggestions: fallbackSuggestions
   };
 
   // LLMによるカスタマイズ提案（根拠がある場合は参照する）
