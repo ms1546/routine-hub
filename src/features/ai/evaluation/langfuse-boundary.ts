@@ -154,9 +154,10 @@ export async function recordLangfuseTrace(
   try {
     const client = await getLangfuseClient();
     if (client) {
-      // ペイロードからプロンプトバージョン情報を抽出（メタデータにも追加）
+      // ペイロードからプロンプトバージョン・Bedrock有無を抽出（メタデータにも追加）
       const payload = input.payload as Record<string, unknown>;
       const promptVersions = payload?.promptVersions as Record<string, unknown> | undefined;
+      const bedrockEnabled = payload?.bedrockEnabled as boolean | undefined;
 
       await client.trace({
         id: traceId,
@@ -165,7 +166,8 @@ export async function recordLangfuseTrace(
         input: input.payload,
         metadata: {
           environment: process.env.NODE_ENV ?? 'development',
-          ...(promptVersions && { promptVersions })
+          ...(promptVersions && { promptVersions }),
+          ...(typeof bedrockEnabled === 'boolean' && { bedrockEnabled })
         }
       });
     }

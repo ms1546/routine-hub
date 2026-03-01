@@ -12,6 +12,7 @@ import { runOptimizationAgent } from '../agents/optimization-agent';
 import { runFutureSimulationAgent } from '../agents/future-simulation-agent';
 import { evaluateWorkflow } from '../evaluation/judge';
 import { recordLangfuseTrace } from '../evaluation/langfuse-boundary';
+import { isBedrockEnabled } from '../providers/bedrock';
 
 const generateUUID = createDefaultUUIDGenerator();
 
@@ -48,7 +49,7 @@ export class MockRoutineAiWorkflowRunner implements RoutineAiWorkflowRunner {
     const executionId = options?.traceId ?? generateUUID();
     const langfuse = await recordLangfuseTrace({
       workflow: 'routine-planning-workflow',
-      payload: { routineId: input.routine.id, executionId },
+      payload: { routineId: input.routine.id, executionId, bedrockEnabled: isBedrockEnabled() },
       traceId: executionId
     });
 

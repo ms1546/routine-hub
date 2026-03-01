@@ -32,10 +32,17 @@ export type BedrockStructuredParams<TSchema extends z.ZodTypeAny> = {
   maxTokens?: number;
 };
 
+/**
+ * Bedrock 利用可否。
+ * - BEDROCK_DISABLE=true のとき無効。
+ * - BEDROCK_ENABLED=true のときは region があれば有効（ECS タスクロール等のデフォルト認証を使う）。
+ * - それ以外は AWS_ACCESS_KEY_ID / Lambda / セッショントークンのいずれかがあれば有効。
+ */
 export const isBedrockEnabled = (): boolean => {
   if (process.env.BEDROCK_DISABLE === 'true') return false;
   const region = getRegion();
   if (!region) return false;
+  if (process.env.BEDROCK_ENABLED === 'true') return true;
   return Boolean(process.env.AWS_ACCESS_KEY_ID || process.env.AWS_LAMBDA_FUNCTION_NAME || process.env.AWS_SESSION_TOKEN);
 };
 

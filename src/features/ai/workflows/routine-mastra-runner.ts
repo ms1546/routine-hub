@@ -12,6 +12,7 @@ import {
 } from '../evaluation/langfuse-boundary';
 import { getSystemPromptInfo, type AgentPromptName } from '../evaluation/prompt-helper';
 import { mastraRepository } from '../mastra/repository';
+import { isBedrockEnabled } from '../providers/bedrock';
 
 /**
  * ワークフローで使用される主要なエージェントのリスト
@@ -56,7 +57,8 @@ export class MastraRoutineAiWorkflowRunner implements RoutineAiWorkflowRunner {
       payload: {
         executionId: traceId,
         routineId: input.routine.id,
-        promptVersions // プロンプトバージョン情報を追加
+        promptVersions,
+        bedrockEnabled: isBedrockEnabled()
       },
       traceId
     });
