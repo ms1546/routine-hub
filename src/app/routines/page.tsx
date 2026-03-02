@@ -43,20 +43,33 @@ export default async function RoutinesPage({
     routinesRepository.list(filter, currentUser.id, currentUser.email, isAdmin)
   ]);
 
+  // アカウント候補: owner（アカウント名）と displayName を収集
+  const ownerIds = Array.from(new Set(allRoutines.map((r) => getOwnerId(r))));
+  const ownerInfoList = await Promise.all(
+    ownerIds.map(async (ownerId) => {
+      const settings = await userSettingsRepository.get(ownerId).catch(() => null);
+      const routine = allRoutines.find((r) => getOwnerId(r) === ownerId);
+      const owner = routine?.owner ?? ownerId;
+      const displayName = settings?.displayName ?? '';
+      const label = displayName || (owner.includes('@') ? owner.split('@')[0] : owner);
+      return { ownerId, owner, label };
+    })
+  );
+  const uniqueAccounts = Array.from(
+    new Map(ownerInfoList.map((o) => [(o.label ?? '').toLowerCase(), o.label ?? ''])).entries()
+  )
+    .map(([, label]) => label)
+    .filter((l): l is string => !!l)
+    .sort();
+
   let filteredRoutines = filteredByRepo;
   if (filter?.ownerDisplayName && filter.ownerDisplayName.trim()) {
-    const ownerIds = Array.from(new Set(filteredByRepo.map((r) => getOwnerId(r))));
-    const ownerDisplayNames = await Promise.all(
-      ownerIds.map(async (ownerId) => {
-        const settings = await userSettingsRepository.get(ownerId).catch(() => null);
-        return { ownerId, displayName: settings?.displayName ?? '' };
-      })
-    );
-    const ownerIdToDisplayName = new Map(ownerDisplayNames.map((o) => [o.ownerId, o.displayName]));
+    const ownerIdToLabel = new Map(ownerInfoList.map((o) => [o.ownerId, o.label]));
     const q = filter.ownerDisplayName.trim().toLowerCase();
     filteredRoutines = filteredByRepo.filter((r) => {
-      const displayName = (ownerIdToDisplayName.get(getOwnerId(r)) ?? '').toLowerCase();
-      return displayName.includes(q);
+      const label = (ownerIdToLabel.get(getOwnerId(r)) ?? r.owner ?? '').toLowerCase();
+      const ownerLower = (r.owner ?? '').toLowerCase();
+      return label.includes(q) || ownerLower.includes(q);
     });
   }
 
@@ -69,7 +82,7 @@ export default async function RoutinesPage({
     <AppShell
       title="All Routines"
     >
-      <RoutineFilters availableTags={uniqueTags} />
+      <RoutineFilters availableTags={uniqueTags} availableAccounts={uniqueAccounts} />
       <RoutineList routines={listItems} userEmail={currentUser.email} filterActive={filterActive} />
     </AppShell>
   );

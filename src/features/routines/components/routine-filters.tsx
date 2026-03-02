@@ -7,9 +7,10 @@ import { Label } from '@/shared/ui/label';
 
 type RoutineFiltersProps = {
   availableTags: string[];
+  availableAccounts?: string[];
 };
 
-export function RoutineFilters({ availableTags }: RoutineFiltersProps) {
+export function RoutineFilters({ availableTags, availableAccounts = [] }: RoutineFiltersProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [pending, startTransition] = useTransition();
@@ -47,14 +48,19 @@ export function RoutineFilters({ availableTags }: RoutineFiltersProps) {
         </div>
         <div className="space-y-1.5">
           <Label htmlFor="account-filter">アカウント</Label>
-          <input
+          <select
             id="account-filter"
-            type="search"
-            placeholder="Creator display name..."
             value={searchParams.get('account') ?? ''}
             onChange={(e) => updateParam('account', e.target.value)}
             className={selectClassName}
-          />
+          >
+            <option value="">すべて</option>
+            {availableAccounts.map((account) => (
+              <option key={account} value={account}>
+                {account}
+              </option>
+            ))}
+          </select>
         </div>
         <div className="space-y-1.5">
           <Label htmlFor="tag-filter">タグ</Label>
