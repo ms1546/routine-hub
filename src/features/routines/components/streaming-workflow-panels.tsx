@@ -68,7 +68,6 @@ export function StreamingWorkflowPanels({ routineId, initialWorkflow, aiAccess }
         <div className="flex items-center justify-between">
           <div>
             <h3 className="text-lg font-semibold">AI Analysis</h3>
-            <p className="text-sm text-muted-foreground">Comprehensive routine compatibility analysis</p>
           </div>
         </div>
         <Card>

@@ -35,7 +35,7 @@ export const RoutineCard = ({
           <div className="flex flex-wrap gap-1">
             <Badge variant="secondary" className="text-xs">{routine.durationType === 'normal' ? 'Day' : routine.durationType === 'weekly' ? 'Weekly' : routine.durationType}</Badge>
             <Badge variant={routine.visibility === 'public' ? 'primary' : 'outline'} className="text-xs">
-              {routine.visibility === 'public' ? '公開' : '非公開'}
+              {routine.visibility === 'public' ? 'public' : 'private'}
             </Badge>
           </div>
           <div className="flex items-center gap-2">

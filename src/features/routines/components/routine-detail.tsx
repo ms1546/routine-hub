@@ -84,7 +84,7 @@ export const RoutineDetail = ({
           <div className="flex flex-wrap items-center gap-1.5 mb-3">
             <Badge variant="secondary">{routine.durationType === 'normal' ? 'Day' : routine.durationType === 'weekly' ? 'Weekly' : routine.durationType}</Badge>
             <Badge variant="secondary">{routine.intensity}</Badge>
-            <Badge variant={routine.visibility === 'public' ? 'primary' : 'outline'}>{routine.visibility === 'public' ? '公開' : '非公開'}</Badge>
+            <Badge variant={routine.visibility === 'public' ? 'primary' : 'outline'}>{routine.visibility === 'public' ? 'public' : 'private'}</Badge>
           </div>
           <CardTitle className="text-2xl">{routine.name}</CardTitle>
           <CardDescription className="text-base">{routine.description}</CardDescription>
@@ -132,8 +132,7 @@ export const RoutineDetail = ({
       <section id="blocks" className="space-y-4">
         <div className="flex items-center justify-between">
           <div>
-            <h2 className="text-xl font-semibold">Time Blocks</h2>
-            <p className="text-sm text-muted-foreground">Scheduled activities and their objectives</p>
+            <h2 className="text-xl font-semibold">Blocks</h2>
           </div>
           <Badge variant="secondary">{routine.timeBlocks.length} blocks</Badge>
         </div>
@@ -177,7 +176,6 @@ const WorkflowPanels = ({ workflow }: { workflow: RoutineAiWorkflowResult }) => 
         </div>
         <div>
           <h2 className="text-xl font-semibold">AI Analysis</h2>
-          <p className="text-sm text-muted-foreground">Comprehensive routine compatibility analysis</p>
         </div>
       </div>
 

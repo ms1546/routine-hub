@@ -39,9 +39,8 @@ export default async function RoutineDetailPage({
 
   return (
     <AppShell
-      title="Routine詳細"
-      description="リズム、ガードレール、AIコメントを確認してから、カレンダーに適用できます。"
-      breadcrumb={{ label: 'ライブラリに戻る', href: '/routines' }}
+      title="Routine Details"
+      breadcrumb={{ label: 'Back To Routines', href: '/routines' }}
     >
       <Suspense fallback={<RoutineDetailFallback routine={detail} />}>
         <RoutineDetailContent

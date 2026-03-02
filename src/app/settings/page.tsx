@@ -14,9 +14,8 @@ export default async function SettingsPage() {
 
   return (
     <AppShell
-      title="設定"
-      description="アカウント情報とAI最適化の基本設定を管理します"
-      breadcrumb={{ label: 'ホーム', href: '/' }}
+      title="User Settings"
+      breadcrumb={{ label: 'Home', href: '/' }}
     >
       <UserSettingsForm
         userId={user.id}

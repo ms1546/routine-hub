@@ -79,13 +79,12 @@ export function UserSettingsForm({ userId, initialSettings, action }: UserSettin
   return (
     <Card>
       <CardHeader>
-        <CardTitle>ユーザー設定</CardTitle>
-        <CardDescription>アカウント情報とAI最適化の基本設定を管理します</CardDescription>
+        <CardTitle>設定</CardTitle>
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="space-y-2.5">
-            <Label htmlFor="displayName">表示名</Label>
+            <Label htmlFor="displayName">account名</Label>
             <Input
               id="displayName"
               type="text"
@@ -207,7 +206,7 @@ export function UserSettingsForm({ userId, initialSettings, action }: UserSettin
 
           <div className="flex items-center gap-4">
             <Button type="submit" disabled={pending}>
-              {pending ? '保存中...' : '設定を保存'}
+              {pending ? 'Saving...' : 'Save'}
             </Button>
             {status && (
               <p className={`text-sm ${statusIsError ? 'text-destructive font-medium' : 'text-muted-foreground'}`} role={statusIsError ? 'alert' : undefined}>

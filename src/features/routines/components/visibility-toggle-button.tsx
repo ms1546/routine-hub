@@ -35,7 +35,7 @@ export function VisibilityToggleButton({
   return (
     <span className="inline-flex flex-col items-start gap-1">
       <Button type="button" onClick={handleClick} disabled={pending} variant="secondary">
-        {pending ? '更新中…' : (nextVisibility === 'public' ? '公開する' : '非公開にする')}
+        {pending ? '更新中…' : (nextVisibility === 'public' ? 'Make public' : 'Make private')}
       </Button>
       {error && <span className="text-xs text-destructive" role="alert">{error}</span>}
     </span>

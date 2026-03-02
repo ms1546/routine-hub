@@ -134,7 +134,7 @@ export function RoutineComposer({ action, asModal = false, open = false, onClose
       if (hasChanges) {
         if (blocksBeforeFilter > adjustedBlocks.length) {
           const deletedCount = blocksBeforeFilter - adjustedBlocks.length;
-          setRangeTrimmedMessage(`時間範囲を変更したため、範囲外の時間ブロック ${deletedCount} 個を削除しました。`);
+          setRangeTrimmedMessage(`時間範囲を変更したため、範囲外のBlock ${deletedCount} 個を削除しました。`);
         } else {
           setRangeTrimmedMessage(null);
         }
@@ -162,7 +162,7 @@ export function RoutineComposer({ action, asModal = false, open = false, onClose
       return;
     }
     if (blocks.length === 0) {
-      setError('時間ブロックは少なくとも1つ必要です。');
+      setError('Blockは少なくとも1つ必要です。');
       return;
     }
 
@@ -222,26 +222,32 @@ export function RoutineComposer({ action, asModal = false, open = false, onClose
     <form id="routine-composer-form" className="space-y-6" onSubmit={handleSubmit}>
       <div className="grid gap-4 md:grid-cols-2">
         <div className="space-y-2">
-          <Label htmlFor="routine-name">Name</Label>
-          <Input name="name" id="routine-name" placeholder="Async Leadership Warm-up" required />
+          <Label htmlFor="routine-name">
+            Routine名 <span className="text-destructive">*</span>
+          </Label>
+          <Input name="name" id="routine-name" placeholder="エンジニア修行" required />
         </div>
         <div className="space-y-2">
-          <Label htmlFor="routine-purpose">目的</Label>
+          <Label htmlFor="routine-purpose">
+            目的 <span className="text-destructive">*</span>
+          </Label>
           <Input
             name="purpose"
             id="routine-purpose"
-            placeholder="Clarify what success looks like"
+            placeholder="このBlockの目的を記載(Routune時に使用)"
             required
           />
         </div>
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="routine-description">Description</Label>
+        <Label htmlFor="routine-description">
+          説明 <span className="text-destructive">*</span>
+        </Label>
         <Textarea
           name="description"
           id="routine-description"
-          placeholder="Explain the shape of this routine"
+          placeholder="Blockの説明を記載"
           required
         />
       </div>
@@ -253,7 +259,7 @@ export function RoutineComposer({ action, asModal = false, open = false, onClose
 
       <div className="grid gap-4 md:grid-cols-2">
         <div className="space-y-2.5">
-          <Label htmlFor="durationType">Duration</Label>
+          <Label htmlFor="durationType">期間</Label>
           <select
             name="durationType"
             id="durationType"
@@ -262,7 +268,7 @@ export function RoutineComposer({ action, asModal = false, open = false, onClose
               const newDurationType = e.target.value as 'normal' | 'weekly';
               // Duration typeを変更する場合は全てのBlockを削除
               if (newDurationType !== durationType && blocks.length > 0) {
-                if (confirm('Duration typeを変更すると、すべての時間ブロックが削除されます。続行しますか？')) {
+                if (confirm('Duration typeを変更すると、すべてのBlockが削除されます。続行しますか？')) {
                   setDurationType(newDurationType);
                   setBlocks([]);
                 }
@@ -277,7 +283,7 @@ export function RoutineComposer({ action, asModal = false, open = false, onClose
           </select>
         </div>
         <div className="space-y-2.5">
-          <Label htmlFor="visibility">Visibility</Label>
+          <Label htmlFor="visibility">公開範囲</Label>
           <select name="visibility" id="visibility" defaultValue="private" className={selectClassName}>
             <option value="public">Public</option>
             <option value="private">Private</option>
@@ -289,7 +295,9 @@ export function RoutineComposer({ action, asModal = false, open = false, onClose
       {durationType === 'normal' && (
         <div className="grid gap-4 md:grid-cols-2 border-t border-border/50 pt-4">
           <div className="space-y-2">
-            <Label htmlFor="normal-start-hour">開始時刻</Label>
+            <Label htmlFor="normal-start-hour">
+              開始時刻 <span className="text-destructive">*</span>
+            </Label>
             <select
               id="normal-start-hour"
               value={formatHourToTime(normalStartHour)}
@@ -308,7 +316,9 @@ export function RoutineComposer({ action, asModal = false, open = false, onClose
             </select>
           </div>
           <div className="space-y-2">
-            <Label htmlFor="normal-end-hour">終了時刻</Label>
+            <Label htmlFor="normal-end-hour">
+              終了時刻 <span className="text-destructive">*</span>
+            </Label>
             <select
               id="normal-end-hour"
               value={formatHourToTime(normalEndHour)}
@@ -351,7 +361,7 @@ export function RoutineComposer({ action, asModal = false, open = false, onClose
               }
               return (
                 <p className="text-sm text-muted-foreground">
-                  この時間範囲内で時間ブロックを配置できます（{formatHourToTime(normalStartHour)}-{formatHourToTime(normalEndHour)}、合計{timeRangeHours.toFixed(2)}時間）
+                  この時間範囲内でBlockを配置できます（{formatHourToTime(normalStartHour)}-{formatHourToTime(normalEndHour)}、合計{timeRangeHours.toFixed(2)}時間）
                 </p>
               );
             })()}
@@ -366,12 +376,17 @@ export function RoutineComposer({ action, asModal = false, open = false, onClose
       )}
 
       {/* ビジュアルタイムライン編集 */}
-      <RoutineBlockTimelineEditor
-        blocks={blocks}
-        onChange={setBlocks}
-        durationType={durationType}
-        normalTimeRange={durationType === 'normal' ? { startHour: normalStartHour, endHour: normalEndHour } : undefined}
-      />
+      <div className="space-y-2">
+        <Label>
+          Blocks <span className="text-destructive">*</span>
+        </Label>
+        <RoutineBlockTimelineEditor
+          blocks={blocks}
+          onChange={setBlocks}
+          durationType={durationType}
+          normalTimeRange={durationType === 'normal' ? { startHour: normalStartHour, endHour: normalEndHour } : undefined}
+        />
+      </div>
 
       {/* エラーメッセージ */}
       {error && (
@@ -436,8 +451,7 @@ export function RoutineComposer({ action, asModal = false, open = false, onClose
   return (
     <Card className="fade-in-up">
       <CardHeader>
-        <CardTitle className="text-2xl">Routineを作成</CardTitle>
-        <p className="text-sm text-muted-foreground mt-1">カスタム時間ブロックで新しいRoutineを作成します</p>
+        <CardTitle className="text-2xl">Create New Routine</CardTitle>
       </CardHeader>
       <CardContent>
         {formContent}

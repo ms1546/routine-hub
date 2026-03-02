@@ -214,7 +214,7 @@ export function ApplyRoutineForm({
   action: (payload: ApplyRoutinePayload) => Promise<ActionResult<RoutineApplicationPreview>>;
 }) {
   const [status, setStatus] = useState(
-    '⚠️ この機能はポートフォリオデモ用の管理者専用機能です。一般ユーザーには提供されていません。'
+    ''
   );
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -484,7 +484,7 @@ export function ApplyRoutineForm({
         errorMessage.includes('admin') || errorMessage.includes('portfolio mode')
           ? 'カレンダーへのエクスポートは現在、管理者のみが利用可能です。'
           : errorMessage.includes('接続') || errorMessage.includes('Connect')
-            ? 'Google Calendarに接続されていません。上の「Google Calendarを接続」ボタンから接続してください。'
+            ? 'Google Calendarに接続されていません。上の「Google Calendarと接続」ボタンから接続してください。'
             : errorMessage;
       setApplyResult({ type: 'error', message: displayMessage });
       setStatus(displayMessage);
@@ -496,10 +496,11 @@ export function ApplyRoutineForm({
 
   return (
     <Card className="w-full p-4">
-      <div className="flex justify-end">
+      <div className="flex items-center justify-between gap-3 mb-4">
+        <h3 className="text-lg font-semibold">Google Calendarに反映</h3>
         <a href={connectUrl}>
           <Button type="button" variant="outline" size="sm">
-            Google Calendarを接続
+            Google Calendarと接続
           </Button>
         </a>
       </div>
@@ -597,7 +598,7 @@ export function ApplyRoutineForm({
         </div>
 
         <Button type="submit" disabled={pending || previewLoading} className="w-full">
-          {pending || previewLoading ? 'プレビューを取得中…' : '適用'}
+          {pending || previewLoading ? 'プレビューを取得中…' : 'Preview'}
         </Button>
       </form>
       {status && (
@@ -680,7 +681,7 @@ export function ApplyRoutineForm({
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
                   <div>
-                    <h4 className="font-semibold mb-1">根拠に基づくカスタマイズ</h4>
+                    <h4 className="font-semibold mb-1">Routune</h4>
                     <p className="text-sm text-muted-foreground">
                       論文データの根拠とユーザー設定に基づいてイベントを最適化します
                     </p>
@@ -691,7 +692,7 @@ export function ApplyRoutineForm({
                     onClick={handleEvidenceBasedCustomize}
                     disabled={customizing || !previewData}
                   >
-                    {customizing ? 'AIカスタマイズ中...' : 'AIカスタマイズ'}
+                    {customizing ? 'Routuning...' : 'Routune'}
                   </Button>
                 </div>
 
