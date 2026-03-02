@@ -1,4 +1,4 @@
-import { Routine } from './models';
+import { getOwnerId, Routine } from './models';
 
 export type RoutineListItem = {
   id: string;
@@ -8,7 +8,8 @@ export type RoutineListItem = {
   durationType: Routine['durationType'];
   tags: string[];
   visibility: Routine['visibility'];
-  owner: Routine['owner'];
+  owner: Routine['owner']; // 表示用アカウント名
+  ownerId?: string; // 所有権チェック用（メールアドレス）
   totalHours: number;
   blockCount: number;
   highlightDay: string;
@@ -77,6 +78,7 @@ export const toRoutineListItem = (routine: Routine): RoutineListItem => {
     tags: routine.tags,
     visibility: routine.visibility,
     owner: routine.owner,
+    ownerId: routine.ownerId,
     totalHours,
     blockCount,
     highlightDay: dayLabels[highlightDay as Weekday],

@@ -36,7 +36,8 @@ export const RoutineList = async ({ routines, onToggleVisibility, userEmail, fil
   const cards = await Promise.all(
     routines.map(async (routine) => {
       const isLiked = await routinesRepository.isLikedByUser(routine.id, currentUser.id);
-      const canEdit = routine.owner === currentUserEmail || currentUser.role === 'admin';
+      const ownerId = routine.ownerId ?? routine.owner;
+      const canEdit = ownerId === currentUserEmail || currentUser.role === 'admin';
       return (
         <RoutineCard
           key={routine.id}

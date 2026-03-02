@@ -14,6 +14,8 @@ import {
   RoutineBlockInput,
   RoutineFilter,
   createRoutineSchema,
+  emailToAccountName,
+  getOwnerId,
   routineBlockInputSchema,
   routineSchema,
   updateRoutineSchema
@@ -30,6 +32,7 @@ type RoutineRecord = {
   visibility: Routine['visibility'];
   tags: Routine['tags'];
   owner: string;
+  ownerId?: string;
   createdAt: string;
   updatedAt: string;
   version?: number;
@@ -51,6 +54,7 @@ const toRoutineRecord = (routine: Routine, likedBy?: string[]): RoutineRecord =>
   visibility: routine.visibility,
   tags: routine.tags,
   owner: routine.owner,
+  ownerId: routine.ownerId,
   createdAt: routine.createdAt.toISOString(),
   updatedAt: routine.updatedAt.toISOString(),
   version: routine.version,
@@ -71,6 +75,7 @@ const fromRoutineRecord = (record: RoutineRecord): { routine: Routine; likedBy: 
     visibility: record.visibility,
     tags: record.tags ?? [],
     owner: record.owner,
+    ownerId: record.ownerId,
     createdAt: new Date(record.createdAt),
     updatedAt: new Date(record.updatedAt),
     version: record.version ?? 1,
@@ -124,7 +129,8 @@ const filterByOwner = (
   if (!userId && !userEmail) {
     return true;
   }
-  const isOwn = (userEmail !== undefined && routine.owner === userEmail) || (userId !== undefined && routine.owner === userId);
+  const ownerId = getOwnerId(routine);
+  const isOwn = (userEmail !== undefined && ownerId === userEmail) || (userId !== undefined && ownerId === userId);
   return routine.visibility === 'public' || isOwn;
 };
 
@@ -171,10 +177,11 @@ const get = async (
   }
 
   const { routine } = fromRoutineRecord(record);
+  const ownerId = getOwnerId(routine);
   if (
     routine.visibility === 'private' &&
-    routine.owner !== userId &&
-    routine.owner !== userEmail &&
+    ownerId !== userId &&
+    ownerId !== userEmail &&
     !isAdmin
   ) {
     return null;
@@ -183,7 +190,7 @@ const get = async (
   return clone(routine);
 };
 
-const create = async (input: CreateRoutineInput): Promise<Routine> => {
+const create = async (input: CreateRoutineInput & { ownerId?: string }): Promise<Routine> => {
   const payload = createRoutineSchema.parse({ ...input, tags: input.tags ?? [] });
   const now = new Date();
   const routine: Routine = {
@@ -195,6 +202,7 @@ const create = async (input: CreateRoutineInput): Promise<Routine> => {
     visibility: payload.visibility,
     tags: payload.tags,
     owner: payload.owner,
+    ownerId: input.ownerId ?? payload.ownerId,
     createdAt: now,
     updatedAt: now,
     version: 1,
@@ -297,7 +305,7 @@ const addBlock = async (routineId: string, blockInput: RoutineBlockInput): Promi
 
 const cloneRoutine = async (
   routineId: string,
-  overrides: Partial<CreateRoutineInput> & { owner: string }
+  overrides: Partial<CreateRoutineInput> & { owner: string; ownerId?: string }
 ): Promise<Routine> => {
   const currentRecord = await fetchRoutineRecord(routineId);
   if (!currentRecord) {
@@ -306,7 +314,7 @@ const cloneRoutine = async (
 
   const { routine: current } = fromRoutineRecord(currentRecord);
 
-  const cloneInput: CreateRoutineInput = {
+  const cloneInput: CreateRoutineInput & { ownerId?: string } = {
     name: overrides.name ?? `${current.name} (Copy)`,
     description: overrides.description ?? current.description,
     purpose: overrides.purpose ?? current.purpose,
@@ -314,6 +322,7 @@ const cloneRoutine = async (
     visibility: overrides.visibility ?? 'private',
     tags: overrides.tags ?? current.tags,
     owner: overrides.owner,
+    ownerId: overrides.ownerId,
     timeBlocks: overrides.timeBlocks ?? current.timeBlocks.map((block) => ({
       ...block,
       id: generateUUID()
@@ -402,7 +411,8 @@ const deleteRoutine = async (routineId: string, userId?: string): Promise<void> 
     throw new Error('Routine not found');
   }
 
-  if (userId && record.owner !== userId) {
+  const ownerId = record.ownerId ?? record.owner;
+  if (userId && ownerId !== userId) {
     throw new Error('Unauthorized');
   }
 

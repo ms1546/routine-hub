@@ -10,6 +10,7 @@ import {
   RoutineBlockInput,
   RoutineVisibility,
   createRoutineSchema,
+  emailToAccountName,
   routineBlockInputSchema,
   routineDurationSchema,
   routineVisibilitySchema,
@@ -114,7 +115,13 @@ export async function createRoutineAction(
 ): Promise<ActionResult<Routine>> {
   try {
     const parsed = createRoutineSchema.parse(toCreateInput(input));
-    const routine = await routinesRepository.create(parsed);
+    const ownerEmail = parsed.owner;
+    const createInput: CreateRoutineInput & { ownerId?: string } = {
+      ...parsed,
+      owner: emailToAccountName(ownerEmail),
+      ownerId: ownerEmail
+    };
+    const routine = await routinesRepository.create(createInput);
     revalidateRoutinePaths(routine.id);
     return { ok: true, data: routine };
   } catch (error) {

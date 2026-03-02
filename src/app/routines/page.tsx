@@ -6,7 +6,7 @@ import {
   createRoutineAction
 } from '@/features/routines/actions/routines';
 import type { RoutineFilter } from '@/features/routines';
-import { routinesRepository, toRoutineListItem } from '@/features/routines';
+import { getOwnerId, routinesRepository, toRoutineListItem } from '@/features/routines';
 import { getCurrentUser } from '@/infrastructure/auth/session';
 import { userSettingsRepository } from '@/features/users';
 
@@ -45,17 +45,17 @@ export default async function RoutinesPage({
 
   let filteredRoutines = filteredByRepo;
   if (filter?.ownerDisplayName && filter.ownerDisplayName.trim()) {
-    const owners = Array.from(new Set(filteredByRepo.map((r) => r.owner)));
+    const ownerIds = Array.from(new Set(filteredByRepo.map((r) => getOwnerId(r))));
     const ownerDisplayNames = await Promise.all(
-      owners.map(async (owner) => {
-        const settings = await userSettingsRepository.get(owner).catch(() => null);
-        return { owner, displayName: settings?.displayName ?? '' };
+      ownerIds.map(async (ownerId) => {
+        const settings = await userSettingsRepository.get(ownerId).catch(() => null);
+        return { ownerId, displayName: settings?.displayName ?? '' };
       })
     );
-    const ownerToDisplayName = new Map(ownerDisplayNames.map((o) => [o.owner, o.displayName]));
+    const ownerIdToDisplayName = new Map(ownerDisplayNames.map((o) => [o.ownerId, o.displayName]));
     const q = filter.ownerDisplayName.trim().toLowerCase();
     filteredRoutines = filteredByRepo.filter((r) => {
-      const displayName = (ownerToDisplayName.get(r.owner) ?? '').toLowerCase();
+      const displayName = (ownerIdToDisplayName.get(getOwnerId(r)) ?? '').toLowerCase();
       return displayName.includes(q);
     });
   }

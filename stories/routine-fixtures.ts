@@ -8,7 +8,8 @@ export const mockRoutineListItem: RoutineListItem = {
   durationType: 'weekly',
   tags: ['集中', '休息'],
   visibility: 'public',
-  owner: 'routunehub.dev@gmail.com',
+  owner: 'routunehub.dev',
+  ownerId: 'routunehub.dev@gmail.com',
   totalHours: 12,
   blockCount: 3,
   highlightDay: 'Monday',
@@ -44,7 +45,8 @@ export const mockRoutineDetail: RoutineDetailView = {
   ...mockRoutineListItem,
   createdAt: new Date('2024-01-10').toISOString(),
   updatedAt: new Date('2024-03-18').toISOString(),
-  owner: 'routunehub.dev@gmail.com',
+  owner: 'routunehub.dev',
+  ownerId: 'routunehub.dev@gmail.com',
   timeBlocks: [
     {
       id: 'block-1',
