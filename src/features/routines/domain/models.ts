@@ -22,7 +22,7 @@ const validateBlockDuration = (block: { startHour: number; endHour: number; day:
   if (durationHours < minDurationHours) {
     ctx.addIssue({
       code: z.ZodIssueCode.custom,
-      message: `各時間ブロックは最低15分必要です。`
+      message: `各Blockは最低15分必要です。`
     });
     return;
   }
@@ -139,7 +139,7 @@ export const routineSchema = z
         if (block.startHour < routine.normalStartHour || block.endHour > routine.normalEndHour) {
           ctx.addIssue({
             code: z.ZodIssueCode.custom,
-            message: `時間ブロックはRoutine全体の時間範囲（${routine.normalStartHour}:00-${routine.normalEndHour}:00）内に収まる必要があります。`,
+            message: `BlockはRoutine全体の時間範囲（${routine.normalStartHour}:00-${routine.normalEndHour}:00）内に収まる必要があります。`,
             path: ['timeBlocks', index]
           });
         }
@@ -162,12 +162,12 @@ export const routineSchema = z
       conflictingBlocks.forEach(({ index1, index2 }) => {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
-          message: `時間ブロックが重複しています。同じ曜日の同じ時間帯に複数のブロックを配置することはできません。`,
+          message: `Blockが重複しています。同じ曜日の同じ時間帯に複数のブロックを配置することはできません。`,
           path: ['timeBlocks', index1]
         });
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
-          message: `時間ブロックが重複しています。同じ曜日の同じ時間帯に複数のブロックを配置することはできません。`,
+          message: `Blockが重複しています。同じ曜日の同じ時間帯に複数のブロックを配置することはできません。`,
           path: ['timeBlocks', index2]
         });
       });
@@ -184,7 +184,7 @@ const routineBaseSchema = z.object({
   visibility: routineVisibilitySchema,
   tags: z.array(z.string().min(2).max(30)).max(8).optional().default([]),
   owner: z.string().min(1),
-  timeBlocks: z.array(routineBlockInputSchema).min(1, '時間ブロックは少なくとも1つ必要です'),
+  timeBlocks: z.array(routineBlockInputSchema).min(1, 'Blockは少なくとも1つ必要です'),
   // normalタイプの場合のみ必須
   normalStartHour: z.number().min(0).max(24).optional(),
   normalEndHour: z.number().min(0).max(24).optional()
@@ -230,7 +230,7 @@ export const createRoutineSchema = routineBaseSchema
     if (routine.timeBlocks.length === 0) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
-        message: '時間ブロックは少なくとも1つ必要です。',
+        message: 'Blockは少なくとも1つ必要です。',
         path: ['timeBlocks']
       });
       return; // 時間ブロックがない場合は他のチェックをスキップ
@@ -257,12 +257,12 @@ export const createRoutineSchema = routineBaseSchema
       conflictingBlocks.forEach(({ index1, index2 }) => {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
-          message: `時間ブロックが重複しています。同じ曜日の同じ時間帯に複数のブロックを配置することはできません。`,
+          message: `Blockが重複しています。同じ曜日の同じ時間帯に複数のブロックを配置することはできません。`,
           path: ['timeBlocks', index1]
         });
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
-          message: `時間ブロックが重複しています。同じ曜日の同じ時間帯に複数のブロックを配置することはできません。`,
+          message: `Blockが重複しています。同じ曜日の同じ時間帯に複数のブロックを配置することはできません。`,
           path: ['timeBlocks', index2]
         });
       });
@@ -299,6 +299,10 @@ export type RoutineFilter = {
   tag?: string;
   duration?: RoutineDuration;
   visibility?: RoutineVisibility;
+  /** キーワード検索（name / description / purpose の部分一致） */
+  query?: string;
+  /** 作成者の表示名で検索（repository では未使用。ページ側で displayName 解決後にフィルタ） */
+  ownerDisplayName?: string;
 };
 
 export const normalizeTags = (tags: string[]): string[] => {

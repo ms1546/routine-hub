@@ -33,7 +33,29 @@ export function RoutineFilters({ availableTags }: RoutineFiltersProps) {
 
   return (
     <Card className="p-4" aria-busy={pending}>
-      <div className="grid gap-4 sm:grid-cols-3">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="space-y-1.5 sm:col-span-2 lg:col-span-1">
+          <Label htmlFor="q-filter">Keyword</Label>
+          <input
+            id="q-filter"
+            type="search"
+            placeholder="Name, description, purpose..."
+            value={searchParams.get('q') ?? ''}
+            onChange={(e) => updateParam('q', e.target.value)}
+            className={selectClassName}
+          />
+        </div>
+        <div className="space-y-1.5">
+          <Label htmlFor="account-filter">Account</Label>
+          <input
+            id="account-filter"
+            type="search"
+            placeholder="Creator display name..."
+            value={searchParams.get('account') ?? ''}
+            onChange={(e) => updateParam('account', e.target.value)}
+            className={selectClassName}
+          />
+        </div>
         <div className="space-y-1.5">
           <Label htmlFor="tag-filter">Tag</Label>
           <select id="tag-filter" value={searchParams.get('tag') ?? ''} onChange={(event) => updateParam('tag', event.target.value)} className={selectClassName}>

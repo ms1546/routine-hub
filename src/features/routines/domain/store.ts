@@ -100,6 +100,15 @@ const applyFilter = (routine: Routine, filter: RoutineFilter): boolean => {
       return false;
     }
   }
+  if (filter.query && filter.query.trim()) {
+    const q = filter.query.trim().toLowerCase();
+    const name = (routine.name ?? '').toLowerCase();
+    const description = (routine.description ?? '').toLowerCase();
+    const purpose = (routine.purpose ?? '').toLowerCase();
+    if (!name.includes(q) && !description.includes(q) && !purpose.includes(q)) {
+      return false;
+    }
+  }
   return true;
 };
 
@@ -112,11 +121,10 @@ const list = async (
   const routines = Array.from(routineStore.values());
   let filtered = filter ? routines.filter((r) => applyFilter(r, filter)) : routines;
 
-  // If userId or userEmail is provided, filter by owner
   if (!isAdmin && (userId || userEmail)) {
-    filtered = filtered.filter((r) =>
-      (userEmail && r.owner === userEmail) || (userId && r.owner === userId)
-    );
+    const isOwn = (r: Routine) =>
+      (userEmail && r.owner === userEmail) || (userId && r.owner === userId);
+    filtered = filtered.filter((r) => r.visibility === 'public' || isOwn(r));
   }
 
   return filtered.map(clone);

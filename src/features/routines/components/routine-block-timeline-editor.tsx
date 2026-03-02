@@ -712,9 +712,6 @@ export function RoutineBlockTimelineEditor({
 
     return (
       <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <h3 className="text-lg font-semibold">時間ブロック</h3>
-        </div>
         {overlapError && (
           <p className="text-sm text-destructive" role="alert">
             {overlapError}
@@ -973,7 +970,7 @@ export function RoutineBlockTimelineEditor({
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h3 className="text-lg font-semibold">時間ブロック</h3>
+        <h3 className="text-lg font-semibold">Block</h3>
       </div>
 
       {overlapError && (

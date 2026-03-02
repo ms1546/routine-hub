@@ -130,7 +130,7 @@ export function RoutineDetailEditor({
             }
           });
           if (!addResult.ok) {
-            setError(addResult.error ?? '時間ブロックの追加に失敗しました');
+            setError(addResult.error ?? 'Blockの追加に失敗しました');
             return;
           }
         }
@@ -172,7 +172,7 @@ export function RoutineDetailEditor({
         for (const block of toDelete) {
           const deleteResult = await onDeleteBlock({ routineId: routine.id, blockId: block.id });
           if (!deleteResult.ok) {
-            setError(deleteResult.error ?? '時間ブロックの削除に失敗しました');
+            setError(deleteResult.error ?? 'Blockの削除に失敗しました');
             return;
           }
         }
@@ -203,7 +203,7 @@ export function RoutineDetailEditor({
           <div className="flex flex-wrap items-center gap-1.5 mb-3">
             <Badge variant="secondary">{routine.durationType === 'normal' ? 'Day' : routine.durationType === 'weekly' ? 'Weekly' : routine.durationType}</Badge>
             <Badge variant="secondary">{routine.intensity}</Badge>
-            <Badge variant={routine.visibility === 'public' ? 'primary' : 'outline'}>{routine.visibility === 'public' ? '公開' : '非公開'}</Badge>
+            <Badge variant={routine.visibility === 'public' ? 'primary' : 'outline'}>{routine.visibility === 'public' ? 'public' : 'private'}</Badge>
           </div>
         </CardHeader>
         <CardContent className="space-y-6">
@@ -264,8 +264,8 @@ export function RoutineDetailEditor({
       <section id="blocks" className="space-y-4">
         <div className="flex items-center justify-between">
           <div>
-            <h2 className="text-xl font-semibold">Time Blocks</h2>
-            <p className="text-sm text-muted-foreground">時間ブロックを編集できます</p>
+            <h2 className="text-xl font-semibold">Blocks</h2>
+            <p className="text-sm text-muted-foreground">Blockを編集できます</p>
           </div>
           <Badge variant="secondary">{blocks.length} blocks</Badge>
         </div>

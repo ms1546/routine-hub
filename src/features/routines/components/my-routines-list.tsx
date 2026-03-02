@@ -84,7 +84,7 @@ export function MyRoutinesList({ routines, userId, userEmail }: MyRoutinesListPr
       {/* Routine作成ボタン */}
       <div className="flex justify-end">
         <Button onClick={() => setShowCreateModal(true)}>
-          新しいRoutineを作成
+          Create New Routine
         </Button>
       </div>
 
@@ -142,7 +142,7 @@ export function MyRoutinesList({ routines, userId, userEmail }: MyRoutinesListPr
                         {routine.durationType === 'normal' ? 'Day' : routine.durationType === 'weekly' ? 'Weekly' : routine.durationType}
                       </Badge>
                       <Badge variant={routine.visibility === 'public' ? 'primary' : 'outline'} className="text-xs">
-                        {routine.visibility === 'public' ? '公開' : '非公開'}
+                        {routine.visibility === 'public' ? 'public' : 'private'}
                       </Badge>
                     </div>
                     <VisibilityToggleButton

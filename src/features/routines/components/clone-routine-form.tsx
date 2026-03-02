@@ -32,7 +32,7 @@ type CloneRoutineFormProps = {
  * - Users create their own copy before editing or applying AI suggestions
  */
 export function CloneRoutineForm({ routineId, defaultName, action }: CloneRoutineFormProps) {
-  const [status, setStatus] = useState('Clone to personalize privately.');
+  const [status, setStatus] = useState('');
   const [pending, startTransition] = useTransition();
 
   const [isError, setIsError] = useState(false);
@@ -58,7 +58,7 @@ export function CloneRoutineForm({ routineId, defaultName, action }: CloneRoutin
     <Card className="w-full p-4">
       <form className="flex w-full flex-col gap-3 sm:flex-row sm:items-end" onSubmit={handleSubmit}>
         <div className="space-y-1.5 flex-1">
-          <Label htmlFor="clone-name">Routine Name</Label>
+          <Label htmlFor="clone-name">Routine</Label>
           <Input
             type="text"
             name="name"

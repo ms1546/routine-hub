@@ -261,7 +261,7 @@ export async function deleteRoutineBlockAction(
     }
 
     if (routine.timeBlocks.length <= 1) {
-      throw new Error('最後の時間ブロックは削除できません');
+      throw new Error('最後のBlockは削除できません');
     }
 
     const updatedBlocks = routine.timeBlocks.filter((block) => block.id !== parsed.blockId);

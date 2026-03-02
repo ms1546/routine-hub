@@ -25,7 +25,7 @@ export default function AuthErrorPage({
                 <Button>再度ログイン</Button>
               </AppLink>
               <AppLink href="/">
-                <Button variant="outline">ホームに戻る</Button>
+                <Button variant="outline">Back To Home</Button>
               </AppLink>
             </div>
           </CardContent>

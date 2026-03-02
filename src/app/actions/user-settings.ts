@@ -28,7 +28,7 @@ const updateUserSettingsSchema = z.object({
   }
   return true;
 }, {
-  message: '表示名は必須です',
+  message: 'account名は必須です',
   path: ['displayName']
 });
 

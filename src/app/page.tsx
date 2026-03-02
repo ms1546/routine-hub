@@ -19,18 +19,16 @@ export default async function HomePage() {
   return (
     <AppShell
       title="Routune Hub"
-      description="人気のRoutineを発見し、あなたの生活に取り入れましょう"
       actions={
         <AppLink href="/routines" className={buttonVariants()}>
-          ライブラリを探索
+          Discover Routine
         </AppLink>
       }
     >
       <div className="space-y-8">
         <section>
           <div className="mb-6">
-            <h2 className="text-2xl font-bold tracking-tight mb-2">人気のRoutine</h2>
-            <p className="text-muted-foreground">コミュニティで最も評価されているRoutineです</p>
+            <h2 className="text-2xl font-bold tracking-tight mb-2">Popular Routine</h2>
           </div>
           <RoutineList routines={highlighted} userEmail={currentUser.email} />
         </section>
