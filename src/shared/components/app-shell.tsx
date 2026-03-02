@@ -1,5 +1,4 @@
 import type { ReactNode } from 'react';
-import Image from 'next/image';
 import { AppLink } from './app-link';
 import { cn } from '@/shared/utils';
 import { HamburgerMenu } from './hamburger-menu';
@@ -38,7 +37,8 @@ export function AppShell({ title, description, children, actions, breadcrumb, sh
               )}
               <h1 className="text-3xl font-bold tracking-tight sm:text-4xl text-foreground flex items-center gap-3">
                 {showLogo && (
-                  <Image
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
                     src="/icon.png"
                     alt="Routune Hub"
                     width={40}

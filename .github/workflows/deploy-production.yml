@@ -40,6 +40,7 @@ jobs:
           fi
 
       - name: Build & Push Docker Image (Production)
+        id: build
         env:
           ECR_REPOSITORY_URL: ${{ secrets.ECR_REPOSITORY_URL }}
           IMAGE_TAG: ${{ github.sha }}
@@ -52,6 +53,15 @@ jobs:
             ${{ secrets.ECR_REPOSITORY_URL }}:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max
+
+      - name: Verify public assets in image
+        run: |
+          docker pull ${{ secrets.ECR_REPOSITORY_URL }}:${{ github.sha }}
+          echo "=== public/ contents ==="
+          docker run --rm ${{ secrets.ECR_REPOSITORY_URL }}:${{ github.sha }} ls -la /app/public/ || true
+          echo "=== Check icon.png and favicon.png ==="
+          docker run --rm ${{ secrets.ECR_REPOSITORY_URL }}:${{ github.sha }} test -f /app/public/icon.png && echo "icon.png: OK" || echo "icon.png: MISSING"
+          docker run --rm ${{ secrets.ECR_REPOSITORY_URL }}:${{ github.sha }} test -f /app/public/favicon.png && echo "favicon.png: OK" || echo "favicon.png: MISSING"
 
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
