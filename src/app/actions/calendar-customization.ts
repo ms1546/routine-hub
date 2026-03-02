@@ -145,19 +145,56 @@ export async function customizeCalendarEventsAction({
       }
     });
 
+    // 衝突していた提案のうち、start/end が変更された件数（プロンプト改善の効果測定用）
+    type CustomizedEvent = CalendarCustomizationResult['customizedEvents'][number];
+    const conflictAdjustedCount = result.customizedEvents.filter(
+      (c: CustomizedEvent) => c.start != null || c.end != null
+    ).length;
+
     await recordLangfuseScore({
       traceId,
       name: 'customized-events-count',
       value: result.customizedEvents.length,
-      comment: `Calendar customization: ${result.customizedEvents.length} event(s), ${result.suggestions.length} suggestion(s)`,
+      comment: `Calendar customization: ${result.customizedEvents.length} event(s), ${result.suggestions.length} suggestion(s), ${conflictAdjustedCount} adjusted`,
       source: 'MODEL',
       metadata: {
         customizedCount: result.customizedEvents.length,
         suggestionCount: result.suggestions.length,
+        conflictAdjustedCount,
         hasEvidenceContext,
         evidenceIsGeneric
       }
     });
+
+    await recordLangfuseScore({
+      traceId,
+      name: 'conflict-adjusted-count',
+      value: conflictAdjustedCount,
+      source: 'MODEL'
+    });
+
+    await recordLangfuseScore({
+      traceId,
+      name: 'suggestions-count',
+      value: result.suggestions.length,
+      source: 'MODEL'
+    });
+
+    // evidenceContext があるときのみ: reasoning に文献を参照しているか
+    if (hasEvidenceContext) {
+      const reasoningText = result.customizedEvents
+        .map((c: CustomizedEvent) => c.reasoning)
+        .join(' ');
+      const evidenceReferenced =
+        !evidenceIsGeneric &&
+        (reasoningText.includes('文献') || reasoningText.includes('研究') || reasoningText.includes('根拠'));
+      await recordLangfuseScore({
+        traceId,
+        name: 'evidence-referenced',
+        value: evidenceReferenced ? 1 : 0,
+        source: 'MODEL'
+      });
+    }
 
     return result;
   } catch (error) {
