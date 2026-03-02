@@ -1,2 +1,2 @@
 export * from './domain/models';
-export { userSettingsRepository } from './domain/store';
+export { userSettingsRepository } from './repository';
