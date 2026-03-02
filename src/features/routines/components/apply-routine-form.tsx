@@ -505,7 +505,7 @@ export function ApplyRoutineForm({
         </a>
       </div>
       <form className="space-y-4" onSubmit={handleSubmit}>
-        <div className="grid gap-3 sm:grid-cols-2">
+        <div className="grid gap-3 sm:grid-cols-2 items-start">
           <div className="space-y-1.5">
             <Label htmlFor="startDate">開始日</Label>
             <Input
@@ -514,6 +514,7 @@ export function ApplyRoutineForm({
               id="startDate"
               value={startDate}
               onChange={(e) => setStartDate(e.target.value)}
+              className="h-11"
               required
             />
           </div>
@@ -547,6 +548,7 @@ export function ApplyRoutineForm({
                 value={endDate}
                 min={startDate}
                 onChange={(e) => setEndDate(e.target.value)}
+                className="h-11"
                 required
               />
             </div>
@@ -683,7 +685,7 @@ export function ApplyRoutineForm({
                   <div>
                     <h4 className="font-semibold mb-1">Routune</h4>
                     <p className="text-sm text-muted-foreground">
-                      論文データの根拠とユーザー設定に基づいてイベントを最適化します
+                      論文データの根拠とユーザー設定に基づいてAIがイベントを最適化します
                     </p>
                   </div>
                   <Button
