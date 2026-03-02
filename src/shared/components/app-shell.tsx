@@ -1,7 +1,8 @@
 import type { ReactNode } from 'react';
 import { AppLink } from './app-link';
-import { cn } from '@/shared/utils';
 import { HamburgerMenu } from './hamburger-menu';
+import { Logo } from './logo';
+import { cn } from '@/shared/utils';
 
 type AppShellProps = {
   title: string;
@@ -35,18 +36,24 @@ export function AppShell({ title, description, children, actions, breadcrumb, sh
                   {breadcrumb.label}
                 </AppLink>
               )}
-              <h1 className="text-3xl font-bold tracking-tight sm:text-4xl text-foreground flex items-center gap-3">
-                {showLogo && (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
-                    src="/icon.png"
-                    alt="Routune Hub"
-                    width={40}
-                    height={40}
-                    className="shrink-0 rounded-lg"
-                  />
+              <h1 className="text-3xl font-bold tracking-tight sm:text-4xl text-foreground flex items-end">
+                {showLogo && title === 'Routune Hub' ? (
+                  <Logo linkToHome />
+                ) : (
+                  <>
+                    {showLogo && (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src="/icon.png"
+                        alt="Routune Hub"
+                        width={40}
+                        height={40}
+                        className="mr-3 shrink-0 rounded-lg"
+                      />
+                    )}
+                    {title}
+                  </>
                 )}
-                {title}
               </h1>
               {description && (
                 <p className="max-w-2xl text-muted-foreground">{description}</p>
