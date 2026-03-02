@@ -75,7 +75,8 @@ export const routineSchema = z
     durationType: routineDurationSchema,
     visibility: routineVisibilitySchema,
     tags: z.array(z.string().min(2).max(30)).max(8).optional().default([]),
-    owner: z.string().min(1),
+    owner: z.string().min(1), // 表示用アカウント名（@より前）
+    ownerId: z.string().min(1).optional(), // 所有権チェック用（メールアドレス）。未設定時はownerをemailとして扱う（後方互換）
     createdAt: z.date(),
     updatedAt: z.date(),
     version: z.number().int().min(1),
@@ -183,7 +184,8 @@ const routineBaseSchema = z.object({
   durationType: routineDurationSchema,
   visibility: routineVisibilitySchema,
   tags: z.array(z.string().min(2).max(30)).max(8).optional().default([]),
-  owner: z.string().min(1),
+  owner: z.string().min(1), // 表示用アカウント名
+  ownerId: z.string().min(1).optional(), // 所有権チェック用（メールアドレス）
   timeBlocks: z.array(routineBlockInputSchema).min(1, 'Blockは少なくとも1つ必要です'),
   // normalタイプの場合のみ必須
   normalStartHour: z.number().min(0).max(24).optional(),
@@ -303,6 +305,16 @@ export type RoutineFilter = {
   /** 作成者の表示名で検索（repository では未使用。ページ側で displayName 解決後にフィルタ） */
   ownerDisplayName?: string;
 };
+
+/** メールアドレスからアカウント名（@より前）を取得。セキュリティのためowner表示に使用 */
+export const emailToAccountName = (email: string): string => {
+  const at = email.indexOf('@');
+  return at > 0 ? email.slice(0, at) : email;
+};
+
+/** 所有権チェック用のIDを取得（ownerIdがあればそれ、なければownerをemailとして扱う後方互換） */
+export const getOwnerId = (routine: { owner: string; ownerId?: string }): string =>
+  routine.ownerId ?? routine.owner;
 
 export const normalizeTags = (tags: string[]): string[] => {
   const seen = new Set<string>();

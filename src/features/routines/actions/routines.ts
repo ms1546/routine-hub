@@ -10,6 +10,7 @@ import {
   RoutineBlockInput,
   RoutineVisibility,
   createRoutineSchema,
+  emailToAccountName,
   routineBlockInputSchema,
   routineDurationSchema,
   routineVisibilitySchema,
@@ -122,7 +123,14 @@ export async function createRoutineAction(
 ): Promise<ActionResult<Routine>> {
   try {
     const parsed = createRoutineSchema.parse(toCreateInput(input));
-    const routine = await routinesRepository.create(parsed);
+    // ownerはフォームでemailが渡る。表示用にaccount名、所有権用にownerIdを設定
+    const ownerEmail = parsed.owner;
+    const createInput: CreateRoutineInput & { ownerId?: string } = {
+      ...parsed,
+      owner: emailToAccountName(ownerEmail),
+      ownerId: ownerEmail
+    };
+    const routine = await routinesRepository.create(createInput);
     revalidateRoutinePaths(routine.id);
     return { ok: true, data: routine };
   } catch (error) {
@@ -379,7 +387,8 @@ export async function deleteRoutineAction(
     }
 
     // 所有者のみ削除可能
-    if (routine.owner !== currentUser.email && currentUser.role !== 'admin') {
+    const ownerId = routine.ownerId ?? routine.owner;
+    if (ownerId !== currentUser.email && ownerId !== currentUser.id && currentUser.role !== 'admin') {
       throw new Error('このRoutineを削除する権限がありません');
     }
 
@@ -419,7 +428,8 @@ export async function updateRoutineInfoAction(
     }
 
     // 所有者のみ更新可能
-    if (routine.owner !== currentUser.email && currentUser.role !== 'admin') {
+    const ownerId = routine.ownerId ?? routine.owner;
+    if (ownerId !== currentUser.email && ownerId !== currentUser.id && currentUser.role !== 'admin') {
       throw new Error('このRoutineを更新する権限がありません');
     }
 
@@ -463,7 +473,8 @@ export async function cloneRoutineAction(
     const parsed = cloneRoutineSchema.parse(payload);
     const currentUser = await getCurrentUser();
     const cloned = await routinesRepository.clone(parsed.routineId, {
-      owner: currentUser.email,
+      owner: emailToAccountName(currentUser.email),
+      ownerId: currentUser.email,
       ...parsed.overrides
     });
     revalidateRoutinePaths(cloned.id);

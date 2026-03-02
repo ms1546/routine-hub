@@ -12,7 +12,7 @@
 import { randomUUID } from 'node:crypto';
 import { PutCommand } from '@aws-sdk/lib-dynamodb';
 import { dynamoDBDocumentClient } from '../src/infrastructure/db/dynamodb-client';
-import { routineSchema } from '../src/features/routines/domain/models';
+import { emailToAccountName, routineSchema } from '../src/features/routines/domain/models';
 
 /** 本番デプロイで使用しているテーブル名（固定） */
 const ROUTINES_TABLE = 'routune-hub-production-routines';
@@ -179,11 +179,9 @@ const SEED_ROUTINES: RoutineInput[] = [
     name: '週間マルチブロック',
     description: '毎日2ブロックで朝と昼の習慣を確保。ブロック数14。',
     purpose: '朝・昼の習慣を週7日で定着させる',
-    durationType: 'normal',
+    durationType: 'weekly',
     visibility: 'public',
     tags: ['習慣', '週間'],
-    normalStartHour: 7,
-    normalEndHour: 18,
     schedule: {
       monday: [
         { startHour: 7, endHour: 8, label: '朝の運動', objective: '軽いストレッチ・散歩', energyLevel: 'medium' },
@@ -219,11 +217,9 @@ const SEED_ROUTINES: RoutineInput[] = [
     name: '毎日3セッション',
     description: '朝・昼・夕の3ブロックを毎日。ブロック数21。',
     purpose: '1日を3つのセッションに分けて集中力を維持',
-    durationType: 'normal',
+    durationType: 'weekly',
     visibility: 'public',
     tags: ['集中', '生産性'],
-    normalStartHour: 7,
-    normalEndHour: 21,
     schedule: {
       monday: [
         { startHour: 7, endHour: 9, label: '朝セッション', objective: 'ディープワーク・計画', energyLevel: 'high' },
@@ -266,11 +262,9 @@ const SEED_ROUTINES: RoutineInput[] = [
     name: 'フルデイ・ワークデイ',
     description: '平日5日間で朝・昼の2ブロック。ブロック数10。',
     purpose: '平日の習慣を朝昼で区切って管理',
-    durationType: 'normal',
+    durationType: 'weekly',
     visibility: 'public',
     tags: ['平日', '習慣'],
-    normalStartHour: 8,
-    normalEndHour: 18,
     schedule: {
       monday: [
         { startHour: 8, endHour: 10, label: '朝ブロック', objective: 'メール・計画', energyLevel: 'medium' },
@@ -313,7 +307,8 @@ async function seedRoutines() {
       durationType: input.durationType,
       visibility: input.visibility,
       tags: input.tags,
-      owner: OWNER_EMAIL,
+      owner: emailToAccountName(OWNER_EMAIL),
+      ownerId: OWNER_EMAIL,
       createdAt: nowStr,
       updatedAt: nowStr,
       version: 1,
@@ -332,6 +327,7 @@ async function seedRoutines() {
       visibility: item.visibility,
       tags: item.tags ?? [],
       owner: item.owner,
+      ownerId: item.ownerId,
       createdAt: now,
       updatedAt: now,
       version: item.version,

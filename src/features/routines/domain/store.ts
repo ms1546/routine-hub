@@ -19,6 +19,7 @@ import {
   RoutineFilter,
   RoutineVisibility,
   createRoutineSchema,
+  getOwnerId,
   routineBlockInputSchema,
   routineSchema,
   updateRoutineSchema
@@ -119,8 +120,10 @@ const list = async (
   let filtered = filter ? routines.filter((r) => applyFilter(r, filter)) : routines;
 
   if (!isAdmin && (userId || userEmail)) {
-    const isOwn = (r: Routine) =>
-      (userEmail && r.owner === userEmail) || (userId && r.owner === userId);
+    const isOwn = (r: Routine) => {
+      const oid = getOwnerId(r);
+      return (userEmail && oid === userEmail) || (userId && oid === userId);
+    };
     filtered = filtered.filter((r) => r.visibility === 'public' || isOwn(r));
   }
 
@@ -132,10 +135,11 @@ const get = async (id: string, userId?: string, userEmail?: string, isAdmin = fa
   if (!routine) {
     return null;
   }
+  const ownerId = getOwnerId(routine);
   if (
     routine.visibility === 'private' &&
-    routine.owner !== userId &&
-    routine.owner !== userEmail &&
+    ownerId !== userId &&
+    ownerId !== userEmail &&
     !isAdmin
   ) {
     return null;
@@ -143,7 +147,7 @@ const get = async (id: string, userId?: string, userEmail?: string, isAdmin = fa
   return clone(routine);
 };
 
-const create = async (input: CreateRoutineInput): Promise<Routine> => {
+const create = async (input: CreateRoutineInput & { ownerId?: string }): Promise<Routine> => {
   const payload = createRoutineSchema.parse({ ...input, tags: input.tags ?? [] });
   const now = new Date();
   const routine: Routine = {
@@ -155,6 +159,7 @@ const create = async (input: CreateRoutineInput): Promise<Routine> => {
     visibility: payload.visibility,
     tags: payload.tags,
     owner: payload.owner,
+    ownerId: input.ownerId ?? (payload as { ownerId?: string }).ownerId,
     createdAt: now,
     updatedAt: now,
     version: 1,
@@ -227,13 +232,13 @@ const addBlock = async (routineId: string, blockInput: RoutineBlockInput): Promi
 
 const cloneRoutine = async (
   routineId: string,
-  overrides: Partial<CreateRoutineInput> & { owner: string }
+  overrides: Partial<CreateRoutineInput> & { owner: string; ownerId?: string }
 ): Promise<Routine> => {
   const source = routineStore.get(routineId);
   if (!source) {
     throw new Error('Routine not found');
   }
-  const cloneInput: CreateRoutineInput = {
+  const cloneInput: CreateRoutineInput & { ownerId?: string } = {
     name: overrides.name ?? `${source.name} (Copy)`,
     description: overrides.description ?? source.description,
     purpose: overrides.purpose ?? source.purpose,
@@ -241,6 +246,7 @@ const cloneRoutine = async (
     visibility: overrides.visibility ?? 'private',
     tags: overrides.tags ?? source.tags,
     owner: overrides.owner,
+    ownerId: overrides.ownerId,
     timeBlocks: overrides.timeBlocks ?? source.timeBlocks.map((block) => ({
       ...block,
       id: generateUUID()
@@ -293,7 +299,8 @@ const deleteRoutine = async (routineId: string, userId?: string): Promise<void> 
   if (!routine) {
     throw new Error('Routine not found');
   }
-  if (userId && routine.owner !== userId) {
+  const ownerId = getOwnerId(routine);
+  if (userId && ownerId !== userId) {
     throw new Error('Unauthorized');
   }
   routineStore.delete(routineId);

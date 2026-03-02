@@ -61,11 +61,12 @@ type RoutineDetailContentProps = {
 
 async function RoutineDetailContent({ routine, detail, currentUser }: RoutineDetailContentProps) {
   const calendarPlan = await planRoutineWithCalendar(routine, currentUser);
-  const canEdit = currentUser.email === routine.owner || currentUser.role === 'admin';
+  const ownerId = routine.ownerId ?? routine.owner;
+  const canEdit = currentUser.email === ownerId || currentUser.id === ownerId || currentUser.role === 'admin';
   const isLiked = await routinesRepository.isLikedByUser(routine.id, currentUser.id);
 
-  // OwnerのdisplayNameを取得（routine.ownerはemail）
-  const ownerSettings = await userSettingsRepository.get(routine.owner);
+  // OwnerのdisplayNameを取得（ownerIdはemail、ownerは表示用アカウント名）
+  const ownerSettings = await userSettingsRepository.get(ownerId).catch(() => null);
   const ownerDisplayName = ownerSettings?.displayName ?? routine.owner;
 
   return (
@@ -108,8 +109,9 @@ async function RoutineDetailFallback({
     : false;
 
   // OwnerのdisplayNameを取得（emailは表示しない）
-  const ownerSettings = await userSettingsRepository.get(routine.owner);
-  const ownerDisplayName = ownerSettings?.displayName ?? 'Unknown';
+  const ownerId = routine.ownerId ?? routine.owner;
+  const ownerSettings = await userSettingsRepository.get(ownerId).catch(() => null);
+  const ownerDisplayName = ownerSettings?.displayName ?? routine.owner ?? 'Unknown';
 
   return (
     <RoutineDetail
