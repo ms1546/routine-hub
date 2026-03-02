@@ -89,9 +89,6 @@ const fromRoutineRecord = (record: RoutineRecord): { routine: Routine; likedBy: 
 };
 
 const applyFilter = (routine: Routine, filter: RoutineFilter): boolean => {
-  if (filter.visibility && routine.visibility !== filter.visibility) {
-    return false;
-  }
   if (filter.duration && routine.durationType !== filter.duration) {
     return false;
   }

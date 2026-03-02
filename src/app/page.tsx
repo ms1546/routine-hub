@@ -9,7 +9,8 @@ export default async function HomePage() {
   const currentUser = await getCurrentUser();
 
   // 公開されているRoutineのみを取得し、人気順（likes数）でソート
-  const publicRoutines = await routinesRepository.list({ visibility: 'public' });
+  const allRoutines = await routinesRepository.list(undefined, currentUser?.id, currentUser?.email);
+  const publicRoutines = allRoutines.filter((r) => r.visibility === 'public');
   const sortedByPopularity = publicRoutines
     .sort((a, b) => b.stats.likes - a.stats.likes)
     .slice(0, 6); // トップ6を表示

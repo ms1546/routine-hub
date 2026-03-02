@@ -130,7 +130,8 @@ describe('Routine popularity sorting', () => {
       ]
     });
 
-    const publicRoutines = await routinesRepository.list({ visibility: 'public' });
+    const allRoutines = await routinesRepository.list();
+    const publicRoutines = allRoutines.filter((r) => r.visibility === 'public');
     const found = publicRoutines.find((r) => r.id === routine.id);
 
     expect(found).toBeDefined();

@@ -46,7 +46,7 @@ export function HamburgerMenu() {
 
   const menuItems = [
     { href: '/', label: 'Home' },
-    { href: '/routines', label: 'Routine Library' },
+    { href: '/routines', label: 'All Routines' },
     ...(session ? [{ href: '/my-routines', label: 'My Routines' }] : []),
     ...(session ? [{ href: '/settings', label: 'Settings' }] : []),
     ...(isAdmin ? [{ href: '/admin', label: 'Admin' }] : [])
