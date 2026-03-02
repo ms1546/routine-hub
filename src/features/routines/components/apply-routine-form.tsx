@@ -605,14 +605,14 @@ export function ApplyRoutineForm({
         <p
           role="status"
           className={`text-sm mt-2 rounded-md px-3 py-2 border ${
-            status.includes('適用しました') || status.includes('追加しました')
+            status.includes('適用しました') || status.includes('追加しました') || status.includes('件を追加') || status.includes('適用が完了しました')
               ? 'bg-green-500/10 text-green-800 dark:text-green-200 border-green-500/20 font-medium'
               : status.includes('失敗') || status.includes('正しくありません') || status.includes('指定してください') || status.includes('接続')
                 ? 'text-destructive font-medium bg-destructive/10 border-destructive/20'
                 : 'text-muted-foreground border-transparent'
           }`}
         >
-          {status.includes('適用しました') || status.includes('追加しました') ? '✓ ' : ''}
+          {(status.includes('適用しました') || status.includes('追加しました') || status.includes('件を追加') || status.includes('適用が完了しました')) ? '✓ ' : ''}
           {status}
         </p>
       )}

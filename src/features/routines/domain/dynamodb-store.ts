@@ -102,9 +102,19 @@ const applyFilter = (routine: Routine, filter: RoutineFilter): boolean => {
       return false;
     }
   }
+  if (filter.query && filter.query.trim()) {
+    const q = filter.query.trim().toLowerCase();
+    const name = (routine.name ?? '').toLowerCase();
+    const description = (routine.description ?? '').toLowerCase();
+    const purpose = (routine.purpose ?? '').toLowerCase();
+    if (!name.includes(q) && !description.includes(q) && !purpose.includes(q)) {
+      return false;
+    }
+  }
   return true;
 };
 
+/** 公開されているもの、または自分のルーチンを表示する */
 const filterByOwner = (
   routine: Routine,
   userId?: string,
@@ -117,7 +127,8 @@ const filterByOwner = (
   if (!userId && !userEmail) {
     return true;
   }
-  return (userEmail && routine.owner === userEmail) || (userId && routine.owner === userId) ? true : false;
+  const isOwn = (userEmail !== undefined && routine.owner === userEmail) || (userId !== undefined && routine.owner === userId);
+  return routine.visibility === 'public' || isOwn;
 };
 
 const fetchRoutineRecord = async (routineId: string): Promise<RoutineRecord | null> => {
