@@ -11,7 +11,10 @@ const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
   title: 'Routune Hub',
-  description: 'Reuse, customize, and apply purposeful routines with AI-assisted guidance.'
+  description: 'Reuse, customize, and apply purposeful routines with AI-assisted guidance.',
+  icons: {
+    icon: '/favicon.png'
+  }
 };
 
 export default function RootLayout({

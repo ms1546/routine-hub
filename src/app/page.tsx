@@ -20,6 +20,7 @@ export default async function HomePage() {
   return (
     <AppShell
       title="Routune Hub"
+      showLogo
       actions={
         <AppLink href="/routines" className={buttonVariants()}>
           Discover Routine

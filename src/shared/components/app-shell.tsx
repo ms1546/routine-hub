@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import Image from 'next/image';
 import { AppLink } from './app-link';
 import { cn } from '@/shared/utils';
 import { HamburgerMenu } from './hamburger-menu';
@@ -12,9 +13,11 @@ type AppShellProps = {
     label: string;
     href: string;
   };
+  /** ホームページなどでタイトル左にロゴを表示 */
+  showLogo?: boolean;
 };
 
-export function AppShell({ title, description, children, actions, breadcrumb }: AppShellProps) {
+export function AppShell({ title, description, children, actions, breadcrumb, showLogo }: AppShellProps) {
   return (
     <div className="min-h-screen gradient-bg">
       <HamburgerMenu />
@@ -33,7 +36,18 @@ export function AppShell({ title, description, children, actions, breadcrumb }: 
                   {breadcrumb.label}
                 </AppLink>
               )}
-              <h1 className="text-3xl font-bold tracking-tight sm:text-4xl text-foreground">{title}</h1>
+              <h1 className="text-3xl font-bold tracking-tight sm:text-4xl text-foreground flex items-center gap-3">
+                {showLogo && (
+                  <Image
+                    src="/icon.png"
+                    alt="Routune Hub"
+                    width={40}
+                    height={40}
+                    className="shrink-0 rounded-lg"
+                  />
+                )}
+                {title}
+              </h1>
               {description && (
                 <p className="max-w-2xl text-muted-foreground">{description}</p>
               )}
