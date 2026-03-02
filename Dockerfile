@@ -8,6 +8,8 @@ WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 RUN mkdir -p public
+# 静的アセット（アイコン・favicon）が含まれることを確認
+RUN test -f public/icon.png && test -f public/favicon.png || (echo "Missing public/icon.png or public/favicon.png" && exit 1)
 ARG MASTRA_USE_MOCK
 ARG DISABLE_CALENDAR_WRITES
 ENV NEXT_TELEMETRY_DISABLED=1
