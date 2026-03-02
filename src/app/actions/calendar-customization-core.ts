@@ -147,49 +147,51 @@ export async function runCalendarCustomizationWithTrace(
             .map((e) => `${e.title ?? '無題'} (${e.start ?? ''}–${e.end ?? ''})`)
             .join('; ')}${existingEvents.length > 10 ? '...' : ''}`;
 
-    try {
-      const judgeResult = await evaluateCalendarCustomization({
-        userProfile,
-        routinePurpose,
-        evidenceContext: evidenceContext ?? undefined,
-        existingEventsSummary,
-        customizedEvents: result.customizedEvents,
-        suggestions: result.suggestions
-      });
-
-      await recordLangfuseScore({
-        traceId,
-        name: 'purpose-preserving',
-        value: judgeResult.purposePreserving,
-        source: 'MODEL',
-        comment: judgeResult.purposePreservingRationale
-          ? `[LLM Judge] ${judgeResult.purposePreservingRationale}`
-          : undefined,
-        metadata: { source: 'llm-judge' }
-      });
-      await recordLangfuseScore({
-        traceId,
-        name: 'evidence-applied',
-        value: judgeResult.evidenceApplied,
-        source: 'MODEL',
-        comment: judgeResult.evidenceAppliedRationale
-          ? `[LLM Judge] ${judgeResult.evidenceAppliedRationale}`
-          : undefined,
-        metadata: { source: 'llm-judge' }
-      });
-      await recordLangfuseScore({
-        traceId,
-        name: 'user-settings-respected',
-        value: judgeResult.userSettingsRespected,
-        source: 'MODEL',
-        comment: judgeResult.userSettingsRespectedRationale
-          ? `[LLM Judge] ${judgeResult.userSettingsRespectedRationale}`
-          : undefined,
-        metadata: { source: 'llm-judge' }
-      });
-    } catch (judgeError) {
-      console.warn('[CalendarCustomization] Judge evaluation failed, skipping judge scores.', judgeError);
-    }
+    // Judge は応答をブロックしないようバックグラウンドで実行（体感速度のため）
+    void (async () => {
+      try {
+        const judgeResult = await evaluateCalendarCustomization({
+          userProfile,
+          routinePurpose,
+          evidenceContext: evidenceContext ?? undefined,
+          existingEventsSummary,
+          customizedEvents: result.customizedEvents,
+          suggestions: result.suggestions
+        });
+        await recordLangfuseScore({
+          traceId,
+          name: 'purpose-preserving',
+          value: judgeResult.purposePreserving,
+          source: 'MODEL',
+          comment: judgeResult.purposePreservingRationale
+            ? `[LLM Judge] ${judgeResult.purposePreservingRationale}`
+            : undefined,
+          metadata: { source: 'llm-judge' }
+        });
+        await recordLangfuseScore({
+          traceId,
+          name: 'evidence-applied',
+          value: judgeResult.evidenceApplied,
+          source: 'MODEL',
+          comment: judgeResult.evidenceAppliedRationale
+            ? `[LLM Judge] ${judgeResult.evidenceAppliedRationale}`
+            : undefined,
+          metadata: { source: 'llm-judge' }
+        });
+        await recordLangfuseScore({
+          traceId,
+          name: 'user-settings-respected',
+          value: judgeResult.userSettingsRespected,
+          source: 'MODEL',
+          comment: judgeResult.userSettingsRespectedRationale
+            ? `[LLM Judge] ${judgeResult.userSettingsRespectedRationale}`
+            : undefined,
+          metadata: { source: 'llm-judge' }
+        });
+      } catch (judgeError) {
+        console.warn('[CalendarCustomization] Judge evaluation failed, skipping judge scores.', judgeError);
+      }
+    })();
 
     return result;
   } catch (error) {
