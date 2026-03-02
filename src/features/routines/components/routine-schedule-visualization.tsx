@@ -214,7 +214,7 @@ export function RoutineScheduleVisualization({
                         return (
                           <div
                             key={block.id}
-                            className={`absolute top-0 h-full border-2 ${energyLevelColors[block.energyLevel] || energyLevelColors.low} rounded-sm transition-all hover:z-30 relative flex flex-col justify-center items-center ${compact ? 'p-1.5' : 'p-2.5'}`}
+                            className={`absolute top-0 h-full border-2 ${energyLevelColors[block.energyLevel] || energyLevelColors.low} rounded-sm transition-all hover:z-30 flex flex-col justify-center items-center ${compact ? 'p-1.5' : 'p-2.5'}`}
                             style={{
                               left: `${leftPercent}%`,
                               width: `${widthPercent}%`
