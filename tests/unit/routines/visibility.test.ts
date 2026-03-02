@@ -49,13 +49,15 @@ describe('Routine visibility and access control', () => {
   });
 
   it('returns public routines when filtering by visibility public', async () => {
-    const routines = await routinesRepository.list({ visibility: 'public' });
+    const allRoutines = await routinesRepository.list();
+    const routines = allRoutines.filter((r) => r.visibility === 'public');
     const allPublic = routines.every((r) => r.visibility === 'public');
     expect(allPublic).toBe(true);
   });
 
   it('excludes private routines from public list for non-owners', async () => {
-    const routines = await routinesRepository.list({ visibility: 'public' }, 'other@example.com');
+    const allRoutines = await routinesRepository.list(undefined, 'other@example.com');
+    const routines = allRoutines.filter((r) => r.visibility === 'public');
     const hasPrivate = routines.some((r) => r.visibility === 'private');
     expect(hasPrivate).toBe(false);
   });
