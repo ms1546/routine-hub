@@ -514,7 +514,7 @@ export function ApplyRoutineForm({
               id="startDate"
               value={startDate}
               onChange={(e) => setStartDate(e.target.value)}
-              className="h-11"
+              className="h-11 min-h-11 max-h-11 box-border"
               required
             />
           </div>
@@ -526,7 +526,7 @@ export function ApplyRoutineForm({
                 id="weekCount"
                 value={weekCount}
                 onChange={(e) => setWeekCount(Number(e.target.value))}
-                className="h-11 w-full rounded-lg border border-input bg-background px-4 py-2.5 text-sm text-foreground transition-all duration-300 hover:border-primary/40 hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:border-ring/50"
+                className="h-11 min-h-11 max-h-11 box-border w-full rounded-lg border border-input bg-background px-4 py-2 text-sm text-foreground transition-all duration-300 hover:border-primary/40 hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:border-ring/50"
                 required
               >
                 <option value={1}>1週間</option>
@@ -548,7 +548,7 @@ export function ApplyRoutineForm({
                 value={endDate}
                 min={startDate}
                 onChange={(e) => setEndDate(e.target.value)}
-                className="h-11"
+                className="h-11 min-h-11 max-h-11 box-border"
                 required
               />
             </div>
@@ -600,7 +600,7 @@ export function ApplyRoutineForm({
         </div>
 
         <Button type="submit" disabled={pending || previewLoading} className="w-full">
-          {pending || previewLoading ? 'プレビューを取得中…' : 'Preview'}
+          {pending || previewLoading ? 'プレビューを取得中…' : 'Routune Preview'}
         </Button>
       </form>
       {status && (

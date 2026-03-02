@@ -22,6 +22,7 @@
     "build-storybook": "storybook build",
     "chromatic": "chromatic",
     "experiment:routine": "tsx scripts/run-routine-experiment.ts",
+    "experiment:calendar-customization": "tsx scripts/run-calendar-customization-experiment.ts",
     "seed:dynamodb": "tsx scripts/seed-dynamodb.ts"
   },
   "dependencies": {
