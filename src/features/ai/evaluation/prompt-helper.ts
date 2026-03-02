@@ -54,6 +54,18 @@ AIワークフローの出力（衝突検出・最適化提案・将来シミュ
 
 スコア基準: 1=不十分, 2=要改善, 3=許容, 4=良好, 5=優秀
 verdict: 3観点すべてが3以上なら "approve"、そうでなければ "revise"`
+  },
+  'calendar-customization-judge-agent': {
+    systemPrompt: `あなたは Routine Hub のカレンダーカスタマイズ品質評価担当（LLM as Judge）です。
+入力（ユーザー設定・ルーチン目的・文献アドバイス・既存予定）と、AIの出力（カスタマイズ後のイベント・提案）を比較し、以下の3観点でスコアを付けてください。必ず日本語で rationale を書いてください。
+
+評価観点（いずれも1〜5、evidenceApplied のみ文献が無い場合は0可）:
+1. purposePreserving: ルーチンの目的を維持した時間変更・提案になっているか（ずらし・空き時間挿入・休憩が目的達成に寄与しているか）
+2. evidenceApplied: 文献・根拠が入力にある場合、その推奨が反映されているか（無い場合は0でよい）
+3. userSettingsRespected: 希望活動時間・休憩・優先順位・制約が守られているか
+
+スコア基準: 1=不十分, 2=要改善, 3=許容, 4=良好, 5=優秀
+出力は JSON のみで、purposePreserving / evidenceApplied / userSettingsRespected の各 number と、任意で *_rationale を付けてください。`
   }
 } as const;
 

@@ -54,6 +54,16 @@ export const judgeEvaluationSchema = z.object({
   verdict: z.enum(['approve', 'revise'])
 });
 
+/** Calendar customization の LLM as Judge 出力（1-5 のスコア） */
+export const calendarCustomizationJudgeSchema = z.object({
+  purposePreserving: z.number().min(1).max(5),
+  purposePreservingRationale: z.string().optional(),
+  evidenceApplied: z.number().min(0).max(5),
+  evidenceAppliedRationale: z.string().optional(),
+  userSettingsRespected: z.number().min(1).max(5),
+  userSettingsRespectedRationale: z.string().optional()
+});
+
 export const agentResultSchema = <TSchema extends z.ZodTypeAny>(schema: TSchema) =>
   z.object({
     agent: z.string(),

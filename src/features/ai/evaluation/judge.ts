@@ -5,7 +5,9 @@ import type {
   FutureSimulationData,
   ConflictAgentData
 } from '../types';
-import { judgeEvaluationSchema } from '../schemas';
+import type { UserProfileContext } from '../types';
+import { judgeEvaluationSchema, calendarCustomizationJudgeSchema } from '../schemas';
+import type { z } from 'zod';
 import { invokeBedrockWithFallback, isBedrockEnabled } from '../providers/bedrock';
 import { getSystemPrompt } from './prompt-helper';
 
@@ -134,5 +136,123 @@ export async function evaluateWorkflow(
     agent: isBedrockEnabled() ? 'bedrock/llm-judge' : 'heuristic/llm-judge',
     generatedAt: new Date().toISOString(),
     data: clampedData
+  };
+}
+
+/** Calendar customization Judge の入力（プロンプト用に要約可能な形） */
+export type CalendarCustomizationJudgeInput = {
+  userProfile: UserProfileContext;
+  routinePurpose: string | undefined;
+  evidenceContext: string | undefined;
+  existingEventsSummary: string;
+  customizedEvents: Array<{
+    proposalId: string;
+    title?: string;
+    description?: string;
+    start?: string;
+    end?: string;
+    reasoning: string;
+  }>;
+  suggestions: Array<{
+    type: string;
+    description: string;
+    affectedProposalIds: string[];
+  }>;
+};
+
+export type CalendarCustomizationJudgeResult = z.infer<typeof calendarCustomizationJudgeSchema>;
+
+function buildCalendarCustomizationJudgeUserPrompt(input: CalendarCustomizationJudgeInput): string {
+  const profileLines = [
+    `timezone: ${input.userProfile.timezone}`,
+    `requiredSleepHours: ${input.userProfile.requiredSleepHours}`,
+    `preferredWorkStart: ${input.userProfile.preferredWorkStartTime ?? '未設定'}`,
+    `preferredWorkEnd: ${input.userProfile.preferredWorkEndTime ?? '未設定'}`,
+    `minBreakBetweenMinutes: ${input.userProfile.minBreakBetweenMinutes ?? '未設定'}`,
+    `priorities: ${(input.userProfile.priorities ?? []).join(', ') || 'なし'}`,
+    `constraints: ${(input.userProfile.constraints ?? []).join(', ') || 'なし'}`,
+    `energyLevel: ${input.userProfile.energyLevel ?? '未設定'}`
+  ].join('\n');
+
+  const customizedText =
+    input.customizedEvents.length > 0
+      ? input.customizedEvents
+          .map(
+            (e) =>
+              `- ${e.proposalId}: ${e.title ?? ''} start=${e.start ?? '変更なし'} end=${e.end ?? '変更なし'} reasoning=${e.reasoning.slice(0, 120)}`
+          )
+          .join('\n')
+      : 'なし';
+  const suggestionsText =
+    input.suggestions.length > 0
+      ? input.suggestions.map((s) => `- [${s.type}] ${s.description} (${s.affectedProposalIds.join(', ')})`).join('\n')
+      : 'なし';
+
+  return `## ユーザー設定
+${profileLines}
+
+## ルーチン目的
+${input.routinePurpose ?? '未指定'}
+
+## 文献・根拠（入力にある場合）
+${input.evidenceContext?.slice(0, 800) ?? 'なし'}
+
+## 既存予定の概要
+${input.existingEventsSummary}
+
+## カスタマイズ結果（customizedEvents）
+${customizedText}
+
+## 提案（suggestions）
+${suggestionsText}
+
+---
+上記の入力と出力を評価し、purposePreserving / evidenceApplied / userSettingsRespected を1〜5（文献が無い場合は evidenceApplied は0可）で付けてください。`;
+}
+
+const calendarJudgeShapeExample = JSON.stringify({
+  purposePreserving: 4,
+  purposePreservingRationale: '時間変更がルーチン目的に沿っている。',
+  evidenceApplied: 3,
+  evidenceAppliedRationale: '文献の推奨が一部反映されている。',
+  userSettingsRespected: 5,
+  userSettingsRespectedRationale: '希望時間・休憩が守られている。'
+});
+
+/** ルールベースのフォールバック（Bedrock 無効時・失敗時） */
+function evaluateCalendarCustomizationRuleBased(input: CalendarCustomizationJudgeInput): CalendarCustomizationJudgeResult {
+  const hasEvidence = Boolean(input.evidenceContext?.trim());
+  return {
+    purposePreserving: 3,
+    evidenceApplied: hasEvidence ? 3 : 0,
+    userSettingsRespected: 3
+  };
+}
+
+export async function evaluateCalendarCustomization(
+  input: CalendarCustomizationJudgeInput
+): Promise<CalendarCustomizationJudgeResult> {
+  const fallbackData = evaluateCalendarCustomizationRuleBased(input);
+
+  const data = await invokeBedrockWithFallback(
+    {
+      systemPrompt: await getSystemPrompt('calendar-customization-judge-agent'),
+      userPrompt: buildCalendarCustomizationJudgeUserPrompt(input),
+      schema: calendarCustomizationJudgeSchema,
+      shapeExample: calendarJudgeShapeExample,
+      temperature: 0.2,
+      maxTokens: 600
+    },
+    () => fallbackData
+  );
+
+  const clamp = (n: number, min: number, max: number) => Math.min(max, Math.max(min, Math.round(n)));
+  return {
+    purposePreserving: clamp(data.purposePreserving, 1, 5),
+    purposePreservingRationale: data.purposePreservingRationale,
+    evidenceApplied: clamp(data.evidenceApplied, 0, 5),
+    evidenceAppliedRationale: data.evidenceAppliedRationale,
+    userSettingsRespected: clamp(data.userSettingsRespected, 1, 5),
+    userSettingsRespectedRationale: data.userSettingsRespectedRationale
   };
 }

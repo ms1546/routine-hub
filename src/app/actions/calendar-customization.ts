@@ -13,6 +13,7 @@ import {
   updateLangfuseTraceOutput
 } from '@/features/ai/evaluation/langfuse-boundary';
 import { getSystemPromptInfo } from '@/features/ai/evaluation/prompt-helper';
+import { evaluateCalendarCustomization } from '@/features/ai/evaluation/judge';
 import { isBedrockEnabled } from '@/features/ai/providers/bedrock';
 
 const generateUUID = createDefaultUUIDGenerator();
@@ -194,6 +195,59 @@ export async function customizeCalendarEventsAction({
         value: evidenceReferenced ? 1 : 0,
         source: 'MODEL'
       });
+    }
+
+    // LLM as Judge: purpose-preserving / evidence-applied / user-settings-respected
+    const existingEventsSummary =
+      existingEvents.length === 0
+        ? '既存予定なし'
+        : `${existingEvents.length}件: ${existingEvents
+            .slice(0, 10)
+            .map((e) => `${e.title ?? '無題'} (${e.start ?? ''}–${e.end ?? ''})`)
+            .join('; ')}${existingEvents.length > 10 ? '...' : ''}`;
+
+    try {
+      const judgeResult = await evaluateCalendarCustomization({
+        userProfile,
+        routinePurpose,
+        evidenceContext: evidenceContext ?? undefined,
+        existingEventsSummary,
+        customizedEvents: result.customizedEvents,
+        suggestions: result.suggestions
+      });
+
+      await recordLangfuseScore({
+        traceId,
+        name: 'purpose-preserving',
+        value: judgeResult.purposePreserving,
+        source: 'MODEL',
+        comment: judgeResult.purposePreservingRationale
+          ? `[LLM Judge] ${judgeResult.purposePreservingRationale}`
+          : undefined,
+        metadata: { source: 'llm-judge' }
+      });
+      await recordLangfuseScore({
+        traceId,
+        name: 'evidence-applied',
+        value: judgeResult.evidenceApplied,
+        source: 'MODEL',
+        comment: judgeResult.evidenceAppliedRationale
+          ? `[LLM Judge] ${judgeResult.evidenceAppliedRationale}`
+          : undefined,
+        metadata: { source: 'llm-judge' }
+      });
+      await recordLangfuseScore({
+        traceId,
+        name: 'user-settings-respected',
+        value: judgeResult.userSettingsRespected,
+        source: 'MODEL',
+        comment: judgeResult.userSettingsRespectedRationale
+          ? `[LLM Judge] ${judgeResult.userSettingsRespectedRationale}`
+          : undefined,
+        metadata: { source: 'llm-judge' }
+      });
+    } catch (judgeError) {
+      console.warn('[CalendarCustomization] Judge evaluation failed, skipping judge scores.', judgeError);
     }
 
     return result;
