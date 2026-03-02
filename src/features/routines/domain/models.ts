@@ -298,7 +298,6 @@ export type UpdateRoutineInput = z.infer<typeof updateRoutineSchema>;
 export type RoutineFilter = {
   tag?: string;
   duration?: RoutineDuration;
-  visibility?: RoutineVisibility;
   /** キーワード検索（name / description / purpose の部分一致） */
   query?: string;
   /** 作成者の表示名で検索（repository では未使用。ページ側で displayName 解決後にフィルタ） */

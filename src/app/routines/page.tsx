@@ -13,21 +13,16 @@ import { userSettingsRepository } from '@/features/users';
 const isValidDuration = (value: string | null | undefined): value is 'normal' | 'weekly' =>
   value === 'normal' || value === 'weekly';
 
-const isValidVisibility = (value: string | null | undefined): value is 'public' | 'private' =>
-  value === 'public' || value === 'private';
-
 const parseFilters = (searchParams?: Record<string, string | string[] | undefined>): RoutineFilter | undefined => {
   if (!searchParams) return undefined;
   const filter: RoutineFilter = {};
   const tag = typeof searchParams.tag === 'string' ? searchParams.tag.toLowerCase() : undefined;
   const duration = typeof searchParams.duration === 'string' ? searchParams.duration : undefined;
-  const visibility = typeof searchParams.visibility === 'string' ? searchParams.visibility : undefined;
   const query = typeof searchParams.q === 'string' ? searchParams.q.trim() : undefined;
   const ownerDisplayName = typeof searchParams.account === 'string' ? searchParams.account.trim() : undefined;
 
   if (tag) filter.tag = tag;
   if (isValidDuration(duration)) filter.duration = duration;
-  if (isValidVisibility(visibility)) filter.visibility = visibility;
   if (query) filter.query = query;
   if (ownerDisplayName) filter.ownerDisplayName = ownerDisplayName;
 
@@ -72,7 +67,7 @@ export default async function RoutinesPage({
 
   return (
     <AppShell
-      title="Routines"
+      title="All Routines"
     >
       <RoutineFilters availableTags={uniqueTags} />
       <RoutineList routines={listItems} userEmail={currentUser.email} filterActive={filterActive} />

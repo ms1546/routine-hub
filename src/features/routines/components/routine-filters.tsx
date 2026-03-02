@@ -35,7 +35,7 @@ export function RoutineFilters({ availableTags }: RoutineFiltersProps) {
     <Card className="p-4" aria-busy={pending}>
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <div className="space-y-1.5 sm:col-span-2 lg:col-span-1">
-          <Label htmlFor="q-filter">Keyword</Label>
+          <Label htmlFor="q-filter">キーワード</Label>
           <input
             id="q-filter"
             type="search"
@@ -46,7 +46,7 @@ export function RoutineFilters({ availableTags }: RoutineFiltersProps) {
           />
         </div>
         <div className="space-y-1.5">
-          <Label htmlFor="account-filter">Account</Label>
+          <Label htmlFor="account-filter">アカウント</Label>
           <input
             id="account-filter"
             type="search"
@@ -57,7 +57,7 @@ export function RoutineFilters({ availableTags }: RoutineFiltersProps) {
           />
         </div>
         <div className="space-y-1.5">
-          <Label htmlFor="tag-filter">Tag</Label>
+          <Label htmlFor="tag-filter">タグ</Label>
           <select id="tag-filter" value={searchParams.get('tag') ?? ''} onChange={(event) => updateParam('tag', event.target.value)} className={selectClassName}>
             <option value="">All tags</option>
             {availableTags.map((tag) => (
@@ -68,19 +68,11 @@ export function RoutineFilters({ availableTags }: RoutineFiltersProps) {
           </select>
         </div>
         <div className="space-y-1.5">
-          <Label htmlFor="duration-filter">Duration</Label>
+          <Label htmlFor="duration-filter">期間</Label>
           <select id="duration-filter" value={searchParams.get('duration') ?? ''} onChange={(event) => updateParam('duration', event.target.value)} className={selectClassName}>
             <option value="">すべて</option>
             <option value="normal">Day</option>
             <option value="weekly">Weekly</option>
-          </select>
-        </div>
-        <div className="space-y-1.5">
-          <Label htmlFor="visibility-filter">Visibility</Label>
-          <select id="visibility-filter" value={searchParams.get('visibility') ?? ''} onChange={(event) => updateParam('visibility', event.target.value)} className={selectClassName}>
-            <option value="">All</option>
-            <option value="public">Public</option>
-            <option value="private">Private</option>
           </select>
         </div>
       </div>

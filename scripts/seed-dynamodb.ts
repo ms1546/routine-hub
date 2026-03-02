@@ -173,6 +173,126 @@ const SEED_ROUTINES: RoutineInput[] = [
       objective: '今日の3行メモ',
       energyLevel: 'low'
     })
+  },
+  // ブロック数が多いルーチン
+  {
+    name: '週間マルチブロック',
+    description: '毎日2ブロックで朝と昼の習慣を確保。ブロック数14。',
+    purpose: '朝・昼の習慣を週7日で定着させる',
+    durationType: 'normal',
+    visibility: 'public',
+    tags: ['習慣', '週間'],
+    normalStartHour: 7,
+    normalEndHour: 18,
+    schedule: {
+      monday: [
+        { startHour: 7, endHour: 8, label: '朝の運動', objective: '軽いストレッチ・散歩', energyLevel: 'medium' },
+        { startHour: 12, endHour: 13, label: '昼休み読書', objective: '30分読書', energyLevel: 'low' }
+      ],
+      tuesday: [
+        { startHour: 7, endHour: 8, label: '朝の運動', objective: '軽いストレッチ・散歩', energyLevel: 'medium' },
+        { startHour: 12, endHour: 13, label: '昼休み読書', objective: '30分読書', energyLevel: 'low' }
+      ],
+      wednesday: [
+        { startHour: 7, endHour: 8, label: '朝の運動', objective: '軽いストレッチ・散歩', energyLevel: 'medium' },
+        { startHour: 12, endHour: 13, label: '昼休み読書', objective: '30分読書', energyLevel: 'low' }
+      ],
+      thursday: [
+        { startHour: 7, endHour: 8, label: '朝の運動', objective: '軽いストレッチ・散歩', energyLevel: 'medium' },
+        { startHour: 12, endHour: 13, label: '昼休み読書', objective: '30分読書', energyLevel: 'low' }
+      ],
+      friday: [
+        { startHour: 7, endHour: 8, label: '朝の運動', objective: '軽いストレッチ・散歩', energyLevel: 'medium' },
+        { startHour: 12, endHour: 13, label: '昼休み読書', objective: '30分読書', energyLevel: 'low' }
+      ],
+      saturday: [
+        { startHour: 8, endHour: 9, label: '朝の運動', objective: '週末はゆっくり', energyLevel: 'medium' },
+        { startHour: 14, endHour: 15, label: '午後読書', objective: 'まとめて読書', energyLevel: 'low' }
+      ],
+      sunday: [
+        { startHour: 8, endHour: 9, label: '朝の運動', objective: '週末はゆっくり', energyLevel: 'medium' },
+        { startHour: 14, endHour: 15, label: '午後読書', objective: 'まとめて読書', energyLevel: 'low' }
+      ]
+    }
+  },
+  {
+    name: '毎日3セッション',
+    description: '朝・昼・夕の3ブロックを毎日。ブロック数21。',
+    purpose: '1日を3つのセッションに分けて集中力を維持',
+    durationType: 'normal',
+    visibility: 'public',
+    tags: ['集中', '生産性'],
+    normalStartHour: 7,
+    normalEndHour: 21,
+    schedule: {
+      monday: [
+        { startHour: 7, endHour: 9, label: '朝セッション', objective: 'ディープワーク・計画', energyLevel: 'high' },
+        { startHour: 12, endHour: 14, label: '昼セッション', objective: 'ミーティング・軽作業', energyLevel: 'medium' },
+        { startHour: 18, endHour: 20, label: '夕セッション', objective: '学習・副業', energyLevel: 'medium' }
+      ],
+      tuesday: [
+        { startHour: 7, endHour: 9, label: '朝セッション', objective: 'ディープワーク・計画', energyLevel: 'high' },
+        { startHour: 12, endHour: 14, label: '昼セッション', objective: 'ミーティング・軽作業', energyLevel: 'medium' },
+        { startHour: 18, endHour: 20, label: '夕セッション', objective: '学習・副業', energyLevel: 'medium' }
+      ],
+      wednesday: [
+        { startHour: 7, endHour: 9, label: '朝セッション', objective: 'ディープワーク・計画', energyLevel: 'high' },
+        { startHour: 12, endHour: 14, label: '昼セッション', objective: 'ミーティング・軽作業', energyLevel: 'medium' },
+        { startHour: 18, endHour: 20, label: '夕セッション', objective: '学習・副業', energyLevel: 'medium' }
+      ],
+      thursday: [
+        { startHour: 7, endHour: 9, label: '朝セッション', objective: 'ディープワーク・計画', energyLevel: 'high' },
+        { startHour: 12, endHour: 14, label: '昼セッション', objective: 'ミーティング・軽作業', energyLevel: 'medium' },
+        { startHour: 18, endHour: 20, label: '夕セッション', objective: '学習・副業', energyLevel: 'medium' }
+      ],
+      friday: [
+        { startHour: 7, endHour: 9, label: '朝セッション', objective: 'ディープワーク・計画', energyLevel: 'high' },
+        { startHour: 12, endHour: 14, label: '昼セッション', objective: 'ミーティング・軽作業', energyLevel: 'medium' },
+        { startHour: 18, endHour: 20, label: '夕セッション', objective: '学習・副業', energyLevel: 'medium' }
+      ],
+      saturday: [
+        { startHour: 8, endHour: 10, label: '朝セッション', objective: '週末プロジェクト', energyLevel: 'high' },
+        { startHour: 13, endHour: 15, label: '昼セッション', objective: '趣味・読書', energyLevel: 'low' },
+        { startHour: 18, endHour: 19, label: '夕セッション', objective: '振り返り', energyLevel: 'low' }
+      ],
+      sunday: [
+        { startHour: 8, endHour: 10, label: '朝セッション', objective: '週末プロジェクト', energyLevel: 'high' },
+        { startHour: 13, endHour: 15, label: '昼セッション', objective: '趣味・読書', energyLevel: 'low' },
+        { startHour: 18, endHour: 19, label: '夕セッション', objective: '振り返り', energyLevel: 'low' }
+      ]
+    }
+  },
+  {
+    name: 'フルデイ・ワークデイ',
+    description: '平日5日間で朝・昼の2ブロック。ブロック数10。',
+    purpose: '平日の習慣を朝昼で区切って管理',
+    durationType: 'normal',
+    visibility: 'public',
+    tags: ['平日', '習慣'],
+    normalStartHour: 8,
+    normalEndHour: 18,
+    schedule: {
+      monday: [
+        { startHour: 8, endHour: 10, label: '朝ブロック', objective: 'メール・計画', energyLevel: 'medium' },
+        { startHour: 14, endHour: 16, label: '午後ブロック', objective: '集中作業', energyLevel: 'high' }
+      ],
+      tuesday: [
+        { startHour: 8, endHour: 10, label: '朝ブロック', objective: 'メール・計画', energyLevel: 'medium' },
+        { startHour: 14, endHour: 16, label: '午後ブロック', objective: '集中作業', energyLevel: 'high' }
+      ],
+      wednesday: [
+        { startHour: 8, endHour: 10, label: '朝ブロック', objective: 'メール・計画', energyLevel: 'medium' },
+        { startHour: 14, endHour: 16, label: '午後ブロック', objective: '集中作業', energyLevel: 'high' }
+      ],
+      thursday: [
+        { startHour: 8, endHour: 10, label: '朝ブロック', objective: 'メール・計画', energyLevel: 'medium' },
+        { startHour: 14, endHour: 16, label: '午後ブロック', objective: '集中作業', energyLevel: 'high' }
+      ],
+      friday: [
+        { startHour: 8, endHour: 10, label: '朝ブロック', objective: 'メール・計画', energyLevel: 'medium' },
+        { startHour: 14, endHour: 16, label: '午後ブロック', objective: '集中作業・週次振り返り', energyLevel: 'high' }
+      ]
+    }
   }
 ];
 

@@ -87,9 +87,6 @@ const hydrateRoutine = (input: SeedRoutine): Routine => {
 };
 
 const applyFilter = (routine: Routine, filter: RoutineFilter): boolean => {
-  if (filter.visibility && routine.visibility !== filter.visibility) {
-    return false;
-  }
   if (filter.duration && routine.durationType !== filter.duration) {
     return false;
   }
