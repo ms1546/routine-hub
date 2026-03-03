@@ -17,6 +17,11 @@ import type { RecurrencePattern, ProposedCalendarEvent, CalendarEvent } from '@/
 import { getCalendarPreviewAction, confirmProposedEventsAction } from '@/app/actions/calendar';
 import { customizeCalendarEventsAction, type CalendarCustomizationResult } from '@/app/actions/calendar-customization';
 import { getEvidenceAdviceAction } from '@/app/actions/evidence-advice';
+import {
+  getRoutineAdjustmentProposalAction,
+  applyRoutineAdjustmentAction,
+  type RoutineAdjustmentProposal
+} from '@/app/actions/routine-adjustment';
 import type { EvidenceAdviceResult } from '@/features/ai/evidence/types';
 import { CalendarPreviewVisualization } from './calendar-preview-visualization';
 
@@ -248,6 +253,9 @@ export function ApplyRoutineForm({
   const [expandedWeeks, setExpandedWeeks] = useState<Set<number>>(new Set()); // すべての週を展開
   const [recurrenceType, setRecurrenceType] = useState<'none' | 'weekly' | 'monthly'>('none');
   const [recurrenceInterval, setRecurrenceInterval] = useState<number>(1);
+  const [adjustmentProposal, setAdjustmentProposal] = useState<RoutineAdjustmentProposal | null>(null);
+  const [adjustmentLoading, setAdjustmentLoading] = useState(false);
+  const [adjustmentApplying, setAdjustmentApplying] = useState(false);
 
   // weeklyの場合、終了日を週数から計算
   const calculatedEndDate = durationType === 'weekly'
@@ -445,6 +453,44 @@ export function ApplyRoutineForm({
     }
   };
 
+  const handleFetchAdjustmentProposal = async () => {
+    setAdjustmentLoading(true);
+    setAdjustmentProposal(null);
+    setStatus('');
+    try {
+      const result = await getRoutineAdjustmentProposalAction(routineId);
+      if (result.ok && result.data) {
+        setAdjustmentProposal(result.data);
+        setStatus('文献・設定に基づくルーチン調整案を取得しました');
+      } else {
+        setStatus(result.error ?? '調整案の取得に失敗しました');
+      }
+    } catch (error) {
+      setStatus(error instanceof Error ? error.message : '調整案の取得に失敗しました');
+    } finally {
+      setAdjustmentLoading(false);
+    }
+  };
+
+  const handleApplyAdjustment = async () => {
+    if (!adjustmentProposal) return;
+    setAdjustmentApplying(true);
+    setStatus('');
+    try {
+      const result = await applyRoutineAdjustmentAction(routineId, adjustmentProposal);
+      if (result.ok) {
+        setAdjustmentProposal(null);
+        setStatus('ルーチンに反映しました。ページを再読み込みすると変更が反映されます。');
+      } else {
+        setStatus(result.error ?? '反映に失敗しました');
+      }
+    } catch (error) {
+      setStatus(error instanceof Error ? error.message : '反映に失敗しました');
+    } finally {
+      setAdjustmentApplying(false);
+    }
+  };
+
   const handleConfirmApply = async () => {
     if (!previewData) return;
 
@@ -603,6 +649,76 @@ export function ApplyRoutineForm({
           {pending || previewLoading ? 'プレビューを取得中…' : 'Routune Preview'}
         </Button>
       </form>
+
+      {/* 文献に基づくルーチン調整（ルーチン定義そのものを短縮・時間帯変更など） */}
+      <div className="mt-6 rounded-lg border border-border bg-muted/20 p-4 space-y-3">
+        <div>
+          <h4 className="font-semibold text-sm">文献に基づくルーチン調整</h4>
+          <p className="text-xs text-muted-foreground mt-0.5">
+            文献と個人設定から、ブロックの長さ・時間帯・頻度などの変更案を提案します。採用するとルーチン定義が更新されます。
+          </p>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={handleFetchAdjustmentProposal}
+            disabled={adjustmentLoading}
+          >
+            {adjustmentLoading ? '取得中…' : '提案を取得'}
+          </Button>
+          {adjustmentProposal && (
+            <>
+              <Button
+                type="button"
+                size="sm"
+                onClick={handleApplyAdjustment}
+                disabled={adjustmentApplying}
+              >
+                {adjustmentApplying ? '反映中…' : '提案をルーチンに反映'}
+              </Button>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={() => setAdjustmentProposal(null)}
+              >
+                閉じる
+              </Button>
+            </>
+          )}
+        </div>
+        {adjustmentProposal && (
+          <div className="space-y-3 rounded-md border border-border bg-background/60 p-3 text-sm">
+            <p className="font-medium text-foreground">{adjustmentProposal.summaryRationale}</p>
+            {adjustmentProposal.blockAdjustments.length > 0 && (
+              <ul className="space-y-2">
+                {adjustmentProposal.blockAdjustments.map((adj) => (
+                  <li key={adj.blockId} className="text-xs text-muted-foreground border-l-2 border-primary/40 pl-2">
+                    <span className="font-medium text-foreground">
+                      {adj.startHour != null || adj.endHour != null
+                        ? `${adj.startHour ?? '?'}:00–${adj.endHour ?? '?'}:00`
+                        : 'ブロック'}
+                    </span>
+                    {adj.label != null && <span> 「{adj.label}」</span>}
+                    {' — '}
+                    {adj.reason}
+                  </li>
+                ))}
+              </ul>
+            )}
+            {(adjustmentProposal.suggestedDurationType ?? adjustmentProposal.suggestedNormalStartHour != null) && (
+              <p className="text-xs text-muted-foreground">
+                {adjustmentProposal.suggestedDurationType && `タイプ: ${adjustmentProposal.suggestedDurationType === 'weekly' ? '週次' : '日次'}`}
+                {adjustmentProposal.suggestedNormalStartHour != null && adjustmentProposal.suggestedNormalEndHour != null &&
+                  ` / 全体: ${adjustmentProposal.suggestedNormalStartHour}:00–${adjustmentProposal.suggestedNormalEndHour}:00`}
+              </p>
+            )}
+          </div>
+        )}
+      </div>
+
       {status && (
         <p
           role="status"
