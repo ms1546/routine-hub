@@ -55,6 +55,19 @@ const formatHourForDisplay = (h: number | null | undefined): string => {
   return `${hours}:${String(minutes).padStart(2, '0')}`;
 };
 
+/** 開始・終了の片方だけあるときは "〜15:30" / "8:00〜" のように表示 */
+const formatTimeRangeForDisplay = (
+  startHour: number | null | undefined,
+  endHour: number | null | undefined
+): string => {
+  const hasStart = startHour != null && !Number.isNaN(startHour);
+  const hasEnd = endHour != null && !Number.isNaN(endHour);
+  if (hasStart && hasEnd) return `${formatHourForDisplay(startHour)}–${formatHourForDisplay(endHour)}`;
+  if (hasEnd) return `〜${formatHourForDisplay(endHour)}`;
+  if (hasStart) return `${formatHourForDisplay(startHour)}〜`;
+  return 'ブロック';
+};
+
 const today = () => formatDateInput(new Date());
 const plusDays = (days: number) => {
   const date = new Date();
@@ -450,9 +463,7 @@ export function ApplyRoutineForm({
         evidenceContextParts.push(adjustmentResult.data.summaryRationale);
         if (Array.isArray(adjustmentResult.data.blockAdjustments) && adjustmentResult.data.blockAdjustments.length > 0) {
           adjustmentResult.data.blockAdjustments.forEach((adj) => {
-            const timeStr = adj.startHour != null || adj.endHour != null
-              ? `${formatHourForDisplay(adj.startHour)}–${formatHourForDisplay(adj.endHour)}`
-              : 'ブロック';
+            const timeStr = formatTimeRangeForDisplay(adj.startHour, adj.endHour);
             evidenceContextParts.push(`- ${timeStr}${adj.label ? ` 「${adj.label}」` : ''}: ${adj.reason}`);
           });
         }
@@ -472,7 +483,7 @@ export function ApplyRoutineForm({
         evidenceContext
       });
       setCustomizationResult(result);
-      setStatus('根拠に基づくカスタマイズが完了しました');
+      setStatus('エビデンスに基づくカスタマイズが完了しました');
     } catch (error) {
       setStatus(error instanceof Error ? error.message : 'カスタマイズに失敗しました');
     } finally {
@@ -722,7 +733,7 @@ export function ApplyRoutineForm({
                   <div>
                     <h4 className="font-semibold mb-1">Routune</h4>
                     <p className="text-sm text-muted-foreground">
-                      論文データの根拠とユーザー設定に基づいてAIがイベントを最適化します
+                      論文データのエビデンスとユーザー設定に基づいてAIがイベントを最適化します
                     </p>
                   </div>
                   <Button
@@ -744,24 +755,25 @@ export function ApplyRoutineForm({
                 {adjustmentProposal && (
                   <div className="rounded-lg border border-border bg-muted/30 p-3 space-y-3">
                     <h5 className="text-sm font-semibold text-foreground">文献・設定に基づく調整の参考</h5>
-                    <p className="text-xs text-muted-foreground">
-                      Routine定義は変更しません。この提案を参考に、カレンダーに出るイベントの時間・長さをRoutuneが目的に沿って調整します。
-                    </p>
                     <p className="text-sm text-foreground">{adjustmentProposal.summaryRationale}</p>
                     {Array.isArray(adjustmentProposal.blockAdjustments) && adjustmentProposal.blockAdjustments.length > 0 && (
                       <ul className="space-y-1.5 text-xs text-muted-foreground">
-                        {adjustmentProposal.blockAdjustments.map((adj) => (
-                          <li key={adj.blockId} className="border-l-2 border-primary/40 pl-2">
-                            <span className="font-medium text-foreground">
-                              {adj.startHour != null || adj.endHour != null
-                                ? `${formatHourForDisplay(adj.startHour)}–${formatHourForDisplay(adj.endHour)}`
-                                : 'ブロック'}
-                            </span>
-                            {adj.label != null && <span> 「{adj.label}」</span>}
-                            {' — '}
-                            {adj.reason}
-                          </li>
-                        ))}
+                        {[...adjustmentProposal.blockAdjustments]
+                          .sort((a, b) => {
+                            const orderA = a.startHour ?? a.endHour ?? 0;
+                            const orderB = b.startHour ?? b.endHour ?? 0;
+                            return orderA - orderB;
+                          })
+                          .map((adj) => (
+                            <li key={adj.blockId} className="border-l-2 border-primary/40 pl-2">
+                              <span className="font-medium text-foreground">
+                                {formatTimeRangeForDisplay(adj.startHour, adj.endHour)}
+                              </span>
+                              {adj.label != null && <span> 「{adj.label}」</span>}
+                              {' — '}
+                              {adj.reason}
+                            </li>
+                          ))}
                       </ul>
                     )}
                     {(adjustmentProposal.suggestedDurationType ?? adjustmentProposal.suggestedNormalStartHour != null) && (
@@ -782,22 +794,11 @@ export function ApplyRoutineForm({
                   </div>
                 )}
 
-                {evidenceAdvice && customizationResult && (
-                  <div className="rounded-lg border border-muted-foreground/20 bg-muted/20 p-3 space-y-2">
-                    <p className="text-xs font-medium text-muted-foreground">参照した根拠</p>
-                    <ul className="text-xs text-muted-foreground space-y-1">
-                      {evidenceAdvice.suggestions.slice(0, 3).map((s) => (
-                        <li key={s.id}>• {s.description}</li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-
                 {customizationResult && (
                   <div className="rounded-lg border border-primary/50 bg-primary/10 p-4 space-y-3">
                     <div className="flex items-center justify-between">
                       <p className="text-sm font-medium text-foreground">
-                        根拠に基づくカスタマイズが完了しました
+                        エビデンスに基づくカスタマイズが完了しました
                       </p>
                       <div className="flex items-center gap-2">
                         <label className="flex items-center gap-2 text-sm cursor-pointer text-foreground">
@@ -828,13 +829,7 @@ export function ApplyRoutineForm({
                 )}
 
                 {evidenceAdvice && !customizationResult && (
-                  <div className="rounded-lg border border-muted-foreground/20 bg-muted/20 p-4 space-y-3">
-                    {(evidenceAdvice.displayQuery ?? evidenceAdvice.query) && (
-                      <p className="text-xs text-muted-foreground">
-                        検索: {evidenceAdvice.displayQuery ?? evidenceAdvice.query}
-                      </p>
-                    )}
-
+                  <div className="rounded-lg border border-muted-foreground/20 bg-muted/20 p-3 space-y-2">
                     {evidenceAdvice.warnings.length > 0 && (
                       <ul className="space-y-1">
                         {evidenceAdvice.warnings.map((warning, index) => {
@@ -863,58 +858,36 @@ export function ApplyRoutineForm({
                         提案を生成できませんでした。ルーチンの目的や優先事項を入力すると検索しやすくなります。
                       </p>
                     ) : (
-                      <div className="space-y-3">
-                        {evidenceAdvice.suggestions.map((suggestion) => {
-                          const confidenceLabel =
-                            suggestion.confidence === 'high'
-                              ? '根拠あり'
-                              : suggestion.confidence === 'medium'
-                                ? '参考'
-                                : '一般的な観点';
-                          return (
-                            <div key={suggestion.id} className="space-y-2">
-                              <div className="flex items-center gap-2">
-                                <Badge variant="outline" className="font-normal">
-                                  {confidenceLabel}
-                                </Badge>
-                                <p className="text-sm font-medium">提案</p>
-                              </div>
-                              <p className="text-sm text-foreground">{suggestion.description}</p>
-                              <div className="rounded-md border border-border/60 bg-background/50 p-3">
-                                <p className="text-xs font-medium mb-2">引用</p>
-                                {suggestion.evidence.length === 0 ? (
-                                  <p className="text-xs text-muted-foreground">
-                                    この提案は文献に基づく引用はありません。ルーティン設計の一般的な観点からまとめています。
-                                  </p>
-                                ) : (
-                                  <ul className="space-y-1">
-                                    {suggestion.evidence.map((citation) => (
-                                      <li key={citation.sourceId} className="text-xs text-muted-foreground">
-                                        <span className="font-medium">{citation.title}</span>
-                                        {citation.year ? ` (${citation.year})` : ''}
-                                        {citation.venue ? ` / ${citation.venue}` : ''}
-                                        {citation.url && (
-                                          <>
-                                            {' '}
-                                            <a
-                                              href={citation.url}
-                                              target="_blank"
-                                              rel="noreferrer"
-                                              className="underline"
-                                            >
-                                              出典
-                                            </a>
-                                          </>
-                                        )}
-                                      </li>
-                                    ))}
-                                  </ul>
-                                )}
-                              </div>
-                            </div>
-                          );
-                        })}
-                      </div>
+                      <>
+                        <ul className="text-sm text-foreground space-y-1">
+                          {evidenceAdvice.suggestions.map((s) => (
+                            <li key={s.id}>• {s.description}</li>
+                          ))}
+                        </ul>
+                        {evidenceAdvice.suggestions.some((s) => s.evidence.length > 0) && (
+                          <details className="text-xs text-muted-foreground">
+                            <summary className="cursor-pointer hover:underline">参照した根拠・出典</summary>
+                            <ul className="mt-1 space-y-0.5 pl-2 border-l border-border/50">
+                              {evidenceAdvice.suggestions.flatMap((s) =>
+                                s.evidence.map((c) => (
+                                  <li key={c.sourceId}>
+                                    {c.title}
+                                    {c.year ? ` (${c.year})` : ''}
+                                    {c.url && (
+                                      <>
+                                        {' '}
+                                        <a href={c.url} target="_blank" rel="noreferrer" className="underline">
+                                          出典
+                                        </a>
+                                      </>
+                                    )}
+                                  </li>
+                                ))
+                              )}
+                            </ul>
+                          </details>
+                        )}
+                      </>
                     )}
                   </div>
                 )}
