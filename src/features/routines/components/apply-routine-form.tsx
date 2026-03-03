@@ -475,12 +475,16 @@ export function ApplyRoutineForm({
             ? '該当する研究文献は見つかりませんでした。一般的な観点からの提案として時間帯・休憩間隔の見直しを考慮してください。'
             : undefined;
 
-      // 3. 根拠＋調整案を踏まえてカレンダーに出るイベントだけをカスタマイズ（Routine定義はそのまま）
+      // 3. 文献・調整案を提案イベントに反映してからカスタマイズ（2時間→90分などはここで適用）
       const result = await customizeCalendarEventsAction({
         proposedEvents: previewData.proposedEvents,
         existingEvents: previewData.existingEvents,
         routineId,
-        evidenceContext
+        evidenceContext,
+        blockAdjustments:
+          adjustmentResult.ok && adjustmentResult.data?.blockAdjustments?.length
+            ? adjustmentResult.data.blockAdjustments
+            : undefined
       });
       setCustomizationResult(result);
       setStatus('エビデンスに基づくカスタマイズが完了しました');
