@@ -359,6 +359,60 @@ export function ApplyRoutineForm({
     });
   }, [previewData, useCustomized, customizationResult, editedEvents]);
 
+  /** 提案を重複でまとめ、該当日付・件数を出して表示用に加工 */
+  const displaySuggestions = useMemo(() => {
+    if (!customizationResult?.suggestions?.length) return [];
+    const byKey = new Map<string, { type: string; description: string; affectedProposalIds: string[] }>();
+    for (const s of customizationResult.suggestions) {
+      const key = `${s.type}:${s.description}`;
+      const existing = byKey.get(key);
+      if (existing) {
+        existing.affectedProposalIds.push(...(s.affectedProposalIds ?? []));
+      } else {
+        byKey.set(key, {
+          type: s.type,
+          description: s.description,
+          affectedProposalIds: [...(s.affectedProposalIds ?? [])]
+        });
+      }
+    }
+    return Array.from(byKey.values()).map((s) => {
+      const ids = [...new Set(s.affectedProposalIds)];
+      const dateLabels: string[] = [];
+      const seenDates = new Set<string>();
+      for (const id of ids) {
+        const parts = id.split('-');
+        if (parts.length >= 3) {
+          const dateStr = parts.slice(-3).join('-');
+          if (!seenDates.has(dateStr)) {
+            seenDates.add(dateStr);
+            try {
+              const [y, m, d] = dateStr.split('-').map(Number);
+              if (y && m && d) dateLabels.push(`${m}/${d}`);
+            } catch {
+              dateLabels.push(dateStr);
+            }
+          }
+        }
+      }
+      dateLabels.sort();
+      const dateSummary =
+        dateLabels.length > 0
+          ? dateLabels.length <= 3
+            ? dateLabels.join('・')
+            : `${dateLabels.slice(0, 2).join('・')} 他${dateLabels.length - 2}日`
+          : '';
+      const count = ids.length;
+      const detail =
+        s.type === 'conflict-resolution' && dateSummary
+          ? `${dateSummary} の${count}件が既存予定と重なっているため時間を調整しました。`
+          : count > 1 && dateSummary
+            ? `${dateSummary}: ${s.description}`
+            : s.description;
+      return { ...s, displayText: detail, affectedProposalIds: ids };
+    });
+  }, [customizationResult?.suggestions, previewData?.proposedEvents]);
+
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const formData = new FormData(event.currentTarget);
@@ -817,13 +871,13 @@ export function ApplyRoutineForm({
                       </div>
                     </div>
 
-                    {customizationResult.suggestions.length > 0 && (
+                    {displaySuggestions.length > 0 && (
                       <div className="space-y-2">
                         <p className="text-xs font-medium text-foreground">提案:</p>
                         <ul className="space-y-1">
-                          {customizationResult.suggestions.map((suggestion, idx) => (
+                          {displaySuggestions.map((suggestion, idx) => (
                             <li key={idx} className="text-xs text-muted-foreground">
-                              • {suggestion.description}
+                              • {suggestion.displayText}
                             </li>
                           ))}
                         </ul>
