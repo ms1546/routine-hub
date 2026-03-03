@@ -46,6 +46,15 @@ const parseLocalDateInput = (value: string): Date | null => {
 const normalizeLocalDate = (date: Date) =>
   new Date(date.getFullYear(), date.getMonth(), date.getDate());
 
+/** 0–24 の小数時間を "15:30" 形式で表示（文献・調整の参考UI用） */
+const formatHourForDisplay = (h: number | null | undefined): string => {
+  if (h == null || Number.isNaN(h)) return '?';
+  const hours = Math.floor(h);
+  const minutes = Math.round((h - hours) * 60);
+  if (minutes === 0) return `${hours}:00`;
+  return `${hours}:${String(minutes).padStart(2, '0')}`;
+};
+
 const today = () => formatDateInput(new Date());
 const plusDays = (days: number) => {
   const date = new Date();
@@ -441,7 +450,9 @@ export function ApplyRoutineForm({
         evidenceContextParts.push(adjustmentResult.data.summaryRationale);
         if (Array.isArray(adjustmentResult.data.blockAdjustments) && adjustmentResult.data.blockAdjustments.length > 0) {
           adjustmentResult.data.blockAdjustments.forEach((adj) => {
-            const timeStr = adj.startHour != null || adj.endHour != null ? `${adj.startHour ?? '?'}:00–${adj.endHour ?? '?'}:00` : 'ブロック';
+            const timeStr = adj.startHour != null || adj.endHour != null
+              ? `${formatHourForDisplay(adj.startHour)}–${formatHourForDisplay(adj.endHour)}`
+              : 'ブロック';
             evidenceContextParts.push(`- ${timeStr}${adj.label ? ` 「${adj.label}」` : ''}: ${adj.reason}`);
           });
         }
@@ -743,7 +754,7 @@ export function ApplyRoutineForm({
                           <li key={adj.blockId} className="border-l-2 border-primary/40 pl-2">
                             <span className="font-medium text-foreground">
                               {adj.startHour != null || adj.endHour != null
-                                ? `${adj.startHour ?? '?'}:00–${adj.endHour ?? '?'}:00`
+                                ? `${formatHourForDisplay(adj.startHour)}–${formatHourForDisplay(adj.endHour)}`
                                 : 'ブロック'}
                             </span>
                             {adj.label != null && <span> 「{adj.label}」</span>}
@@ -757,7 +768,7 @@ export function ApplyRoutineForm({
                       <p className="text-xs text-muted-foreground">
                         {adjustmentProposal.suggestedDurationType && `タイプ: ${adjustmentProposal.suggestedDurationType === 'weekly' ? '週次' : '日次'}`}
                         {adjustmentProposal.suggestedNormalStartHour != null && adjustmentProposal.suggestedNormalEndHour != null &&
-                          ` / 全体: ${adjustmentProposal.suggestedNormalStartHour}:00–${adjustmentProposal.suggestedNormalEndHour}:00`}
+                          ` / 全体: ${formatHourForDisplay(adjustmentProposal.suggestedNormalStartHour)}–${formatHourForDisplay(adjustmentProposal.suggestedNormalEndHour)}`}
                       </p>
                     )}
                     <Button

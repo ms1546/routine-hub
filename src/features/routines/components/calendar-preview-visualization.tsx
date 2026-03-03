@@ -139,7 +139,14 @@ export function CalendarPreviewVisualization({
     <div className="space-y-6">
       {sortedDates.map((dateKey) => {
         const { proposed, existing } = eventsByDate.get(dateKey)!;
-        const { start: rangeStart, end: rangeEnd } = getEventRange([...proposed, ...existing]);
+        // 同一日の提案イベントは開始時刻順に並べ替える（プレビューで時間順に表示するため）
+        const sortedProposed = [...proposed].sort((a, b) => {
+          const aStart = new Date(a.start).getTime();
+          const bStart = new Date(b.start).getTime();
+          if (Number.isNaN(aStart) || Number.isNaN(bStart)) return 0;
+          return aStart - bStart;
+        });
+        const { start: rangeStart, end: rangeEnd } = getEventRange([...sortedProposed, ...existing]);
         const { axisStart, axisRange, marks } = buildAxisMarks(rangeStart, rangeEnd);
         const date = parseLocalDateKey(dateKey);
         const dateLabel = date.toLocaleDateString('ja-JP', {
@@ -154,7 +161,7 @@ export function CalendarPreviewVisualization({
               <div>
                 <h5 className="font-semibold text-foreground mb-1">{dateLabel}</h5>
                 <p className="text-xs text-muted-foreground">
-                  {proposed.length}件の提案イベント {existing.length > 0 && `· ${existing.length}件の既存イベント`}
+                  {sortedProposed.length}件の提案イベント {existing.length > 0 && `· ${existing.length}件の既存イベント`}
                 </p>
               </div>
 
@@ -202,7 +209,7 @@ export function CalendarPreviewVisualization({
 
                   {/* 提案イベント（left/right で親幅を明示し、子の % が正しく効くようにする） */}
                   <div className="absolute left-2 right-2 top-2 bottom-2">
-                    {proposed.map((event, idx) => {
+                    {sortedProposed.map((event, idx) => {
                       const eventStart = new Date(event.start);
                       const eventEnd = new Date(event.end);
                       const startHour = getHourFraction(eventStart);
@@ -245,7 +252,7 @@ export function CalendarPreviewVisualization({
 
                 {/* イベント詳細リスト */}
                 <div className="space-y-2 pt-2 border-t border-border/50">
-                  {proposed.map((event) => {
+                  {sortedProposed.map((event) => {
                     const isSelected = selectedIds.includes(event.proposalId);
                     const hasConflict = hasTimeConflict(event, existing);
                     const eventStart = new Date(event.start);
