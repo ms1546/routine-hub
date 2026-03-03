@@ -119,7 +119,15 @@ export async function runCalendarCustomizationWithTrace(
       proposedEventCount: proposedEvents.length,
       existingEventCount: existingEvents.length,
       promptVersions,
-      bedrockEnabled: isBedrockEnabled()
+      bedrockEnabled: isBedrockEnabled(),
+      // Dataset に追加したときに再実行できるよう run input を含める
+      runInput: {
+        proposedEvents,
+        existingEvents,
+        userProfile,
+        routinePurpose,
+        evidenceContext: evidenceContext ?? undefined
+      }
     },
     traceId
   });

@@ -28,52 +28,52 @@ type ExperimentItem = {
 };
 
 /** サンプルテストケース（ローカルデータ） */
-const SAMPLE_DATA: ExperimentItem[] = [
-  {
-    input: {
-      routine: {
-        id: randomUUID(),
-        name: '朝のルーティン',
-        description: '起床から出勤まで',
-        purpose: '生産性向上',
-        durationType: 'weekly',
-        visibility: 'private',
-        tags: [],
-        owner: 'test@example.com',
-        createdAt: new Date(),
-        updatedAt: new Date(),
-        version: 1,
-        timeBlocks: [
-          {
-            id: randomUUID(),
-            day: 'monday',
-            startHour: 7,
-            endHour: 9,
-            label: '朝の準備',
-            objective: '身支度と朝食',
-            energyLevel: 'medium'
-          }
-        ],
-        stats: { clones: 0, applications: 0, likes: 0 }
-      } as Routine,
-      user: {
-        timezone: 'Asia/Tokyo',
-        priorities: ['集中時間を守る'],
-        constraints: ['手動確認を好む'],
-        energyLevel: 'high'
-      },
-      calendarWindow: {
-        startDate: '2025-02-01',
-        endDate: '2025-02-07'
-      }
-    },
-    expected_output: {
-      verdict: 'approve',
-      minClarityScore: 3,
-      minConsistencyScore: 3
-    }
-  }
-];
+// const SAMPLE_DATA: ExperimentItem[] = [
+//   {
+//     input: {
+//       routine: {
+//         id: randomUUID(),
+//         name: '朝のルーティン',
+//         description: '起床から出勤まで',
+//         purpose: '生産性向上',
+//         durationType: 'weekly',
+//         visibility: 'private',
+//         tags: [],
+//         owner: 'test@example.com',
+//         createdAt: new Date(),
+//         updatedAt: new Date(),
+//         version: 1,
+//         timeBlocks: [
+//           {
+//             id: randomUUID(),
+//             day: 'monday',
+//             startHour: 7,
+//             endHour: 9,
+//             label: '朝の準備',
+//             objective: '身支度と朝食',
+//             energyLevel: 'medium'
+//           }
+//         ],
+//         stats: { clones: 0, applications: 0, likes: 0 }
+//       } as Routine,
+//       user: {
+//         timezone: 'Asia/Tokyo',
+//         priorities: ['集中時間を守る'],
+//         constraints: ['手動確認を好む'],
+//         energyLevel: 'high'
+//       },
+//       calendarWindow: {
+//         startDate: '2025-02-01',
+//         endDate: '2025-02-07'
+//       }
+//     },
+//     expected_output: {
+//       verdict: 'approve',
+//       minClarityScore: 3,
+//       minConsistencyScore: 3
+//     }
+//   }
+// ];
 
 async function runExperiment() {
   const originalRunner = getRoutineAiWorkflowRunner();
