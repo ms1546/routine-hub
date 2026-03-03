@@ -20,11 +20,11 @@ export async function getCalendarPreviewAction({
   startDate: string;
   endDate: string;
   recurrence?: RecurrencePattern;
-}): Promise<{ proposedEvents: ProposedCalendarEvent[]; existingEvents: CalendarEvent[] }> {
+}): Promise<{ ok: true; proposedEvents: ProposedCalendarEvent[]; existingEvents: CalendarEvent[]; isCalendarConnected: boolean }> {
   console.log('[Storybook Mock] getCalendarPreviewAction called:', { routineId, startDate, endDate, recurrence });
 
-  // Return mock data
   return {
+    ok: true,
     proposedEvents: [
       {
         proposalId: 'mock-proposal-1',
@@ -37,7 +37,8 @@ export async function getCalendarPreviewAction({
         status: 'pending'
       }
     ],
-    existingEvents: []
+    existingEvents: [],
+    isCalendarConnected: false
   };
 }
 

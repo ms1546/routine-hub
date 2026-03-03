@@ -27,6 +27,10 @@ export type CalendarConfirmationResult = {
   skipped: SkippedProposal[];
 };
 
+export type GetCalendarPreviewResult =
+  | { ok: true; proposedEvents: ProposedCalendarEvent[]; existingEvents: CalendarEvent[]; isCalendarConnected: boolean }
+  | { ok: false; error: string };
+
 export async function getCalendarPreviewAction({
   routineId,
   startDate,
@@ -37,48 +41,57 @@ export async function getCalendarPreviewAction({
   startDate: string;
   endDate: string;
   recurrence?: RecurrencePattern;
-}): Promise<{ proposedEvents: ProposedCalendarEvent[]; existingEvents: CalendarEvent[]; isCalendarConnected: boolean }> {
-  const { getCurrentUser } = await import('@/infrastructure/auth/session');
-  const currentUser = await getCurrentUser();
-  const routine = await routinesRepository.get(
-    routineId,
-    currentUser.id,
-    currentUser.email,
-    currentUser.role === 'admin'
-  );
-  if (!routine) {
-    throw new Error('Routine not found');
-  }
-
-  const timeZone = 'Asia/Tokyo';
-  const parseDateParts = (value: string) => {
-    const [yearPart = '', monthPart = '', dayPart = ''] = value.split('-');
-    const year = Number(yearPart);
-    const month = Number(monthPart);
-    const day = Number(dayPart);
-    if (!yearPart || !monthPart || !dayPart || Number.isNaN(year) || Number.isNaN(month) || Number.isNaN(day)) {
-      throw new Error('Invalid date format. Expected YYYY-MM-DD.');
+}): Promise<GetCalendarPreviewResult> {
+  try {
+    const { getCurrentUser } = await import('@/infrastructure/auth/session');
+    const currentUser = await getCurrentUser();
+    const routine = await routinesRepository.get(
+      routineId,
+      currentUser.id,
+      currentUser.email,
+      currentUser.role === 'admin'
+    );
+    if (!routine) {
+      return { ok: false, error: 'Routine not found' };
     }
-    return { year, month, day };
-  };
 
-  const { year: startYear, month: startMonth, day: startDay } = parseDateParts(startDate);
-  const { year: endYear, month: endMonth, day: endDay } = parseDateParts(endDate);
+    const timeZone = 'Asia/Tokyo';
+    const parseDateParts = (value: string) => {
+      const [yearPart = '', monthPart = '', dayPart = ''] = value.split('-');
+      const year = Number(yearPart);
+      const month = Number(monthPart);
+      const day = Number(dayPart);
+      if (!yearPart || !monthPart || !dayPart || Number.isNaN(year) || Number.isNaN(month) || Number.isNaN(day)) {
+        return null;
+      }
+      return { year, month, day };
+    };
 
-  const calendarWindow: CalendarTimeRange = {
-    start: makeZonedDate({ year: startYear, month: startMonth, day: startDay }, timeZone).toISOString(),
-    end: makeZonedDate({ year: endYear, month: endMonth, day: endDay }, timeZone).toISOString(),
-    timezone: timeZone
-  };
+    const startParts = parseDateParts(startDate);
+    const endParts = parseDateParts(endDate);
+    if (!startParts || !endParts) {
+      return { ok: false, error: 'Invalid date format. Expected YYYY-MM-DD.' };
+    }
+    const { year: startYear, month: startMonth, day: startDay } = startParts;
+    const { year: endYear, month: endMonth, day: endDay } = endParts;
 
-  const proposedEvents = buildProposedEvents(routine, calendarWindow, recurrence);
-  // ログイン中ユーザーのカレンダー接続状態を使用（routine.owner ではない）
-  const isConnected = await hasStoredRefreshToken(currentUser.email);
-  const existingEvents = isConnected
-    ? await getCalendarClient(currentUser.email).listEvents(calendarWindow)
-    : [];
+    const calendarWindow: CalendarTimeRange = {
+      start: makeZonedDate({ year: startYear, month: startMonth, day: startDay }, timeZone).toISOString(),
+      end: makeZonedDate({ year: endYear, month: endMonth, day: endDay }, timeZone).toISOString(),
+      timezone: timeZone
+    };
 
-  return { proposedEvents, existingEvents, isCalendarConnected: isConnected };
+    const proposedEvents = buildProposedEvents(routine, calendarWindow, recurrence);
+    const isConnected = await hasStoredRefreshToken(currentUser.email);
+    const existingEvents = isConnected
+      ? await getCalendarClient(currentUser.email).listEvents(calendarWindow)
+      : [];
+
+    return { ok: true, proposedEvents, existingEvents, isCalendarConnected: isConnected };
+  } catch (err) {
+    const message = err instanceof Error ? err.message : 'Failed to load preview';
+    return { ok: false, error: message };
+  }
 }
 
 /** クライアントから渡す「適用するイベント」の形（編集・AIカスタマイズ反映済み） */

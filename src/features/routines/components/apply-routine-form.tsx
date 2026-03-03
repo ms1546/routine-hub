@@ -17,11 +17,8 @@ import type { RecurrencePattern, ProposedCalendarEvent, CalendarEvent } from '@/
 import { getCalendarPreviewAction, confirmProposedEventsAction } from '@/app/actions/calendar';
 import { customizeCalendarEventsAction, type CalendarCustomizationResult } from '@/app/actions/calendar-customization';
 import { getEvidenceAdviceAction } from '@/app/actions/evidence-advice';
-import {
-  getRoutineAdjustmentProposalAction,
-  applyRoutineAdjustmentAction,
-  type RoutineAdjustmentProposal
-} from '@/app/actions/routine-adjustment';
+import { getRoutineAdjustmentProposalAction, applyRoutineAdjustmentAction } from '@/app/actions/routine-adjustment';
+import type { RoutineAdjustmentProposal } from '@/features/ai/routine-adjustment/types';
 import type { EvidenceAdviceResult } from '@/features/ai/evidence/types';
 import { CalendarPreviewVisualization } from './calendar-preview-visualization';
 
@@ -285,18 +282,22 @@ export function ApplyRoutineForm({
     const refetch = async () => {
       setPreviewLoading(true);
       try {
-        const preview = await getCalendarPreviewAction({
+        const result = await getCalendarPreviewAction({
           routineId,
           startDate: previewData.startDate,
           endDate: previewData.endDate,
           recurrence: previewData.recurrence
         });
-        setPreviewData({
-          ...preview,
-          startDate: previewData.startDate,
-          endDate: previewData.endDate,
-          recurrence: previewData.recurrence
-        });
+        if (result.ok) {
+          setPreviewData({
+            proposedEvents: result.proposedEvents,
+            existingEvents: result.existingEvents,
+            isCalendarConnected: result.isCalendarConnected,
+            startDate: previewData.startDate,
+            endDate: previewData.endDate,
+            recurrence: previewData.recurrence
+          });
+        }
       } finally {
         setPreviewLoading(false);
       }
@@ -370,37 +371,37 @@ export function ApplyRoutineForm({
           : { type: 'monthly', interval: recurrenceInterval };
 
     startTransition(async () => {
-      // まずプレビューを取得
       setPreviewLoading(true);
       try {
-        const preview = await getCalendarPreviewAction({
+        const result = await getCalendarPreviewAction({
           routineId,
           startDate: validatedStartDate,
           endDate: validatedEndDate,
           recurrence
         });
+        if (!result.ok) {
+          setStatus(result.error);
+          return;
+        }
         setPreviewData({
-          ...preview,
+          proposedEvents: result.proposedEvents,
+          existingEvents: result.existingEvents,
+          isCalendarConnected: result.isCalendarConnected,
           startDate: validatedStartDate,
           endDate: validatedEndDate,
           recurrence
         });
-        // 週ごとの展開状態を初期化（すべての週を展開）
-        // 週数を計算してすべて展開
         if (durationType === 'weekly') {
           const weeks = Math.ceil((new Date(validatedEndDate).getTime() - new Date(validatedStartDate).getTime()) / (1000 * 60 * 60 * 24 * 7));
-          const allWeeks = Array.from({ length: weeks }, (_, i) => i);
-          setExpandedWeeks(new Set(allWeeks));
+          setExpandedWeeks(new Set(Array.from({ length: weeks }, (_, i) => i)));
         } else {
           setExpandedWeeks(new Set([0]));
         }
         setShowPreviewModal(true);
-        setStatus(''); // プレビュー表示時はステータスをクリア
-        // カスタマイズ結果をリセット
+        setStatus('');
         setCustomizationResult(null);
         setUseCustomized(false);
         setEvidenceAdvice(null);
-        // 手動編集をリセット
         setEditedEvents(new Map());
       } catch (error) {
         setStatus(error instanceof Error ? error.message : 'プレビューの取得に失敗しました');
@@ -692,7 +693,7 @@ export function ApplyRoutineForm({
         {adjustmentProposal && (
           <div className="space-y-3 rounded-md border border-border bg-background/60 p-3 text-sm">
             <p className="font-medium text-foreground">{adjustmentProposal.summaryRationale}</p>
-            {adjustmentProposal.blockAdjustments.length > 0 && (
+            {Array.isArray(adjustmentProposal.blockAdjustments) && adjustmentProposal.blockAdjustments.length > 0 && (
               <ul className="space-y-2">
                 {adjustmentProposal.blockAdjustments.map((adj) => (
                   <li key={adj.blockId} className="text-xs text-muted-foreground border-l-2 border-primary/40 pl-2">
