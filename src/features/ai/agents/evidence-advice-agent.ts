@@ -181,6 +181,22 @@ const rankCitations = (citations: EvidenceCitation[]): EvidenceCitation[] => {
   });
 };
 
+/** 検索クエリとの関連が薄い論文を除外する（タイトルにクエリのいずれかの語が含まれるものだけ残す） */
+const filterCitationsByTitleRelevance = (
+  citations: EvidenceCitation[],
+  searchQuery: string
+): EvidenceCitation[] => {
+  const terms = searchQuery
+    .toLowerCase()
+    .split(/\s+/)
+    .filter((t) => t.length >= 2);
+  if (terms.length === 0) return citations;
+  return citations.filter((c) => {
+    const titleLower = (c.title ?? '').toLowerCase();
+    return terms.some((t) => titleLower.includes(t));
+  });
+};
+
 const toConfidence = (citation: EvidenceCitation): EvidenceSuggestion['confidence'] => {
   const citedBy = citation.citedByCount ?? 0;
   if (citedBy >= 50) return 'high';
@@ -188,12 +204,22 @@ const toConfidence = (citation: EvidenceCitation): EvidenceSuggestion['confidenc
   return 'low';
 };
 
+/** 論文タイトルに応じて提案の一文を変える（汎用「休憩間隔」だけにしない） */
+const getActionHintByTitle = (title: string, durationType: string): string => {
+  const t = title.toLowerCase();
+  if (/time|schedule|calendar|routine|productivity|break|rest|work-life|sleep/.test(t))
+    return durationType === 'weekly' ? '週次でのブロック配分や休憩間隔を見直してみてください。' : '時間帯や休憩間隔の見直しを検討してみてください。';
+  if (/learning|skill|practice|deliberate|expertise|habit|retention/.test(t))
+    return '練習時間の確保や習慣化のペース配分を検討してみてください。';
+  if (/goal|motivation|self-regulation|commitment/.test(t))
+    return 'ルーチンの目的と優先順位の見直しを検討してみてください。';
+  return '研究内容を参照し、ルーチン設計の見直しを検討してみてください。';
+};
+
 const buildSuggestionText = (routine: Routine, citation: EvidenceCitation): string => {
   const routineFocus = routine.purpose || routine.name;
   const yearSuffix = citation.year ? `（${citation.year}）` : '';
-  const actionHint = routine.durationType === 'weekly'
-    ? '週次でのブロック配分や休憩間隔を見直してみてください。'
-    : '時間帯や休憩間隔の見直しを検討してみてください。';
+  const actionHint = getActionHintByTitle(citation.title ?? '', routine.durationType ?? 'normal');
 
   return `「${routineFocus}」に関連して、研究「${citation.title}」${yearSuffix}が参考になります。${actionHint}`;
 };
@@ -234,7 +260,9 @@ export async function runEvidenceAdviceAgent({
   let translationFailed = false;
 
   if (keywords.length >= 2) {
-    searchQuery = keywords.join(' ');
+    // クエリが長すぎると無関係な論文が混ざるため、関連の強いキーワードに絞る（最大6語）
+    const maxKeywords = 6;
+    searchQuery = keywords.slice(0, maxKeywords).join(' ');
   } else {
     const translated = await translateQueryToEnglish(query, translationSystemPrompt);
     searchQuery = translated.searchQuery;
@@ -248,10 +276,12 @@ export async function runEvidenceAdviceAgent({
   try {
     const searchResult = await literatureSearchTool({
       query: searchQuery,
-      perPage: 6,
+      perPage: 12,
       fromYear: new Date().getFullYear() - 15
     });
-    citations = rankCitations(searchResult.citations);
+    const ranked = rankCitations(searchResult.citations);
+    const relevant = filterCitationsByTitleRelevance(ranked, searchQuery);
+    citations = relevant.length >= minEvidenceCount ? relevant : ranked;
   } catch (error) {
     warnings.push('論文 API の取得に失敗しました。時間を置いて再試行してください。');
     return applyEvidencePolicy({ query, displayQuery, searchQuery, suggestions: [], warnings });
