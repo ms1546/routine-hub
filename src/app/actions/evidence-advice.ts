@@ -146,7 +146,7 @@ export async function getEvidenceAdviceAction({
     return {
       query: '',
       suggestions: [],
-      warnings: ['根拠取得に失敗しました。時間を置いて再試行してください。'],
+      warnings: ['Evidence取得に失敗しました。時間を置いて再試行してください。'],
       disclaimer: evidenceDisclaimer
     };
   }
