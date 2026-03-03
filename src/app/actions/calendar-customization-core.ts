@@ -15,6 +15,72 @@ import { evaluateCalendarCustomization } from '@/features/ai/evaluation/judge';
 import { isBedrockEnabled } from '@/features/ai/providers/bedrock';
 import type { CalendarCustomizationResult } from './calendar-customization';
 
+type CustomizedEventItem = CalendarCustomizationResult['customizedEvents'][number];
+
+/** 提案イベント＋カスタマイズをマージしたリストを日付ごとにソートし、同日内の時間重複を解消する */
+function resolveOverlapsAmongCustomized(
+  proposedEvents: ProposedCalendarEvent[],
+  customizedEvents: CustomizedEventItem[]
+): CustomizedEventItem[] {
+  const byId = new Map(customizedEvents.map((c) => [c.proposalId, c]));
+  const merged: Array<{ proposalId: string; start: string; end: string }> = proposedEvents.map((e) => {
+    const c = byId.get(e.proposalId);
+    return {
+      proposalId: e.proposalId,
+      start: c?.start ?? e.start,
+      end: c?.end ?? e.end
+    };
+  });
+
+  const dateKey = (iso: string) => iso.slice(0, 10);
+  const byDate = new Map<string, typeof merged>();
+  merged.forEach((ev) => {
+    const key = dateKey(ev.start);
+    if (!byDate.has(key)) byDate.set(key, []);
+    byDate.get(key)!.push(ev);
+  });
+
+  const gapMs = 0;
+  const resolved = new Map<string, { start: string; end: string }>();
+
+  byDate.forEach((events) => {
+    const sorted = [...events].sort(
+      (a, b) => new Date(a.start).getTime() - new Date(b.start).getTime()
+    );
+    let lastEnd = 0;
+    sorted.forEach((ev) => {
+      const startMs = new Date(ev.start).getTime();
+      const endMs = new Date(ev.end).getTime();
+      const durationMs = Math.max(0, endMs - startMs);
+      let newStart = startMs;
+      if (startMs < lastEnd) {
+        newStart = lastEnd + gapMs;
+      }
+      const newEnd = newStart + durationMs;
+      lastEnd = newEnd;
+      resolved.set(ev.proposalId, {
+        start: new Date(newStart).toISOString(),
+        end: new Date(newEnd).toISOString()
+      });
+    });
+  });
+
+  return customizedEvents.map((c) => {
+    const r = resolved.get(c.proposalId);
+    if (!r) return c;
+    const orig = merged.find((m) => m.proposalId === c.proposalId)!;
+    const changed = orig.start !== r.start || orig.end !== r.end;
+    if (!changed) return c;
+    return {
+      ...c,
+      start: r.start,
+      end: r.end,
+      reasoning:
+        c.reasoning?.includes('重複解消') ? c.reasoning : '提案イベント同士の重複を解消するため時間を調整しました。'
+    };
+  });
+}
+
 export type CalendarCustomizationRunInput = {
   proposedEvents: ProposedCalendarEvent[];
   existingEvents: CalendarEvent[];
@@ -80,7 +146,11 @@ export async function runCalendarCustomizationWithTrace(
       throw new Error('Calendar customization workflow execution failed');
     }
 
-    const result = runResult.result;
+    let result = runResult.result;
+    result = {
+      ...result,
+      customizedEvents: resolveOverlapsAmongCustomized(proposedEvents, result.customizedEvents)
+    };
     const hasEvidenceContext = Boolean(evidenceContext?.trim());
     const evidenceIsGeneric =
       hasEvidenceContext && (evidenceContext?.includes('一般的な観点') ?? false);

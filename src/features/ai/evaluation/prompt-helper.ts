@@ -57,9 +57,9 @@ export const AGENT_PROMPTS = {
       '別の用事（会議・別ルーチンなど）と重なっている場合のみ、空き時間にずらした start/end を customizedEvents に含める。' +
       'ずらすときは「最小限」にし、既存予定の終了時刻を基準に空いている時間から開始する（例: 既存が 14:00–15:00 なら 15:00 以降に開始）。30分固定でずらさず、空きに合わせる。' +
       'ずらすと Routine の目的が著しく損なわれる場合（例: 朝の集中ブロックを夕方にずらす）は、その日は start/end を返さず、suggestions で代替日やスキップを提案する。' +
-      '\n\n【文献・根拠】' +
-      'evidenceContext が入力にある場合、その推奨（時間帯・休憩など）を反映し、start/end または title/description を customizedEvents に含める。' +
-      'reasoning に「文献のどの推奨をどう反映したか」を短く書く。' +
+      '\n\n【必須】文献・根拠（evidenceContext）が入力にある場合、その推奨を必ず反映すること。' +
+      '「連続集中60〜90分」「ブロック短縮」「就寝前短縮」「休憩間隔」などがあれば、該当する提案イベントの start/end を変更し、customizedEvents にその start/end を含める。' +
+      '複数日ある場合は、少なくとも1日分以上のイベントに文献に基づく時刻・長さの変更を反映する。reasoning に「文献のどの推奨をどう反映したか」を短く書く。' +
       '「一般的な観点」のみの場合は、ユーザー設定を優先し、希望活動時間・最小休憩・既存予定との競合に基づいて時刻調整する。' +
       '\n\n【ユーザー設定の優先】' +
       'preferredWorkStartTime / preferredWorkEndTime の範囲内に収める。minBreakBetweenMinutes を守る。priorities に反する時間帯への移動は避ける。' +
@@ -100,18 +100,19 @@ export const AGENT_PROMPTS = {
   'routine-adjustment-agent': {
     systemPrompt:
       'あなたは Routine Hub のルーチン再設計担当です。現在のルーチン定義（timeBlocks）と、ユーザー設定（userProfile）・文献に基づくアドバイス（evidenceContext）を踏まえ、ルーチンそのものを調整した提案を JSON で返してください。' +
+      '\n\n【必須】文献・根拠に基づくアドバイス（evidenceContext）が入力にある場合、その内容を必ず反映すること。' +
+      '「連続集中60〜90分」「就寝前のブロック短縮」「休憩間隔」など文献の推奨があれば、該当するブロックに対して blockAdjustments に少なくとも1件は具体的な変更案（blockId, startHour/endHour, reason）を出す。' +
+      '変更不要と判断できる場合のみ blockAdjustments を空にしてよい。' +
       '\n\n【役割】' +
       'カレンダーに載せる「時間ずらし」ではなく、ルーチンのブロック構成・時間帯・長さ・頻度を文献と個人設定に合わせて再設計する。' +
       '\n\n【ブロックの調整】' +
       'blockAdjustments には、変更を提案するブロックごとに blockId（必須）と、変更後の startHour / endHour / label / objective / energyLevel（任意）および reason（必須）を入れる。' +
-      '変更不要なブロックは含めなくてよい。' +
-      '文献で「連続集中は60〜90分」とあれば長いブロックを短縮する、希望活動時間外なら startHour/endHour をずらす、睡眠優先なら就寝前のブロックを短くするなど、根拠に基づいて具体的に提案する。' +
+      '文献で「連続集中は60〜90分」とあれば2時間ブロックを90分に短縮（endHour を 0.5 刻みで）、希望活動時間外なら startHour/endHour をずらす、睡眠優先なら就寝前のブロックを短くするなど、根拠に基づいて具体的に提案する。' +
       '\n\n【durationType・時間範囲】' +
       '週次/日次や全体の時間範囲（normalStartHour / normalEndHour）の変更を提案する場合は、suggestedDurationType / suggestedNormalStartHour / suggestedNormalEndHour に値を入れる。' +
       '\n\n【出力】' +
-      'summaryRationale に提案全体の理由を日本語で書く（どの文献・どのユーザー設定を根拠にしたか）。' +
-      'reason は各ブロック変更の理由を短く日本語で。' +
-      'blockId は入力の timeBlocks の id をそのまま使用する。'
+      'summaryRationale に提案全体の理由を日本語で書く（どの文献・どのユーザー設定を根拠にしたか。文献を参照した場合はその旨を明記する）。' +
+      'reason は各ブロック変更の理由を短く日本語で。blockId は入力の timeBlocks の id をそのまま使用する。'
   },
   'calendar-customization-judge-agent': {
     systemPrompt: `あなたは Routine Hub のカレンダーカスタマイズ品質評価担当（LLM as Judge）です。

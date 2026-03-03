@@ -184,6 +184,57 @@ const rankCitations = (citations: EvidenceCitation[]): EvidenceCitation[] => {
   });
 };
 
+/** ルーチン・生産性・時間設計に関連する英語タイトルか（いずれか1語以上含む） */
+const ROUTINE_RELEVANT_TITLE_TERMS = [
+  'time',
+  'schedule',
+  'calendar',
+  'routine',
+  'productivity',
+  'focus',
+  'concentration',
+  'break',
+  'rest',
+  'sleep',
+  'learning',
+  'skill',
+  'habit',
+  'practice',
+  'goal',
+  'motivation',
+  'work',
+  'retention',
+  'expertise',
+  'performance',
+  'wellbeing',
+  'well-being',
+  'health',
+  'cognitive',
+  'attention',
+  'deliberate'
+];
+
+/** タイトルに含まれていたらルーチン設計と無関係とみなして除外する語句 */
+const OFF_TOPIC_TITLE_PATTERNS = [
+  /pest\b/i,
+  /\bsolid waste\b/i,
+  /\bwaste management\b/i,
+  /\bintegrated pest\b/i,
+  /\bmedia as cultural\b/i,
+  /\bindigenous\b/i,
+  /\bcircular economy\b/i,
+  /\bwaste hierarchy\b/i
+];
+
+/** ルーチン・生産性と無関係な論文を除外（タイトルが明らかに別分野のもの） */
+const filterCitationsRoutineRelevant = (citations: EvidenceCitation[]): EvidenceCitation[] => {
+  return citations.filter((c) => {
+    const t = (c.title ?? '').toLowerCase();
+    if (OFF_TOPIC_TITLE_PATTERNS.some((pat) => pat.test(t))) return false;
+    return ROUTINE_RELEVANT_TITLE_TERMS.some((term) => t.includes(term));
+  });
+};
+
 /** 検索クエリとの関連が薄い論文を除外する（タイトルにクエリのいずれかの語が含まれるものだけ残す） */
 const filterCitationsByTitleRelevance = (
   citations: EvidenceCitation[],
@@ -283,8 +334,10 @@ export async function runEvidenceAdviceAgent({
       fromYear: new Date().getFullYear() - 15
     });
     const ranked = rankCitations(searchResult.citations);
-    const relevant = filterCitationsByTitleRelevance(ranked, searchQuery);
-    citations = relevant.length >= minEvidenceCount ? relevant : ranked;
+    const routineRelevant = filterCitationsRoutineRelevant(ranked);
+    const usePool = routineRelevant.length >= minEvidenceCount ? routineRelevant : ranked;
+    const relevant = filterCitationsByTitleRelevance(usePool, searchQuery);
+    citations = relevant.length >= minEvidenceCount ? relevant : usePool;
   } catch (error) {
     warnings.push('論文 API の取得に失敗しました。時間を置いて再試行してください。');
     return applyEvidencePolicy({ query, displayQuery, searchQuery, suggestions: [], warnings });

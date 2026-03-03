@@ -66,7 +66,7 @@ export async function runRoutineAdjustmentAgent({
   evidenceContext
 }: RoutineAdjustmentAgentInput): Promise<AgentResult<RoutineAdjustmentProposal>> {
   const fallbackData: RoutineAdjustmentProposal = {
-    summaryRationale: '文献・個人設定を参照し、変更が必要な場合は blockAdjustments に具体的な変更案を出してください。',
+    summaryRationale: '提案を取得できませんでした。しばらくしてから再度 Routune を試してください。',
     blockAdjustments: []
   };
 
@@ -91,7 +91,7 @@ ${userProfile.preferredWorkStartTime ? `- 希望活動開始: ${userProfile.pref
 ${userProfile.preferredWorkEndTime ? `- 希望活動終了: ${userProfile.preferredWorkEndTime}` : ''}
 ${userProfile.minBreakBetweenMinutes != null ? `- 連続イベント間最小休憩: ${userProfile.minBreakBetweenMinutes}分` : ''}
 
-【文献・根拠に基づくアドバイス】
+【必読】文献・根拠に基づくアドバイス（この内容を反映した blockAdjustments を出してください。推奨があれば必ず1件以上変更案を出すこと）
 ${evidenceContext}
       `.trim(),
       schema: routineAdjustmentProposalSchema,
