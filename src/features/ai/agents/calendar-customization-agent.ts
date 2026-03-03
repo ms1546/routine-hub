@@ -62,7 +62,7 @@ export async function runCalendarCustomizationAgent({
     }
   });
 
-  // フォールバック（Bedrock 無効時）: 時間重複があれば 30 分ずらす。同一予定の判定は AI 任せのためオフ時は一律ずらす
+  // フォールバック（Bedrock 無効時）: 重複があれば「既存の最も遅い終了時刻の直後」から開始する（重複解消）
   const fallbackCustomizedEvents = proposedEvents.map((event) => {
     const conflicts = conflictMap.get(event.proposalId) ?? [];
     let customized = { ...event };
@@ -70,15 +70,21 @@ export async function runCalendarCustomizationAgent({
 
     if (conflicts.length > 0) {
       const originalStart = new Date(event.start);
-      originalStart.setMinutes(originalStart.getMinutes() + 30);
       const originalEnd = new Date(event.end);
-      originalEnd.setMinutes(originalEnd.getMinutes() + 30);
+      const durationMs = originalEnd.getTime() - originalStart.getTime();
+      const latestConflictEnd = new Date(
+        Math.max(...conflicts.map((c) => new Date(c.end).getTime()))
+      );
+      const newStart = latestConflictEnd.getTime() <= originalStart.getTime()
+        ? originalStart
+        : latestConflictEnd;
+      const newEnd = new Date(newStart.getTime() + durationMs);
       customized = {
         ...customized,
-        start: originalStart.toISOString(),
-        end: originalEnd.toISOString()
+        start: newStart.toISOString(),
+        end: newEnd.toISOString()
       };
-      reasoning = `既存イベントとの競合を避けるため、30分後ろにシフトしました。`;
+      reasoning = `既存イベントとの競合を避けるため、既存予定の終了後から開始するようシフトしました。`;
     } else {
       const priorityLabel =
         userProfile.priorities.length > 0 ? `ユーザーの優先（${userProfile.priorities.slice(0, 2).join('、')}）` : 'ユーザー設定';
