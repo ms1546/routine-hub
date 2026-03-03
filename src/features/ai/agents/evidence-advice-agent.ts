@@ -223,7 +223,10 @@ const OFF_TOPIC_TITLE_PATTERNS = [
   /\bmedia as cultural\b/i,
   /\bindigenous\b/i,
   /\bcircular economy\b/i,
-  /\bwaste hierarchy\b/i
+  /\bwaste hierarchy\b/i,
+  /eye-tracking/i,
+  /atypical development\b/i,
+  /\bduet\b/i
 ];
 
 /** ルーチン・生産性と無関係な論文を除外（タイトルが明らかに別分野のもの） */

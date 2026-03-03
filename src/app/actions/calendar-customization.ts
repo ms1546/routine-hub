@@ -79,6 +79,67 @@ function applyBlockAdjustmentsToProposed(
   });
 }
 
+/** "HH:mm" を 0–24 の小数時間にパース（未設定は null） */
+function parseTimeToHourDecimal(value: string | undefined): number | null {
+  if (!value?.trim()) return null;
+  const [h, m] = value.trim().split(':').map((s) => parseInt(s, 10));
+  if (h === undefined || Number.isNaN(h) || h < 0 || h > 23) return null;
+  const min = m !== undefined && !Number.isNaN(m) ? Math.min(59, Math.max(0, m)) : 0;
+  return h + min / 60;
+}
+
+/** 希望活動開始・終了時刻を超えている customizedEvents の start/end をその範囲に収める */
+function clampCustomizedEventsToPreferredWorkHours(
+  customizedEvents: CalendarCustomizationResult['customizedEvents'],
+  userProfile: { timezone: string; preferredWorkStartTime?: string; preferredWorkEndTime?: string }
+): CalendarCustomizationResult['customizedEvents'] {
+  const tz = userProfile.timezone;
+  const minStartHour = parseTimeToHourDecimal(userProfile.preferredWorkStartTime);
+  const maxEndHour = parseTimeToHourDecimal(userProfile.preferredWorkEndTime);
+  if (minStartHour == null && maxEndHour == null) return customizedEvents;
+
+  return customizedEvents.map((c) => {
+    if (c.start == null || c.end == null) return c;
+    const { year, month, day } = getDatePartsInTimezone(c.start, tz);
+    let start = c.start;
+    let end = c.end;
+    let clamped = false;
+
+    if (maxEndHour != null) {
+      const maxEndISO = toISOAtLocalHour(year, month, day, maxEndHour, tz);
+      if (new Date(end).getTime() > new Date(maxEndISO).getTime()) {
+        end = maxEndISO;
+        clamped = true;
+      }
+    }
+    if (minStartHour != null) {
+      const minStartISO = toISOAtLocalHour(year, month, day, minStartHour, tz);
+      if (new Date(start).getTime() < new Date(minStartISO).getTime()) {
+        start = minStartISO;
+        clamped = true;
+      }
+    }
+
+    if (!clamped) return c;
+    if (new Date(end).getTime() <= new Date(start).getTime()) {
+      const endMs = new Date(end).getTime();
+      const thirtyMinMs = 30 * 60 * 1000;
+      start = new Date(endMs - thirtyMinMs).toISOString();
+      if (minStartHour != null) {
+        const minStartISO = toISOAtLocalHour(year, month, day, minStartHour, tz);
+        if (new Date(start).getTime() < new Date(minStartISO).getTime()) start = minStartISO;
+      }
+    }
+    const suffix = '希望活動時間内に収まるよう調整しました。';
+    return {
+      ...c,
+      start,
+      end,
+      reasoning: c.reasoning?.includes('希望活動時間') ? c.reasoning : `${c.reasoning ?? ''} ${suffix}`.trim()
+    };
+  });
+}
+
 export type CalendarCustomizationResult = {
   customizedEvents: Array<{
     proposalId: string;
@@ -156,7 +217,7 @@ export async function customizeCalendarEventsAction({
       : proposedEvents;
 
   const traceId = generateUUID();
-  return runCalendarCustomizationWithTrace(
+  const result = await runCalendarCustomizationWithTrace(
     {
       proposedEvents: eventsToCustomize,
       existingEvents,
@@ -166,4 +227,30 @@ export async function customizeCalendarEventsAction({
     },
     traceId
   );
+
+  // LLM が start/end を返さない場合、事前適用した文献ベースの時間を結果に埋め戻す（クライアントが元の2hで上書きしないように）
+  if (eventsToCustomize !== proposedEvents) {
+    const preAdjustedByProposalId = new Map(
+      eventsToCustomize.map((e) => [e.proposalId, { start: e.start, end: e.end }])
+    );
+    const originalByProposalId = new Map(proposedEvents.map((e) => [e.proposalId, { start: e.start, end: e.end }]));
+    result.customizedEvents = result.customizedEvents.map((c) => {
+      const pre = preAdjustedByProposalId.get(c.proposalId);
+      const orig = originalByProposalId.get(c.proposalId);
+      const wasPreAdjusted = pre && orig && (pre.start !== orig.start || pre.end !== orig.end);
+      const needsFill = (c.start == null && c.end == null) && wasPreAdjusted;
+      if (!needsFill || !pre) return c;
+      const suffix = '文献・設定に基づくブロック時間を反映しています。';
+      return {
+        ...c,
+        start: pre.start,
+        end: pre.end,
+        reasoning: c.reasoning?.includes(suffix) ? c.reasoning : `${c.reasoning ?? ''} ${suffix}`.trim()
+      };
+    });
+  }
+
+  result.customizedEvents = clampCustomizedEventsToPreferredWorkHours(result.customizedEvents, userProfile);
+
+  return result;
 }
