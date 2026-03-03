@@ -5,7 +5,7 @@ import type { UserProfileContext } from '../types';
 import type { EvidenceAdviceResult, EvidenceCitation, EvidenceSuggestion } from '../evidence/types';
 import { literatureSearchTool } from '../tools/literature-search-tool';
 import { applyEvidencePolicy } from '../tools/evidence-policy-tool';
-import { invokeBedrockWithFallback, isBedrockEnabled } from '../providers/bedrock';
+import { invokeBedrockWithFallback, isBedrockEnabled, ROUTINE_MODEL_ID } from '../providers/bedrock';
 import { getSystemPrompt } from '../evaluation/prompt-helper';
 
 const generateUUID = createDefaultUUIDGenerator();
@@ -39,6 +39,7 @@ const extractKeywordsForElement = async (text: string): Promise<string[]> => {
   try {
     const result = await invokeBedrockWithFallback(
       {
+        modelId: ROUTINE_MODEL_ID,
         systemPrompt:
           'You extract 1-3 English keywords for searching academic literature. ' +
           'Input: a single concept (may be in Japanese). ' +
@@ -120,6 +121,7 @@ const translateToJapanese = async (text: string): Promise<string> => {
   try {
     const result = await invokeBedrockWithFallback(
       {
+        modelId: ROUTINE_MODEL_ID,
         systemPrompt:
           'Translate the following text into natural Japanese. Preserve meaning; for academic paper titles use a natural Japanese translation. Keep well-known proper nouns in original if commonly used in Japanese (e.g. product names).',
         userPrompt: `Translate to Japanese:\n${text}`,
@@ -150,6 +152,7 @@ const translateQueryToEnglish = async (
 
   const result = await invokeBedrockWithFallback(
     {
+      modelId: ROUTINE_MODEL_ID,
       systemPrompt,
       userPrompt:
         `Translate the following query into concise English keywords. Keep proper nouns.\nQuery: ${query}`,

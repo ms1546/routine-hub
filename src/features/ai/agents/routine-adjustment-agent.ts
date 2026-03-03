@@ -6,7 +6,7 @@
 import { z } from 'zod';
 import type { Routine } from '@/features/routines';
 import type { UserProfileContext } from '../types';
-import { invokeBedrockWithFallback, isBedrockEnabled } from '../providers/bedrock';
+import { invokeBedrockWithFallback, isBedrockEnabled, ROUTINE_MODEL_ID } from '../providers/bedrock';
 import type { AgentResult } from '../types';
 import { getSystemPrompt } from '../evaluation/prompt-helper';
 import type { RoutineAdjustmentProposal } from '../routine-adjustment/types';
@@ -75,6 +75,7 @@ export async function runRoutineAdjustmentAgent({
 
   const data = await invokeBedrockWithFallback(
     {
+      modelId: ROUTINE_MODEL_ID,
       systemPrompt,
       userPrompt: `
 現在のルーチン:

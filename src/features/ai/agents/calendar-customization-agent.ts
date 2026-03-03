@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import type { ProposedCalendarEvent, CalendarEvent } from '@/features/calendar/domain/types';
 import type { UserProfileContext } from '../types';
-import { invokeBedrockWithFallback, isBedrockEnabled } from '../providers/bedrock';
+import { invokeBedrockWithFallback, isBedrockEnabled, ROUTINE_MODEL_ID } from '../providers/bedrock';
 import type { AgentResult } from '../types';
 import { getSystemPrompt } from '../evaluation/prompt-helper';
 
@@ -136,6 +136,7 @@ ${evidenceContext}
 
   const data = await invokeBedrockWithFallback(
     {
+      modelId: ROUTINE_MODEL_ID,
       systemPrompt,
       userPrompt: `
 提案イベント:

@@ -2,6 +2,9 @@ import { BedrockRuntimeClient, InvokeModelCommand } from '@aws-sdk/client-bedroc
 import { z } from 'zod';
 
 const DEFAULT_MODEL = 'anthropic.claude-3-5-sonnet-20241022-v2:0';
+/** Routune 系（文献・調整・カレンダーカスタマイズ）で使うモデル。429 軽減のため Haiku デフォルト。 */
+export const ROUTINE_MODEL_ID =
+  process.env.AWS_BEDROCK_MODEL_ROUTINE ?? 'anthropic.claude-3-haiku-20240307-v1:0';
 const BEDROCK_VERSION = 'bedrock-2023-05-31';
 const PROFILE_ONLY_MODEL_PATTERNS = [/claude-3-5/i];
 let client: BedrockRuntimeClient | null = null;
@@ -30,6 +33,8 @@ export type BedrockStructuredParams<TSchema extends z.ZodTypeAny> = {
   shapeExample: string;
   temperature?: number;
   maxTokens?: number;
+  /** 指定時はこのモデルを優先（Routune 系で Haiku 指定用）。未指定時は AWS_BEDROCK_MODEL。 */
+  modelId?: string;
 };
 
 /**
@@ -49,11 +54,13 @@ export const isBedrockEnabled = (): boolean => {
 export async function invokeBedrockStructured<TSchema extends z.ZodTypeAny>(
   params: BedrockStructuredParams<TSchema>
 ): Promise<z.infer<TSchema>> {
-  const modelId = process.env.AWS_BEDROCK_MODEL ?? DEFAULT_MODEL;
+  const primaryModelId = params.modelId ?? process.env.AWS_BEDROCK_MODEL ?? DEFAULT_MODEL;
   const inferenceProfileArn = process.env.AWS_BEDROCK_INFERENCE_PROFILE_ARN;
   const fallbackModelId =
     process.env.AWS_BEDROCK_FALLBACK_MODEL ?? 'anthropic.claude-3-haiku-20240307-v1:0';
-  const requiresInferenceProfile = PROFILE_ONLY_MODEL_PATTERNS.some((pattern) => pattern.test(modelId));
+  const requiresInferenceProfile = PROFILE_ONLY_MODEL_PATTERNS.some((pattern) =>
+    pattern.test(primaryModelId)
+  );
   const body = JSON.stringify({
     anthropic_version: BEDROCK_VERSION,
     max_tokens: params.maxTokens ?? 600,
@@ -74,20 +81,25 @@ export async function invokeBedrockStructured<TSchema extends z.ZodTypeAny>(
 
   const attempts: Array<{ modelId: string; label: string }> = [];
 
-  if (inferenceProfileArn) {
-    attempts.push({ modelId: inferenceProfileArn, label: 'inference-profile' });
-  } else if (requiresInferenceProfile) {
-    console.warn(
-      `[RoutuneHub] Model ${modelId} requires AWS_BEDROCK_INFERENCE_PROFILE_ARN. Falling back to on-demand models.`
-    );
-  }
-
-  if (!requiresInferenceProfile || Boolean(inferenceProfileArn)) {
-    attempts.push({ modelId, label: 'primary-model' });
-  }
-
-  if (!attempts.some((attempt) => attempt.modelId === fallbackModelId)) {
-    attempts.push({ modelId: fallbackModelId, label: 'fallback-model' });
+  if (params.modelId) {
+    attempts.push({ modelId: primaryModelId, label: 'primary-model' });
+    if (primaryModelId !== fallbackModelId) {
+      attempts.push({ modelId: fallbackModelId, label: 'fallback-model' });
+    }
+  } else {
+    if (inferenceProfileArn) {
+      attempts.push({ modelId: inferenceProfileArn, label: 'inference-profile' });
+    } else if (requiresInferenceProfile) {
+      console.warn(
+        `[RoutuneHub] Model ${primaryModelId} requires AWS_BEDROCK_INFERENCE_PROFILE_ARN. Falling back to on-demand models.`
+      );
+    }
+    if (!requiresInferenceProfile || Boolean(inferenceProfileArn)) {
+      attempts.push({ modelId: primaryModelId, label: 'primary-model' });
+    }
+    if (!attempts.some((attempt) => attempt.modelId === fallbackModelId)) {
+      attempts.push({ modelId: fallbackModelId, label: 'fallback-model' });
+    }
   }
 
   const guardrailId = process.env.AWS_BEDROCK_GUARDRAIL_ARN ?? process.env.AWS_BEDROCK_GUARDRAIL_ID;
