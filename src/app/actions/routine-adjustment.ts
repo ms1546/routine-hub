@@ -10,8 +10,6 @@ import type { RoutineAdjustmentProposal, RoutineBlockAdjustment } from '@/featur
 import type { ActionResult } from '@/shared/types/actionResult';
 import { userSettingsRepository } from '@/features/users';
 
-export type { RoutineAdjustmentProposal, RoutineBlockAdjustment };
-
 /**
  * 文献・個人設定に基づくルーチン調整案を取得する。
  * 先に evidence-advice を取得し、その要約をコンテキストとして routine-adjustment-agent に渡す。
