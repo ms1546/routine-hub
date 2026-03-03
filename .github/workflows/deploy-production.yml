@@ -124,6 +124,12 @@ jobs:
           ENV_VARS+=",LANGFUSE_BASE_URL=\"https://us.cloud.langfuse.com\""
           ENV_VARS+=",BEDROCK_ENABLED=\"true\""
           ENV_VARS+=",AWS_BEDROCK_GUARDRAIL_ARN=\"${{ secrets.AWS_BEDROCK_GUARDRAIL_ARN }}\",AWS_BEDROCK_GUARDRAIL_ID=\"${{ secrets.AWS_BEDROCK_GUARDRAIL_ID }}\",AWS_BEDROCK_GUARDRAIL_VERSION=\"${{ secrets.AWS_BEDROCK_GUARDRAIL_VERSION }}\""
+          if [ -n "${{ secrets.AWS_BEDROCK_INFERENCE_PROFILE_ARN }}" ]; then
+            ENV_VARS+=",AWS_BEDROCK_INFERENCE_PROFILE_ARN=\"${{ secrets.AWS_BEDROCK_INFERENCE_PROFILE_ARN }}\""
+          fi
+          if [ -n "${{ secrets.AWS_BEDROCK_MODEL_ROUTINE }}" ]; then
+            ENV_VARS+=",AWS_BEDROCK_MODEL_ROUTINE=\"${{ secrets.AWS_BEDROCK_MODEL_ROUTINE }}\""
+          fi
           SECRETS_MANAGER_ENV_VARS=""
           add_secret() {
             if [ -n "$2" ]; then
