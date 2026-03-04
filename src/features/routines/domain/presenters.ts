@@ -55,7 +55,7 @@ const dayLabels = {
 type Weekday = keyof typeof dayLabels;
 
 const formatSchedule = (day: Weekday, startHour: number, endHour: number) =>
-  `${dayLabels[day]} · ${startHour}:00 – ${endHour}:00`;
+  `${dayLabels[day]} · ${startHour}:00〜${endHour}:00`;
 
 const computeIntensity = (totalHours: number): RoutineListItem['intensity'] => {
   if (totalHours <= 6) return 'light';

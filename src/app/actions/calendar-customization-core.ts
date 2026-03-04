@@ -222,7 +222,7 @@ export async function runCalendarCustomizationWithTrace(
         ? '既存予定なし'
         : `${existingEvents.length}件: ${existingEvents
             .slice(0, 10)
-            .map((e) => `${e.title ?? '無題'} (${e.start ?? ''}–${e.end ?? ''})`)
+            .map((e) => `${e.title ?? '無題'} (${e.start ?? ''}〜${e.end ?? ''})`)
             .join('; ')}${existingEvents.length > 10 ? '...' : ''}`;
 
     // Judge は応答をブロックしないようバックグラウンドで実行（体感速度のため）
