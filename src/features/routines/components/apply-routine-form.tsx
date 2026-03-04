@@ -62,7 +62,7 @@ const formatTimeRangeForDisplay = (
 ): string => {
   const hasStart = startHour != null && !Number.isNaN(startHour);
   const hasEnd = endHour != null && !Number.isNaN(endHour);
-  if (hasStart && hasEnd) return `${formatHourForDisplay(startHour)}–${formatHourForDisplay(endHour)}`;
+  if (hasStart && hasEnd) return `${formatHourForDisplay(startHour)}〜${formatHourForDisplay(endHour)}`;
   if (hasEnd) return `〜${formatHourForDisplay(endHour)}`;
   if (hasStart) return `${formatHourForDisplay(startHour)}〜`;
   return 'ブロック';
@@ -411,7 +411,7 @@ export function ApplyRoutineForm({
             : s.description;
       return { ...s, displayText: detail, affectedProposalIds: ids };
     });
-  }, [customizationResult?.suggestions, previewData?.proposedEvents]);
+  }, [customizationResult?.suggestions]);
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -838,7 +838,7 @@ export function ApplyRoutineForm({
                       <p className="text-xs text-muted-foreground">
                         {adjustmentProposal.suggestedDurationType && `タイプ: ${adjustmentProposal.suggestedDurationType === 'weekly' ? '週次' : '日次'}`}
                         {adjustmentProposal.suggestedNormalStartHour != null && adjustmentProposal.suggestedNormalEndHour != null &&
-                          ` / 全体: ${formatHourForDisplay(adjustmentProposal.suggestedNormalStartHour)}–${formatHourForDisplay(adjustmentProposal.suggestedNormalEndHour)}`}
+                          ` / 全体: ${formatHourForDisplay(adjustmentProposal.suggestedNormalStartHour)}〜${formatHourForDisplay(adjustmentProposal.suggestedNormalEndHour)}`}
                       </p>
                     )}
                     <Button

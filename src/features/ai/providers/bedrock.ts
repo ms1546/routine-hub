@@ -152,12 +152,16 @@ export async function invokeBedrockWithFallback<TSchema extends z.ZodTypeAny>(
     try {
       return await invokeBedrockStructured(params);
     } catch (error) {
-      console.warn('[RoutuneHub] Bedrock invocation failed, using fallback output.', error);
-      if (error && typeof error === 'object') {
-        console.warn('[RoutuneHub] Bedrock error detail:', JSON.stringify(error, null, 2));
-      }
-      if (!process.env.AWS_BEDROCK_INFERENCE_PROFILE_ARN) {
-        console.warn('Set AWS_BEDROCK_INFERENCE_PROFILE_ARN to use provisioned throughput for this model.');
+      const message = error instanceof Error ? error.message : String(error);
+      const isJsonError =
+        error instanceof SyntaxError || /JSON|Unterminated string/i.test(message);
+      if (isJsonError) {
+        console.warn('[RoutuneHub] Bedrock returned invalid JSON, using fallback.', message);
+      } else {
+        console.warn('[RoutuneHub] Bedrock invocation failed, using fallback output.', message);
+        if (!process.env.AWS_BEDROCK_INFERENCE_PROFILE_ARN) {
+          console.warn('[RoutuneHub] Set AWS_BEDROCK_INFERENCE_PROFILE_ARN to use provisioned throughput.');
+        }
       }
     }
   }

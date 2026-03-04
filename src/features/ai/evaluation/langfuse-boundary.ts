@@ -323,7 +323,15 @@ export async function getLangfusePrompt(
       labels: result.labels
     };
   } catch (error) {
-    console.warn(`[RoutuneHub] Failed to fetch prompt "${input.name}" from Langfuse, using fallback.`, error);
+    const err = error as { response?: { status?: number; url?: string }; status?: number; url?: string; message?: string };
+    const status = err?.response?.status ?? err?.status ?? (error && typeof error === 'object' && 'status' in error ? (error as { status: number }).status : undefined);
+    const url = err?.response?.url ?? err?.url ?? (error && typeof error === 'object' && 'url' in error ? (error as { url: string }).url : undefined);
+    if (status === 404) {
+      console.warn(`[RoutuneHub] Prompt "${input.name}" not found in Langfuse (404), using fallback.`);
+    } else {
+      const msg = err?.message ?? (typeof error === 'string' ? error : 'Unknown error');
+      console.warn(`[RoutuneHub] Failed to fetch prompt "${input.name}" from Langfuse, using fallback.`, msg, url ? `(${url})` : '');
+    }
     return null;
   }
 }

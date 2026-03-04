@@ -55,7 +55,7 @@ export const AGENT_PROMPTS = {
       '\n\n【衝突の解決】' +
       '同一ルーチンブロック（同じ routineId・blockId）や睡眠・就寝・休憩など同種の予定との重なりは調整不要。' +
       '別の用事（会議・別ルーチンなど）と重なっている場合のみ、空き時間にずらした start/end を customizedEvents に含める。' +
-      'ずらすときは「最小限」にし、既存予定の終了時刻を基準に空いている時間から開始する（例: 既存が 14:00–15:00 なら 15:00 以降に開始）。30分固定でずらさず、空きに合わせる。' +
+      'ずらすときは「最小限」にし、既存予定の終了時刻を基準に空いている時間から開始する（例: 既存が 14:00〜15:00 なら 15:00 以降に開始）。30分固定でずらさず、空きに合わせる。' +
       'ずらすと Routine の目的が著しく損なわれる場合（例: 朝の集中ブロックを夕方にずらす）は、その日は start/end を返さず、suggestions で代替日やスキップを提案する。' +
       '\n\n【必須】文献・根拠（evidenceContext）が入力にある場合、その推奨を必ず反映すること。' +
       '「連続集中60〜90分」「ブロック短縮」「就寝前短縮」「休憩間隔」などがあれば、該当する提案イベントの start/end を変更し、customizedEvents にその start/end を含める。' +
@@ -66,10 +66,10 @@ export const AGENT_PROMPTS = {
       '\n\n【reasoning のルール】' +
       '変更しない場合でも「カスタマイズの必要はありませんでした」だけにせず、理由を書く（例: 競合なし、希望時間帯と一致、文献推奨と合っている）。' +
       '全イベントで同一文言の繰り返しは禁止。日付・ブロック・文脈ごとに表現を変える（例: 「3/2 は競合なし」「同日2件目も変更不要」）。' +
-      'ずらした場合は「何分ずらしたか」「なぜその時間にしたか」を書く（例: 既存予定「週次定例」終了の 15:00 以降に開始するよう 15:00–17:00 に設定）。' +
+      'ずらした場合は「何分ずらしたか」「なぜその時間にしたか」を書く（例: 既存予定「週次定例」終了の 15:00 以降に開始するよう 15:00〜17:00 に設定）。' +
       '\n\n【suggestions のルール】' +
       '文献またはユーザー設定が入力にある場合は、suggestions を空にせず、少なくとも1件は具体的な提案（time-adjustment / energy-optimization / conflict-resolution）を出す。' +
-      '抽象的禁止。「時間を調整することをおすすめします」ではなく、どの提案イベントを・何時〜何時に移動するか・何分休憩を挟むかを、ユーザーがそのまま実行できる形で書く（例: 「3/2 の提案イベントは既存予定終了後の 15:00–17:00 へ移動することをおすすめします」）。'
+      '抽象的禁止。「時間を調整することをおすすめします」ではなく、どの提案イベントを・何時〜何時に移動するか・何分休憩を挟むかを、ユーザーがそのまま実行できる形で書く（例: 「3/2 の提案イベントは既存予定終了後の 15:00〜17:00 へ移動することをおすすめします」）。'
   },
   'evidence-advice-agent': {
     systemPrompt:
@@ -82,7 +82,7 @@ export const AGENT_PROMPTS = {
       '\n\n【同じ内容は入れない】' +
       '既存イベントと同一内容（同じルーチン・同じブロック、または同じタイトルで同じ時間帯）の提案は skip する。reason に「既存の〇〇（タイトル）と同一のため追加不要」と書く。同じスケジュールを二重に登録しない。' +
       '\n\n【insert】新規挿入。既存と時間が重なっていない場合は recommendedStart/End は省略可。' +
-      '重なっている場合は、既存予定の終了時刻を基準に「空いている時間」を具体的に示す。recommendedStart / recommendedEnd に、衝突している既存の終了直後から開始する ISO 文字列を指定する（例: 既存が 14:00–15:00 なら 15:00 以降に開始）。30分固定でずらさず、空きに合わせる。' +
+      '重なっている場合は、既存予定の終了時刻を基準に「空いている時間」を具体的に示す。recommendedStart / recommendedEnd に、衝突している既存の終了直後から開始する ISO 文字列を指定する（例: 既存が 14:00〜15:00 なら 15:00 以降に開始）。30分固定でずらさず、空きに合わせる。' +
       '\n\n【merge】既存予定と同一とみなし更新。既存の source に同じ routineId と blockId がある場合のみ使用する。source がない既存予定（ユーザーが手で入れた予定）は merge 対象にしない。existingEventId に既存の id を指定し、reason に短く理由を書く。' +
       '\n\n【skip】挿入しない。上記「同じ内容」のほか、全日詰まっている・ルーチン目的を損なう等で挿入できない場合に使う。reason に理由と代替案を具体的に書く（例: 「該当日は空きがありません。翌日 〇月〇日を推奨」）。' +
       '\n\n出力は必ず JSON の resolutions 配列。提案イベントの proposalId ごとに1件ずつ出力し、各要素に proposalId と action を必ず含め、action に応じて recommendedStart/recommendedEnd（insert で重複時）、existingEventId（merge）、reason（任意だが skip 時は必須）を含める。'
@@ -158,11 +158,19 @@ export async function getSystemPromptInfo(
 
   // Langfuseからプロンプトを取得
   // label と version は同時に指定できないため、label が指定されている場合は version を undefined にする
-  const langfusePrompt = await getLangfusePrompt({
+  let langfusePrompt = await getLangfusePrompt({
     name: agentName,
     version: label ? undefined : (options?.version ?? 'latest'),
     label: label || undefined
   });
+
+  // development で 404 のときは production を試す（Langfuse に development ラベルが無い場合に対応）
+  if (!langfusePrompt?.prompt && label === 'development' && !options?.label) {
+    langfusePrompt = await getLangfusePrompt({
+      name: agentName,
+      label: 'production'
+    });
+  }
 
   if (langfusePrompt?.prompt) {
     return {
