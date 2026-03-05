@@ -563,7 +563,8 @@ export function ApplyRoutineForm({
         recurrence: previewData.recurrence,
         startDate: previewData.startDate,
         endDate: previewData.endDate,
-        events: displayEventsToApply.length > 0 ? displayEventsToApply : undefined
+        events: displayEventsToApply.length > 0 ? displayEventsToApply : undefined,
+        existingEventsSnapshot: previewData.existingEvents
       });
       const parts: string[] = [];
       if (result.successCount > 0) parts.push(`${result.successCount}件を追加`);
@@ -1023,7 +1024,13 @@ export function ApplyRoutineForm({
                       weekEndDate.setDate(weekEndDate.getDate() + 6);
 
                       const isExpanded = expandedWeeks.has(weekIndex);
-                      const weekLabel = `第${weekIndex + 1}週 (${weekStartDate.toLocaleDateString('ja-JP', { month: 'short', day: 'numeric' })} - ${weekEndDate.toLocaleDateString('ja-JP', { month: 'short', day: 'numeric' })})`;
+                      const weekLabel = `${weekStartDate.toLocaleDateString('ja-JP', {
+                        month: 'short',
+                        day: 'numeric'
+                      })} 〜 ${weekEndDate.toLocaleDateString('ja-JP', {
+                        month: 'short',
+                        day: 'numeric'
+                      })}`;
 
                       return (
                         <div key={weekIndex} className="border border-border/60 rounded-lg overflow-hidden">
