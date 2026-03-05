@@ -969,10 +969,12 @@ export function ApplyRoutineForm({
 
             {/* 適用されるイベントの一覧（週ごとに展開/折りたたみ） */}
             {displayEvents.length > 0 && (() => {
-              // イベントを週ごとにグループ化
+              // イベントを週ごとにグループ化（ただし週ラベルの終了日はプレビュー終了日を超えないようにする）
               const eventsByWeek = new Map<number, ProposedCalendarEvent[]>();
               const startDateObj = parseLocalDateInput(previewData.startDate) ?? new Date(previewData.startDate);
+              const endDateObj = parseLocalDateInput(previewData.endDate) ?? new Date(previewData.endDate);
               const startOfPreview = normalizeLocalDate(startDateObj);
+              const endOfPreview = normalizeLocalDate(endDateObj);
 
               displayEvents.forEach((event) => {
                 const eventDate = normalizeLocalDate(new Date(event.start));
@@ -1019,9 +1021,13 @@ export function ApplyRoutineForm({
                     {weeks.map((weekIndex) => {
                       const weekEvents = eventsByWeek.get(weekIndex) ?? [];
                       const weekStartDate = new Date(startOfPreview);
-                      weekStartDate.setDate(weekStartDate.getDate() + (weekIndex * 7));
+                      weekStartDate.setDate(weekStartDate.getDate() + weekIndex * 7);
                       const weekEndDate = new Date(weekStartDate);
                       weekEndDate.setDate(weekEndDate.getDate() + 6);
+                      // 週単位のラベルであっても、ユーザーが選択した終了日（プレビュー範囲の終了）を超えないようにする
+                      if (weekEndDate > endOfPreview) {
+                        weekEndDate.setTime(endOfPreview.getTime());
+                      }
 
                       const isExpanded = expandedWeeks.has(weekIndex);
                       const weekLabel = `${weekStartDate.toLocaleDateString('ja-JP', {
