@@ -32,7 +32,8 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       if (session.user) {
         session.user.id = token.sub ?? '';
         // userSettingsからdisplayNameを取得してセッションに含める
-        const userId = session.user.email ?? session.user.id ?? '';
+        // UserSettings のキーは user.id で管理しているため、まず id を優先し、なければ email を使う
+        const userId = session.user.id ?? session.user.email ?? '';
         if (userId) {
           const settings = await userSettingsRepository.get(userId);
           session.user.displayName = settings?.displayName ?? session.user.name ?? null;
