@@ -99,6 +99,8 @@ export type ConfirmProposedEventsInput = {
   routineId: string;
   /** 適用するイベントの一覧。渡す場合は日付・編集・カスタマイズをそのまま挿入する。未指定の場合は proposalIds + startDate/endDate でサーバー側で再構築する。 */
   events?: ProposedCalendarEvent[];
+  /** プレビュー時点で取得した既存カレンダー予定のスナップショット。渡された場合は適用時も同じスナップショットを使用する（プレビューと適用で同じ前提にするため）。 */
+  existingEventsSnapshot?: CalendarEvent[];
   /** events を渡さない場合に使用。この日付範囲でサーバーが提案を再構築する。 */
   startDate?: string;
   endDate?: string;
@@ -115,7 +117,15 @@ export type ConfirmProposedEventsInput = {
 export async function confirmProposedEventsAction(
   input: ConfirmProposedEventsInput
 ): Promise<CalendarConfirmationResult> {
-  const { routineId, events: eventsToInsert, startDate, endDate, proposalIds, recurrence } = input;
+  const {
+    routineId,
+    events: eventsToInsert,
+    existingEventsSnapshot,
+    startDate,
+    endDate,
+    proposalIds,
+    recurrence
+  } = input;
   const { getCurrentUser } = await import('@/infrastructure/auth/session');
   const currentUser = await getCurrentUser();
 
@@ -138,7 +148,8 @@ export async function confirmProposedEventsAction(
     if (!valid) {
       throw new Error('Invalid events: routineId or proposalIds do not match.');
     }
-    proposals = eventsToInsert;
+    // 同一 proposalId が複数あると toInsert に重複して入りカレンダーに二重登録されるため、1件にまとめる
+    proposals = [...new Map(eventsToInsert.map((e) => [e.proposalId, e])).values()];
   } else {
     const timeZone = 'Asia/Tokyo';
     let calendarWindow: CalendarTimeRange;
@@ -184,8 +195,68 @@ export async function confirmProposedEventsAction(
     };
   }
   const client = getCalendarClient(currentUser.email);
+  // events を渡している場合（プレビュー経由で編集・カスタマイズ済みのケース）は、
+  // プレビューと同じ existingEvents スナップショットを使い、解釈ロジックを変えずにそのまま挿入する。
+  if (eventsToInsert != null && eventsToInsert.length > 0) {
+    const windowFromProposals: CalendarTimeRange = {
+      start: proposals.reduce(
+        (min, p) => (p.start < min ? p.start : min),
+        proposals[0]?.start ?? new Date().toISOString()
+      ),
+      end: proposals.reduce(
+        (max, p) => (p.end > max ? p.end : max),
+        proposals[0]?.end ?? new Date().toISOString()
+      ),
+      timezone: 'Asia/Tokyo'
+    };
+    // プレビュー時点のスナップショットがあればそれを優先し、なければ最新を取得
+    const existingEvents =
+      existingEventsSnapshot && existingEventsSnapshot.length > 0
+        ? existingEventsSnapshot
+        : await client.listEvents(windowFromProposals);
 
-  // 適用方針を決定（insert / merge / skip）
+    const toInsert: ProposedCalendarEvent[] = [];
+    const skipped: SkippedProposal[] = [];
+
+    for (const prop of proposals) {
+      const hasConflict = existingEvents.some((existing) => {
+        const eventStart = new Date(prop.start);
+        const eventEnd = new Date(prop.end);
+        const existingStart = new Date(existing.start);
+        const existingEnd = new Date(existing.end);
+        return (
+          (eventStart >= existingStart && eventStart < existingEnd) ||
+          (eventEnd > existingStart && eventEnd <= existingEnd) ||
+          (eventStart <= existingStart && eventEnd >= existingEnd)
+        );
+      });
+
+      if (hasConflict) {
+        skipped.push({
+          proposalId: prop.proposalId,
+          reason: '既存のカレンダー予定と重複するためスキップされました'
+        });
+        continue;
+      }
+
+      toInsert.push(prop);
+    }
+
+    // 同一 proposalId が複数入っているとカレンダーに二重登録されるため、1件にまとめてから挿入
+    const uniqueToInsert = [...new Map(toInsert.map((e) => [e.proposalId, e])).values()];
+    const result = await client.insertEvents(uniqueToInsert);
+    return {
+      successCount: result.success.length,
+      failureCount: result.failures.length,
+      insertedEvents: result.success,
+      failedEvents: result.failures,
+      mergedCount: 0,
+      mergedEvents: [],
+      skipped
+    };
+  }
+
+  // events を渡さない場合は、既存ロジックどおり LLM エージェントで insert / merge / skip を決定
   const windowFromProposals: CalendarTimeRange = {
     start: proposals.reduce((min, p) => (p.start < min ? p.start : min), proposals[0]?.start ?? new Date().toISOString()),
     end: proposals.reduce((max, p) => (p.end > max ? p.end : max), proposals[0]?.end ?? new Date().toISOString()),
@@ -241,7 +312,9 @@ export async function confirmProposedEventsAction(
     }
   }
 
-  const result = await client.insertEvents(toInsert);
+  // 同一 proposalId が複数入っているとカレンダーに二重登録されるため、1件にまとめてから挿入
+  const uniqueToInsert = [...new Map(toInsert.map((e) => [e.proposalId, e])).values()];
+  const result = await client.insertEvents(uniqueToInsert);
   return {
     successCount: result.success.length,
     failureCount: result.failures.length,

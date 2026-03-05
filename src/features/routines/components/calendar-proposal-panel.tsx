@@ -72,7 +72,9 @@ export function CalendarProposalPanel({
           proposalIds: selectedIds,
           recurrence,
           ...(startDate && endDate ? { startDate, endDate } : {}),
-          ...(eventsToInsert != null && eventsToInsert.length > 0 ? { events: eventsToInsert } : {})
+          ...(eventsToInsert != null && eventsToInsert.length > 0
+            ? { events: eventsToInsert, existingEventsSnapshot: existingEvents }
+            : {})
         });
         setResult(confirmation);
         const parts: string[] = [];

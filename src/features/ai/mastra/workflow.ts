@@ -16,6 +16,7 @@ import { runCalendarConflictAgent } from '../agents/calendar-conflict-agent';
 import { runOptimizationAgent } from '../agents/optimization-agent';
 import { runFutureSimulationAgent } from '../agents/future-simulation-agent';
 import { evaluateWorkflow } from '../evaluation/judge';
+import { runEvidenceAdviceAgent } from '../agents/evidence-advice-agent';
 
 const userProfileSchema = z.object({
   timezone: z.string(),
@@ -39,28 +40,63 @@ const workflowInputSchema = z.object({
   calendarWindow: calendarWindowSchema
 });
 
-const contextSchema = workflowInputSchema;
+const baseContextSchema = workflowInputSchema;
+
+const evidenceCitationSchema = z.object({
+  sourceId: z.string(),
+  title: z.string(),
+  year: z.number().optional(),
+  venue: z.string().optional(),
+  authors: z.array(z.string()).optional(),
+  url: z.string().optional(),
+  citedByCount: z.number().optional()
+});
+
+const evidenceSuggestionSchema = z.object({
+  id: z.string(),
+  description: z.string(),
+  evidence: z.array(evidenceCitationSchema),
+  confidence: z.enum(['low', 'medium', 'high'])
+});
+
+const evidenceResultSchema = z.object({
+  query: z.string(),
+  displayQuery: z.string().optional(),
+  searchQuery: z.string().optional(),
+  suggestions: z.array(evidenceSuggestionSchema),
+  warnings: z.array(z.string()),
+  disclaimer: z.string()
+});
+
+const evidenceContextSchema = z.object({
+  context: baseContextSchema,
+  evidence: evidenceResultSchema
+});
 
 const profileResultSchema = z.object({
-  context: contextSchema,
+  context: baseContextSchema,
+  evidence: evidenceResultSchema,
   profile: agentResultSchema(profileAgentDataSchema)
 });
 
 const interpretationResultSchema = z.object({
-  context: contextSchema,
+  context: baseContextSchema,
+  evidence: evidenceResultSchema,
   profile: agentResultSchema(profileAgentDataSchema),
   interpretation: agentResultSchema(interpretationAgentDataSchema)
 });
 
 const conflictResultSchema = z.object({
-  context: contextSchema,
+  context: baseContextSchema,
+  evidence: evidenceResultSchema,
   profile: agentResultSchema(profileAgentDataSchema),
   interpretation: agentResultSchema(interpretationAgentDataSchema),
   conflicts: agentResultSchema(conflictAgentDataSchema)
 });
 
 const optimizationResultSchema = z.object({
-  context: contextSchema,
+  context: baseContextSchema,
+  evidence: evidenceResultSchema,
   profile: agentResultSchema(profileAgentDataSchema),
   interpretation: agentResultSchema(interpretationAgentDataSchema),
   conflicts: agentResultSchema(conflictAgentDataSchema),
@@ -68,7 +104,8 @@ const optimizationResultSchema = z.object({
 });
 
 const futureResultSchema = z.object({
-  context: contextSchema,
+  context: baseContextSchema,
+  evidence: evidenceResultSchema,
   profile: agentResultSchema(profileAgentDataSchema),
   interpretation: agentResultSchema(interpretationAgentDataSchema),
   conflicts: agentResultSchema(conflictAgentDataSchema),
@@ -85,13 +122,26 @@ const workflowOutputSchema = z.object({
   evaluation: agentResultSchema(judgeEvaluationSchema)
 });
 
+const evidenceStep = createStep({
+  id: 'evidence-step',
+  inputSchema: workflowInputSchema,
+  outputSchema: evidenceContextSchema,
+  execute: async ({ inputData }) => {
+    const evidence = await runEvidenceAdviceAgent({
+      routine: inputData.routine,
+      userProfile: inputData.user
+    });
+    return { context: inputData, evidence };
+  }
+});
+
 const profileStep = createStep({
   id: 'profile-step',
-  inputSchema: workflowInputSchema,
+  inputSchema: evidenceContextSchema,
   outputSchema: profileResultSchema,
   execute: async ({ inputData }) => {
-    const profile = await runProfileAgent({ userProfile: inputData.user });
-    return { context: inputData, profile };
+    const profile = await runProfileAgent({ userProfile: inputData.context.user });
+    return { context: inputData.context, evidence: inputData.evidence, profile };
   }
 });
 
@@ -179,6 +229,7 @@ export const routinePlanningWorkflow = createWorkflow({
   inputSchema: workflowInputSchema,
   outputSchema: workflowOutputSchema,
 })
+  .then(evidenceStep)
   .then(profileStep)
   .then(interpretationStep)
   .then(conflictStep)
